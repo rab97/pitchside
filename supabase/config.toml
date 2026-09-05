@@ -286,12 +286,18 @@ max_frequency = "5s"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# In locale il provider e' finto ma deve risultare abilitato: senza un provider
+# attivo gotrue rifiuta l'accesso via telefono con `phone_provider_disabled`,
+# e la mappa [auth.sms.test_otp] non viene mai consultata. Nessun SMS parte:
+# i numeri di test vengono intercettati prima della chiamata a Twilio.
+# Il provider vero si configura nel dashboard del progetto, non qui.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+enabled = true
+account_sid = "locale-non-usato"
+message_service_sid = "locale-non-usato"
+# Segnaposto, non una credenziale: in locale non viene mai usato. Il token vero
+# non finisce in questo file — sta nelle impostazioni del progetto Supabase.
+auth_token = "locale-non-usato"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
