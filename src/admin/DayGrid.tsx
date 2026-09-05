@@ -42,7 +42,7 @@ export function DayGrid({ day, onSlotClick, onBookingClick }: {
         {fields.map((f) => (
           <div key={f.id} className="border-b border-line pb-2 pl-1.5 text-[11.5px] font-medium text-ink-2">
             {f.name}
-            <span className="block font-mono text-[10px] tracking-[.04em] text-muted">
+            <span className="block tabular-nums text-[10px] tracking-[.04em] text-muted">
               {f.kind === 'calcio7' ? 'a 7' : f.kind === 'calcio11' ? 'a 11' : 'a 5'}
               {f.covered ? ' · coperto' : ' · scoperto'}
             </span>
@@ -60,7 +60,7 @@ export function DayGrid({ day, onSlotClick, onBookingClick }: {
           return (
             <div
               key={`t-${r}`}
-              className="col-start-1 -translate-y-1.5 pr-2 text-right font-mono text-[10.5px] text-muted"
+              className="col-start-1 -translate-y-1.5 pr-2 text-right tabular-nums text-[10.5px] text-muted"
               style={{ gridRow: r + 1 }}
             >
               {min % 60 === 0 ? minToLabel(min) : ''}

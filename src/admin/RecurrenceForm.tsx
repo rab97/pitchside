@@ -24,7 +24,7 @@ export function RecurrenceForm({ day, enabled, until, onToggle, onUntil }: {
         />
         <span>
           Ripeti ogni {WEEKDAY[getISODay(day)]}
-          <em className="mt-0.5 block font-mono text-[11.5px] not-italic text-muted">
+          <em className="mt-0.5 block tabular-nums text-[11.5px] not-italic text-muted">
             {enabled && until
               ? `fino al ${format(new Date(`${until}T12:00:00`), 'd MMMM', { locale: it })} · ${dates} ${dates === 1 ? 'data' : 'date'}`
               : 'per i gruppi fissi della stagione'}
@@ -34,13 +34,13 @@ export function RecurrenceForm({ day, enabled, until, onToggle, onUntil }: {
 
       {enabled && (
         <label className="flex items-center justify-between gap-2 text-[11.5px] text-muted">
-          <span className="font-mono uppercase tracking-[.06em]">Fino al</span>
+          <span className="tabular-nums uppercase tracking-[.06em]">Fino al</span>
           <input
             type="date"
             value={until}
             min={format(day, 'yyyy-MM-dd')}
             onChange={(e) => onUntil(e.target.value)}
-            className="rounded-[7px] border border-line bg-surface px-2 py-1 font-mono text-[12.5px] text-ink"
+            className="rounded-[7px] border border-line bg-surface px-2 py-1 tabular-nums text-[12.5px] text-ink"
           />
         </label>
       )}

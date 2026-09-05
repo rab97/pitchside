@@ -95,7 +95,7 @@ function LoginArt({ name, address }: { name: string; address: string | null }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-[10.5px] uppercase tracking-[.1em] text-muted">
+      <span className="tabular-nums text-[10.5px] uppercase tracking-[.1em] text-muted">
         {label}
       </span>
       {children}
@@ -208,7 +208,7 @@ function OtpForm({ phone, code, busy, error, onChange, onSubmit, onBack }: {
             <span
               key={i}
               className={
-                'grid aspect-[1/1.15] flex-1 place-items-center rounded-lg border font-mono text-[19px] font-medium ' +
+                'grid aspect-[1/1.15] flex-1 place-items-center rounded-lg border tabular-nums text-[19px] font-medium ' +
                 (d.trim()
                   ? 'border-pitch bg-pitch-tint text-pitch'
                   : 'border-line bg-surface-2 text-muted')

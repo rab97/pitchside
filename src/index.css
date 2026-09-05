@@ -66,15 +66,39 @@
   --color-ochre: var(--ochre);
   --color-ochre-tint: var(--ochre-tint);
 
+  /* Una sola famiglia, per scelta. I mockup ne usano due — Montserrat per il
+     testo e IBM Plex Mono per orari, importi ed etichette — ma qui Montserrat
+     vale ovunque. L'incolonnamento delle cifre, che era il motivo tecnico del
+     mono, resta: gli elementi numerici portano `tabular-nums`, e Montserrat
+     espone le cifre a larghezza fissa. */
   --font-sans: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI",
                "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
   --radius-card: var(--r);
   --shadow-card: var(--shadow);
 }
 
 html { color-scheme: light dark; }
+
+/* Tutto ciò che si clicca mostra la manina. Tailwind v4 lascia ai bottoni il
+   cursore di default del browser — la freccia — e ogni cella della griglia,
+   ogni pulsante di durata e ogni voce dei suggerimenti è un <button>. Si
+   definisce qui una volta sola, invece di ricordarsene in ogni componente. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label:has(input[type="checkbox"]),
+label:has(input[type="radio"]),
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary {
+  cursor: pointer;
+}
+
+/* Un bottone spento non è cliccabile: dirlo col cursore evita il clic a vuoto. */
+button:disabled {
+  cursor: not-allowed;
+}
 
 body{
   background: var(--ground);

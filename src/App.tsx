@@ -15,7 +15,7 @@ function Home() {
   const facility = useFacility()
   return (
     <main className="p-8">
-      <p className="font-mono text-[11px] uppercase tracking-[.14em] text-pitch">
+      <p className="tabular-nums text-[11px] uppercase tracking-[.14em] text-pitch">
         Prenota Campi
       </p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">{facility.name}</h1>

@@ -54,7 +54,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
   return (
     <Dialog open onClose={onClose} labelledBy="bd-title">
       <div className="flex flex-col gap-3 p-4">
-        <p className="font-mono text-[11px] tracking-[.03em] text-muted">
+        <p className="tabular-nums text-[11px] tracking-[.03em] text-muted">
           {(fieldName ?? '').toUpperCase()} · {format(booking.slot_start, 'EEE d MMM', { locale: it }).toUpperCase()}
         </p>
         <h3 id="bd-title" className="text-base font-semibold tracking-[-.01em]">
@@ -65,7 +65,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
           <Kv label="Prenotata da">{booking.member_name}</Kv>
           {booking.member_phone && (
             <Kv label="Telefono">
-              <a className="font-mono text-pitch" href={`tel:${booking.member_phone}`}>
+              <a className="tabular-nums text-pitch" href={`tel:${booking.member_phone}`}>
                 {booking.member_phone}
               </a>
             </Kv>

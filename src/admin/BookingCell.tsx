@@ -32,7 +32,7 @@ export function BookingCell({ booking, column, rowStart, rowEnd, onClick }: {
       <div className="truncate text-[11.5px] font-medium leading-[1.25]">
         {booking.member_name}
       </div>
-      <div className="truncate font-mono text-[9.5px] opacity-[.78]">
+      <div className="truncate tabular-nums text-[9.5px] opacity-[.78]">
         {from}–{to}
         {booking.member_phone ? ` · ${booking.member_phone}` : ''}
       </div>

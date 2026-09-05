@@ -17,7 +17,7 @@ export function AdminPage() {
   return (
     <div className="min-h-screen bg-ground p-4 sm:p-6">
       <div className="mx-auto max-w-[1140px]">
-        <p className="font-mono text-[11px] uppercase tracking-[.14em] text-pitch">
+        <p className="tabular-nums text-[11px] uppercase tracking-[.14em] text-pitch">
           {facility.name}
         </p>
         <h1 className="mt-1.5 text-2xl font-semibold tracking-[-.02em]">
@@ -26,7 +26,7 @@ export function AdminPage() {
 
         <div className="mt-4 overflow-hidden rounded-card border border-line bg-surface shadow-card">
           <div className="flex flex-wrap items-center gap-2 border-b border-line-soft bg-surface-2 px-3.5 py-3">
-            <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted">
+            <span className="inline-flex items-center gap-1.5 tabular-nums text-[11px] text-muted">
               <span className="h-1.5 w-1.5 rounded-full bg-pitch" />
               in tempo reale
             </span>
@@ -40,7 +40,7 @@ export function AdminPage() {
               >
                 ‹
               </button>
-              <span className="font-mono text-[12.5px] font-medium">
+              <span className="tabular-nums text-[12.5px] font-medium">
                 {isToday(day) ? 'Oggi · ' : ''}
                 {format(day, 'EEEE d MMMM', { locale: it })}
               </span>
