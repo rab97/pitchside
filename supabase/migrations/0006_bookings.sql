@@ -55,6 +55,16 @@ create policy closures_write_admin on public.closures
   for all using (public.is_facility_admin(facility_id))
   with check (public.is_facility_admin(facility_id));
 
+-- I codici di errore di dominio stanno nella classe privata PS, non in P0.
+-- P0 e' riservata a PL/pgSQL e P0004 e' `assert_failure`, che `when others`
+-- per costruzione NON cattura: usandolo per «slot occupato», la generazione
+-- di una ricorrenza abortirebbe alla prima data gia' presa invece di saltarla.
+--   PS001 intervallo o fasce incoerenti   PS007 oltre l'orizzonte
+--   PS002 campo non disponibile           PS008 sotto la durata minima
+--   PS003 campo chiuso                    PS009 prenotazione non trovata
+--   PS004 slot gia' prenotato             PS010 gia' disdetta
+--   PS005 nessuna tariffa per l'orario    PS011 ricorrenza non trovata
+--   PS006 slot nel passato
 create or replace function public.create_booking(
   p_field_id uuid,
   p_slot tstzrange,
@@ -73,24 +83,29 @@ declare
 begin
   select * into f from public.fields where id = p_field_id and active;
   if not found then
-    raise exception 'Il campo non è disponibile.' using errcode = 'P0002';
+    raise exception 'Il campo non è disponibile.' using errcode = 'PS002';
   end if;
 
   select * into fac from public.facilities where id = f.facility_id;
 
   if lower(p_slot) < now() then
-    raise exception 'Non si può prenotare nel passato.' using errcode = 'P0006';
+    raise exception 'Non si può prenotare nel passato.' using errcode = 'PS006';
   end if;
 
-  if lower(p_slot) > now() + make_interval(days => fac.booking_horizon_days) then
+  -- L'orizzonte vale solo per chi prenota dall'app. Esiste perche' un cliente
+  -- non blocchi il calendario con mesi di anticipo, non per limitare il
+  -- gestore: i gruppi fissi si bloccano da settembre a maggio, e applicare i
+  -- 60 giorni anche a loro renderebbe impossibile la funzione che li serve.
+  if p_source = 'app'
+     and lower(p_slot) > now() + make_interval(days => fac.booking_horizon_days) then
     raise exception 'Si può prenotare al massimo % giorni in anticipo.',
-      fac.booking_horizon_days using errcode = 'P0007';
+      fac.booking_horizon_days using errcode = 'PS007';
   end if;
 
   if extract(epoch from (upper(p_slot) - lower(p_slot))) / 60
      < fac.min_duration_minutes then
     raise exception 'La durata minima è di % minuti.',
-      fac.min_duration_minutes using errcode = 'P0008';
+      fac.min_duration_minutes using errcode = 'PS008';
   end if;
 
   if exists (
@@ -99,10 +114,10 @@ begin
       and (c.field_id is null or c.field_id = p_field_id)
       and c.period && p_slot
   ) then
-    raise exception 'Il campo è chiuso in quell''orario.' using errcode = 'P0003';
+    raise exception 'Il campo è chiuso in quell''orario.' using errcode = 'PS003';
   end if;
 
-  -- Alza P0005 se lo slot cade fuori dall'orario di apertura.
+  -- Alza PS005 se lo slot cade fuori dall'orario di apertura.
   v_price := public.calc_booking_price(p_field_id, p_slot);
 
   insert into public.bookings (
@@ -116,7 +131,7 @@ begin
   return v_row;
 exception
   when exclusion_violation then
-    raise exception 'Questo slot è già stato prenotato.' using errcode = 'P0004';
+    raise exception 'Questo slot è già stato prenotato.' using errcode = 'PS004';
 end;
 $$;
 
@@ -134,10 +149,10 @@ declare
 begin
   select * into v_row from public.bookings where id = p_booking_id for update;
   if not found then
-    raise exception 'Prenotazione non trovata.' using errcode = 'P0009';
+    raise exception 'Prenotazione non trovata.' using errcode = 'PS009';
   end if;
   if v_row.status <> 'active' then
-    raise exception 'La prenotazione è già stata disdetta.' using errcode = 'P0010';
+    raise exception 'La prenotazione è già stata disdetta.' using errcode = 'PS010';
   end if;
 
   v_late := now() > v_row.cancel_deadline;

@@ -42,14 +42,14 @@ begin
   cur := lower(p_slot);
   fin := upper(p_slot);
   if cur is null or fin is null or cur >= fin then
-    raise exception 'intervallo non valido' using errcode = 'P0001';
+    raise exception 'intervallo non valido' using errcode = 'PS001';
   end if;
 
   while cur < fin loop
     guard := guard + 1;
     if guard > 100 then
       raise exception 'calcolo prezzo non terminato: fasce incoerenti'
-        using errcode = 'P0001';
+        using errcode = 'PS001';
     end if;
 
     loc := cur at time zone tz;
@@ -66,7 +66,7 @@ begin
     if not found then
       raise exception 'nessuna tariffa attiva per le % del %',
         to_char(loc, 'HH24:MI'), to_char(loc, 'DD/MM/YYYY')
-        using errcode = 'P0005';
+        using errcode = 'PS005';
     end if;
 
     seg_end := least(

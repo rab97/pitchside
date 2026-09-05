@@ -1,9 +1,9 @@
 begin;
-select plan(6);
+select plan(8);
 
 -- Le date sono nel futuro e l'orizzonte è largo di proposito: create_booking
--- rifiuta il passato (P0006) e le prenotazioni oltre booking_horizon_days
--- (P0007). Con date fisse nel passato questo file fallirebbe per un motivo
+-- rifiuta il passato (PS006) e le prenotazioni oltre booking_horizon_days
+-- (PS007). Con date fisse nel passato questo file fallirebbe per un motivo
 -- che non c'entra nulla con la sovrapposizione, che è ciò che vuole provare.
 insert into public.facilities (id, slug, name, booking_horizon_days)
   values ('11111111-1111-1111-1111-111111111111', 'test', 'Test', 3650);
@@ -34,7 +34,7 @@ select throws_ok(
       'aaaaaaaa-0000-0000-0000-000000000001',
       tstzrange('2030-10-15 20:00+02','2030-10-15 21:30+02'),
       'bbbbbbbb-0000-0000-0000-000000000001', 'app')$$,
-  'P0004', 'Questo slot è già stato prenotato.',
+  'PS004', 'Questo slot è già stato prenotato.',
   'la sovrapposizione totale è rifiutata'
 );
 
@@ -44,7 +44,7 @@ select throws_ok(
       'aaaaaaaa-0000-0000-0000-000000000001',
       tstzrange('2030-10-15 21:00+02','2030-10-15 22:00+02'),
       'bbbbbbbb-0000-0000-0000-000000000001', 'app')$$,
-  'P0004', 'Questo slot è già stato prenotato.',
+  'PS004', 'Questo slot è già stato prenotato.',
   'la sovrapposizione parziale è rifiutata'
 );
 
@@ -71,6 +71,38 @@ select lives_ok(
       tstzrange('2030-10-15 20:00+02','2030-10-15 21:30+02'),
       'bbbbbbbb-0000-0000-0000-000000000001', 'app')$$,
   'lo slot disdetto si può riprenotare'
+);
+
+-- L'orizzonte di prenotazione limita il cliente, non il gestore: senza questa
+-- distinzione una ricorrenza di stagione perderebbe tutte le date oltre i 60
+-- giorni, che sono quasi tutte.
+insert into public.facilities (id, slug, name, booking_horizon_days)
+  values ('99999999-9999-9999-9999-999999999999', 'stretta', 'Orizzonte stretto', 30);
+insert into public.fields (id, facility_id, name, kind)
+  values ('aaaaaaaa-0000-0000-0000-000000000009',
+          '99999999-9999-9999-9999-999999999999', 'Campo 1', 'calcio5');
+insert into public.price_bands (facility_id, field_id, weekdays, starts_min, ends_min, price_cents)
+  values ('99999999-9999-9999-9999-999999999999','aaaaaaaa-0000-0000-0000-000000000009',
+          '{1,2,3,4,5,6,7}', 0, 1440, 2500);
+insert into public.members (id, facility_id, name)
+  values ('bbbbbbbb-0000-0000-0000-000000000009',
+          '99999999-9999-9999-9999-999999999999', 'Gruppo del martedì');
+
+select throws_ok(
+  $$select public.create_booking(
+      'aaaaaaaa-0000-0000-0000-000000000009',
+      tstzrange(now() + interval '200 days', now() + interval '200 days 1 hour'),
+      'bbbbbbbb-0000-0000-0000-000000000009', 'app')$$,
+  'PS007', 'Si può prenotare al massimo 30 giorni in anticipo.',
+  'dall app l orizzonte vale'
+);
+
+select lives_ok(
+  $$select public.create_booking(
+      'aaaaaaaa-0000-0000-0000-000000000009',
+      tstzrange(now() + interval '200 days', now() + interval '200 days 1 hour'),
+      'bbbbbbbb-0000-0000-0000-000000000009', 'recurrence')$$,
+  'per una ricorrenza del gestore l orizzonte non vale'
 );
 
 select * from finish();

@@ -105,6 +105,13 @@ export type Database = {
             referencedRelation: "members"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bookings_recurrence_fk"
+            columns: ["recurrence_id"]
+            isOneToOne: false
+            referencedRelation: "recurrences"
+            referencedColumns: ["id"]
+          },
         ]
       }
       closures: {
@@ -379,6 +386,67 @@ export type Database = {
           },
         ]
       }
+      recurrences: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          facility_id: string
+          field_id: string
+          from_date: string
+          id: string
+          member_id: string
+          start_min: number
+          to_date: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes: number
+          facility_id: string
+          field_id: string
+          from_date: string
+          id?: string
+          member_id: string
+          start_min: number
+          to_date: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          facility_id?: string
+          field_id?: string
+          from_date?: string
+          id?: string
+          member_id?: string
+          start_min?: number
+          to_date?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurrences_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurrences_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurrences_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       busy_slots: {
@@ -497,6 +565,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      generate_recurrence: {
+        Args: { p_recurrence_id: string }
+        Returns: {
+          created: number
+          skipped: number
+          skipped_dates: string[]
+        }[]
       }
       is_facility_admin: { Args: { p_facility: string }; Returns: boolean }
       member_reliability: {

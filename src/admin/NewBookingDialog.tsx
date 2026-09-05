@@ -9,7 +9,10 @@ import { supabase } from '../lib/supabase'
 import { dayKey, minToLabel } from '../lib/tz'
 import { useFacility } from '../tenant/FacilityProvider'
 import { pickExistingMember } from './pickMember'
+import { defaultSeasonEnd } from './recurrence'
+import { RecurrenceForm } from './RecurrenceForm'
 import { useCreateBooking } from './useCreateBooking'
+import { useCreateRecurrence } from './useCreateRecurrence'
 import type { FieldRow } from './DayGrid.hooks'
 
 const DURATIONS = [60, 90, 120]
@@ -57,9 +60,12 @@ export function NewBookingDialog({ target, onClose }: {
 }) {
   const facility = useFacility()
   const create = useCreateBooking()
+  const createRecurrence = useCreateRecurrence()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [minutes, setMinutes] = useState(facility.min_duration_minutes || 60)
+  const [repeat, setRepeat] = useState(false)
+  const [until, setUntil] = useState('')
   const [error, setError] = useState<string | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
@@ -69,6 +75,8 @@ export function NewBookingDialog({ target, onClose }: {
     if (target) {
       setName(''); setPhone(''); setError(null)
       setMinutes(facility.min_duration_minutes || 60)
+      setRepeat(false)
+      setUntil(format(defaultSeasonEnd(target.day), 'yyyy-MM-dd'))
       requestAnimationFrame(() => nameRef.current?.focus())
     }
   }, [target, facility.min_duration_minutes])
@@ -85,6 +93,34 @@ export function NewBookingDialog({ target, onClose }: {
     setError(null)
     try {
       const memberId = await resolveMember(facility.id, name, phone)
+
+      if (repeat && until) {
+        const { created, skipped, skipped_dates } = await createRecurrence.mutateAsync({
+          facilityId: facility.id,
+          fieldId: target.field.id,
+          memberId,
+          day: target.day,
+          startMin: target.startMin,
+          minutes,
+          until,
+        })
+        if (created === 0) {
+          setError('Nessuna data creata: il campo è già occupato in tutte quelle scelte.')
+          return
+        }
+        toast.success(
+          skipped === 0
+            ? `Create ${created} date.`
+            : `Create ${created} date. ${skipped} saltate perché il campo era già occupato: ` +
+              skipped_dates
+                .map((d) => format(new Date(`${d}T12:00:00`), 'd MMM', { locale: it }))
+                .join(', '),
+          { duration: skipped === 0 ? 4000 : 12000 },
+        )
+        onClose()
+        return
+      }
+
       const booking = await create.mutateAsync({
         fieldId: target.field.id,
         day: dayKey(target.day),
@@ -178,6 +214,14 @@ export function NewBookingDialog({ target, onClose }: {
           </div>
         </div>
 
+        <RecurrenceForm
+          day={target?.day ?? new Date()}
+          enabled={repeat}
+          until={until}
+          onToggle={setRepeat}
+          onUntil={setUntil}
+        />
+
         {error && (
           <p role="alert" className="rounded-lg border border-terra bg-terra-tint px-3 py-2 text-[12.5px] text-terra">
             {error}
@@ -194,10 +238,10 @@ export function NewBookingDialog({ target, onClose }: {
           </button>
           <button
             type="submit"
-            disabled={create.isPending || !name.trim()}
+            disabled={create.isPending || createRecurrence.isPending || !name.trim()}
             className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-white disabled:opacity-50"
           >
-            {create.isPending ? 'Salvo…' : 'Conferma'}
+            {create.isPending || createRecurrence.isPending ? 'Salvo…' : 'Conferma'}
           </button>
         </div>
       </form>

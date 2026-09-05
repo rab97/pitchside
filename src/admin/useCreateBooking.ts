@@ -6,13 +6,13 @@ import { slotRange } from '../lib/tz'
 // restituisce tali e quali in `error.code`. Il messaggio del database è già
 // in italiano, ma qui diventa una frase che dice al gestore cosa fare.
 const MESSAGES: Record<string, string> = {
-  P0002: 'Il campo non è disponibile.',
-  P0003: 'Il campo è chiuso in quell’orario.',
-  P0004: 'Questo slot è appena stato prenotato da qualcun altro. Scegline un altro.',
-  P0005: 'Non c’è una tariffa per quell’orario: il campo è fuori apertura.',
-  P0006: 'Non si può prenotare nel passato.',
-  P0007: 'La data è troppo lontana: supera l’orizzonte di prenotazione.',
-  P0008: 'La durata è inferiore al minimo consentito.',
+  PS002: 'Il campo non è disponibile.',
+  PS003: 'Il campo è chiuso in quell’orario.',
+  PS004: 'Questo slot è appena stato prenotato da qualcun altro. Scegline un altro.',
+  PS005: 'Non c’è una tariffa per quell’orario: il campo è fuori apertura.',
+  PS006: 'Non si può prenotare nel passato.',
+  PS007: 'La data è troppo lontana: supera l’orizzonte di prenotazione.',
+  PS008: 'La durata è inferiore al minimo consentito.',
 }
 
 export function messageForError(code: string): string {
