@@ -222,11 +222,60 @@ export type Database = {
           },
         ]
       }
+      price_bands: {
+        Row: {
+          ends_min: number
+          facility_id: string
+          field_id: string
+          id: string
+          price_cents: number
+          starts_min: number
+          weekdays: number[]
+        }
+        Insert: {
+          ends_min: number
+          facility_id: string
+          field_id: string
+          id?: string
+          price_cents: number
+          starts_min: number
+          weekdays: number[]
+        }
+        Update: {
+          ends_min?: number
+          facility_id?: string
+          field_id?: string
+          id?: string
+          price_cents?: number
+          starts_min?: number
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_bands_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_bands_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calc_booking_price: {
+        Args: { p_field_id: string; p_slot: unknown }
+        Returns: number
+      }
       find_members_by_phone: {
         Args: { p_phone: string }
         Returns: {
