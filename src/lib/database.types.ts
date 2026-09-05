@@ -381,7 +381,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      busy_slots: {
+        Row: {
+          facility_id: string | null
+          field_id: string | null
+          slot: unknown
+        }
+        Insert: {
+          facility_id?: string | null
+          field_id?: string | null
+          slot?: unknown
+        }
+        Update: {
+          facility_id?: string | null
+          field_id?: string | null
+          slot?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calc_booking_price: {
