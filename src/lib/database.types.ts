@@ -169,12 +169,92 @@ export type Database = {
           },
         ]
       }
+      members: {
+        Row: {
+          created_at: string
+          email: string | null
+          facility_id: string
+          honored_count: number
+          id: string
+          kind: string
+          missed_count: number
+          name: string
+          notes: string | null
+          phone: string | null
+          price_list: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          facility_id: string
+          honored_count?: number
+          id?: string
+          kind?: string
+          missed_count?: number
+          name: string
+          notes?: string | null
+          phone?: string | null
+          price_list?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          facility_id?: string
+          honored_count?: number
+          id?: string
+          kind?: string
+          missed_count?: number
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          price_list?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      find_members_by_phone: {
+        Args: { p_phone: string }
+        Returns: {
+          created_at: string
+          email: string | null
+          facility_id: string
+          honored_count: number
+          id: string
+          kind: string
+          missed_count: number
+          name: string
+          notes: string | null
+          phone: string | null
+          price_list: string
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "members"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       is_facility_admin: { Args: { p_facility: string }; Returns: boolean }
+      member_reliability: {
+        Args: { m: Database["public"]["Tables"]["members"]["Row"] }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
