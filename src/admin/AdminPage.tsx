@@ -3,12 +3,15 @@ import { addDays, format, isToday } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useFacility } from '../tenant/FacilityProvider'
 import { DayGrid } from './DayGrid'
-import type { BookingRow } from './DayGrid.hooks'
+import { useDayBookings, type BookingRow } from './DayGrid.hooks'
+import { NewBookingDialog, type NewBookingTarget } from './NewBookingDialog'
 
 export function AdminPage() {
   const facility = useFacility()
   const [day, setDay] = useState<Date>(() => new Date())
   const [, setSelected] = useState<BookingRow | null>(null)
+  const [target, setTarget] = useState<NewBookingTarget | null>(null)
+  const { fields } = useDayBookings(day)
 
   return (
     <div className="min-h-screen bg-ground p-4 sm:p-6">
@@ -62,11 +65,16 @@ export function AdminPage() {
 
           <DayGrid
             day={day}
-            onSlotClick={() => {}}
+            onSlotClick={(fieldId, startMin) => {
+              const field = fields.find((f) => f.id === fieldId)
+              if (field) setTarget({ field, day, startMin })
+            }}
             onBookingClick={setSelected}
           />
         </div>
       </div>
+
+      <NewBookingDialog target={target} onClose={() => setTarget(null)} />
     </div>
   )
 }

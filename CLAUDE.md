@@ -1,6 +1,9 @@
-# Prenota Campi
+# Pitchside
 
 Prenotazione campi da calcio, multi-struttura. Primo cliente: Palacalcetto, Alba.
+
+`pitchside` è il nome del progetto: repository, `package.json` e `project_id` di
+Supabase. Il nome che vede l'utente arriva dai dati della struttura, non da qui.
 
 ## Documenti
 - Specifica: `docs/superpowers/specs/2026-09-05-prenota-campi-design.md`
@@ -34,6 +37,7 @@ Prenotazione campi da calcio, multi-struttura. Primo cliente: Palacalcetto, Alba
 Questa macchina condivide Docker e le porte con altri progetti dell'utente.
 - Non eseguire mai `docker system/image/volume prune` né rimozioni massive:
   ci sono stack `coolpim-*` e `coolsales-*` che non riguardano questo progetto.
+  I container di questo progetto sono `supabase_*_pitchside`.
 - Fermare Supabase con `npm run db:stop`, mai con comandi `docker` diretti.
 - Non usare mai `pkill -f vite` o simili: altri progetti tengono aperti dei dev
   server. Terminare solo il PID esatto, dopo aver verificato `/proc/<pid>/cwd`.
