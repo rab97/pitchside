@@ -52,15 +52,19 @@ export function AdminPage() {
               >
                 ›
               </button>
-              {!isToday(day) && (
-                <button
-                  type="button"
-                  onClick={() => setDay(new Date())}
-                  className="rounded-[7px] px-2 py-1 text-[12.5px] text-pitch"
-                >
-                  Oggi
-                </button>
-              )}
+              {/* Sempre presente, anche quando è già oggi: se comparisse solo
+                  spostandosi, la barra cambierebbe larghezza a ogni freccia e
+                  il gestore dovrebbe cercare ogni volta dove è finito. Da
+                  spento dice comunque dove si trova. */}
+              <button
+                type="button"
+                disabled={isToday(day)}
+                aria-label="Torna a oggi"
+                onClick={() => setDay(new Date())}
+                className="ml-1 h-6 rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 hover:border-pitch hover:text-pitch disabled:border-line-soft disabled:bg-surface-2 disabled:text-muted disabled:hover:border-line-soft disabled:hover:text-muted"
+              >
+                Oggi
+              </button>
             </div>
           </div>
 
