@@ -3,7 +3,7 @@ import { addDays, format, isToday } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useFacility } from '../tenant/FacilityProvider'
 import { DayGrid } from './DayGrid'
-import { useDayBookings, type BookingRow } from './DayGrid.hooks'
+import { useFields, type BookingRow } from './DayGrid.hooks'
 import { BookingDetailDialog } from './BookingDetailDialog'
 import { NewBookingDialog, type NewBookingTarget } from './NewBookingDialog'
 
@@ -12,7 +12,7 @@ export function AdminPage() {
   const [day, setDay] = useState<Date>(() => new Date())
   const [selected, setSelected] = useState<BookingRow | null>(null)
   const [target, setTarget] = useState<NewBookingTarget | null>(null)
-  const { fields } = useDayBookings(day)
+  const fields = useFields()
 
   return (
     <div className="min-h-screen bg-ground p-4 sm:p-6">

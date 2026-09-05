@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { endOfDay, startOfDay } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useFacility } from '../tenant/FacilityProvider'
@@ -31,10 +32,9 @@ export function parseRange(raw: string): [Date, Date] {
   return [new Date(a), new Date(b)]
 }
 
-export function useDayBookings(day: Date) {
+export function useFields(): FieldRow[] {
   const facility = useFacility()
-
-  const fieldsQ = useQuery({
+  const { data } = useQuery({
     queryKey: ['fields', facility.id],
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<FieldRow[]> => {
@@ -48,6 +48,13 @@ export function useDayBookings(day: Date) {
       return data
     },
   })
+  return data ?? []
+}
+
+export function useDayBookings(day: Date) {
+  const facility = useFacility()
+  const qc = useQueryClient()
+  const fields = useFields()
 
   const bookingsQ = useQuery({
     queryKey: ['bookings', facility.id, startOfDay(day).toISOString()],
@@ -81,9 +88,23 @@ export function useDayBookings(day: Date) {
     },
   })
 
+  // Si invalida la query invece di applicare al volo la riga che arriva dal
+  // canale: quella non passa dalle stesse policy della select, e ricaricare
+  // una giornata di prenotazioni costa poco.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`bookings-${facility.id}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings',
+          filter: `facility_id=eq.${facility.id}` },
+        () => qc.invalidateQueries({ queryKey: ['bookings', facility.id] }))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [facility.id, qc])
+
   return {
-    fields: fieldsQ.data ?? [],
+    fields,
     bookings: bookingsQ.data ?? [],
-    isPending: fieldsQ.isPending || bookingsQ.isPending,
+    isPending: bookingsQ.isPending,
   }
 }

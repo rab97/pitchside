@@ -42,9 +42,12 @@ export function FacilityProvider({ children }: { children: ReactNode }) {
   })
 
   // Il branding è dati, non codice: una variabile CSS, non un tema ricompilato.
+  // Si scrive --brand e non --pitch: da --brand index.css deriva l'accento e la
+  // sua tinta, con una resa diversa per tema chiaro e scuro. Scrivere --pitch
+  // direttamente imporrebbe a entrambi i temi un colore scelto per uno solo.
   useEffect(() => {
     if (data?.color) {
-      document.documentElement.style.setProperty('--pitch', data.color)
+      document.documentElement.style.setProperty('--brand', data.color)
     }
   }, [data?.color])
 
