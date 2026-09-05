@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* I token sono gli stessi di docs/mockups/01-proposta-design.html, con gli
+   stessi nomi: i mockup restano leggibili come documentazione viva.
+   Restano variabili CSS e non valori compilati, perché il branding di una
+   struttura le riscrive a runtime (vedi FacilityProvider). */
+:root{
+  --ground:#ECEFE9; --surface:#FFFFFF; --surface-2:#F5F7F2;
+  --ink:#131A15; --ink-2:#3F4A42; --muted:#6E786C;
+  --line:#D5DACE; --line-soft:#E3E7DE;
+  --pitch:#146B3F; --pitch-tint:#DDEBE1;
+  --terra:#A8431C; --terra-tint:#F3E3DA;
+  --slate:#4F6285; --slate-tint:#DFE4EE;
+  --ochre:#8A6510; --ochre-tint:#F0E7CF;
+  --shadow:0 1px 2px rgba(19,26,21,.06), 0 10px 28px -14px rgba(19,26,21,.22);
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E120F; --surface:#161C18; --surface-2:#1C231E;
+    --ink:#E7ECE5; --ink-2:#B4BDB2; --muted:#8A958A;
+    --line:#2B332C; --line-soft:#222A24;
+    --pitch:#4FB07A; --pitch-tint:#17301F;
+    --terra:#E08B62; --terra-tint:#33201A;
+    --slate:#93A6C9; --slate-tint:#1C2432;
+    --ochre:#D7B25C; --ochre-tint:#2E2716;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E120F; --surface:#161C18; --surface-2:#1C231E;
+  --ink:#E7ECE5; --ink-2:#B4BDB2; --muted:#8A958A;
+  --line:#2B332C; --line-soft:#222A24;
+  --pitch:#4FB07A; --pitch-tint:#17301F;
+  --terra:#E08B62; --terra-tint:#33201A;
+  --slate:#93A6C9; --slate-tint:#1C2432;
+  --ochre:#D7B25C; --ochre-tint:#2E2716;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+@theme inline{
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-pitch: var(--pitch);
+  --color-pitch-tint: var(--pitch-tint);
+  --color-terra: var(--terra);
+  --color-terra-tint: var(--terra-tint);
+  --color-slate: var(--slate);
+  --color-slate-tint: var(--slate-tint);
+  --color-ochre: var(--ochre);
+  --color-ochre-tint: var(--ochre-tint);
+
+  --font-sans: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI",
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --radius-card: var(--r);
+  --shadow-card: var(--shadow);
+}
+
+html { color-scheme: light dark; }
+
+body{
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
