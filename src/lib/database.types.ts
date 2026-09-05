@@ -34,6 +34,118 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          cancel_deadline: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          created_by: string | null
+          facility_id: string
+          field_id: string
+          id: string
+          member_id: string
+          price_cents: number
+          recurrence_id: string | null
+          slot: unknown
+          source: string
+          status: string
+        }
+        Insert: {
+          cancel_deadline: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          facility_id: string
+          field_id: string
+          id?: string
+          member_id: string
+          price_cents: number
+          recurrence_id?: string | null
+          slot: unknown
+          source?: string
+          status?: string
+        }
+        Update: {
+          cancel_deadline?: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          facility_id?: string
+          field_id?: string
+          id?: string
+          member_id?: string
+          price_cents?: number
+          recurrence_id?: string | null
+          slot?: unknown
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      closures: {
+        Row: {
+          facility_id: string
+          field_id: string | null
+          id: string
+          period: unknown
+          reason: string | null
+        }
+        Insert: {
+          facility_id: string
+          field_id?: string | null
+          id?: string
+          period: unknown
+          reason?: string | null
+        }
+        Update: {
+          facility_id?: string
+          field_id?: string | null
+          id?: string
+          period?: unknown
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closures_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closures_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facilities: {
         Row: {
           address: string | null
@@ -275,6 +387,61 @@ export type Database = {
       calc_booking_price: {
         Args: { p_field_id: string; p_slot: unknown }
         Returns: number
+      }
+      cancel_booking: {
+        Args: { p_booking_id: string; p_reason?: string }
+        Returns: {
+          cancel_deadline: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          created_by: string | null
+          facility_id: string
+          field_id: string
+          id: string
+          member_id: string
+          price_cents: number
+          recurrence_id: string | null
+          slot: unknown
+          source: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_booking: {
+        Args: {
+          p_field_id: string
+          p_member_id: string
+          p_slot: unknown
+          p_source?: string
+        }
+        Returns: {
+          cancel_deadline: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          created_by: string | null
+          facility_id: string
+          field_id: string
+          id: string
+          member_id: string
+          price_cents: number
+          recurrence_id: string | null
+          slot: unknown
+          source: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       find_members_by_phone: {
         Args: { p_phone: string }
