@@ -4,12 +4,13 @@ import { it } from 'date-fns/locale'
 import { useFacility } from '../tenant/FacilityProvider'
 import { DayGrid } from './DayGrid'
 import { useDayBookings, type BookingRow } from './DayGrid.hooks'
+import { BookingDetailDialog } from './BookingDetailDialog'
 import { NewBookingDialog, type NewBookingTarget } from './NewBookingDialog'
 
 export function AdminPage() {
   const facility = useFacility()
   const [day, setDay] = useState<Date>(() => new Date())
-  const [, setSelected] = useState<BookingRow | null>(null)
+  const [selected, setSelected] = useState<BookingRow | null>(null)
   const [target, setTarget] = useState<NewBookingTarget | null>(null)
   const { fields } = useDayBookings(day)
 
@@ -75,6 +76,11 @@ export function AdminPage() {
       </div>
 
       <NewBookingDialog target={target} onClose={() => setTarget(null)} />
+      <BookingDetailDialog
+        booking={selected}
+        fieldName={fields.find((f) => f.id === selected?.field_id)?.name}
+        onClose={() => setSelected(null)}
+      />
     </div>
   )
 }
