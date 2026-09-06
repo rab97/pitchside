@@ -27,7 +27,7 @@ scelta qui sotto è fatta per evitarlo.
 
 ## 2. Le decisioni che reggono questa fase
 
-### 2.1 Si entra con Google o Apple, non con l'SMS
+### 2.1 Si entra con Google, non con l'SMS
 
 La specifica di progetto pone due vincoli che confliggono: il telefono è
 l'identità (§2.1), e il primo anno deve costare circa 12 € (§1). Gli SMS verso
