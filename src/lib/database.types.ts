@@ -579,6 +579,7 @@ export type Database = {
         Args: { m: Database["public"]["Tables"]["members"]["Row"] }
         Returns: number
       }
+      owns_member: { Args: { p_member_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

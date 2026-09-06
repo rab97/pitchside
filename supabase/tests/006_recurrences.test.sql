@@ -15,6 +15,21 @@ insert into public.members (id, facility_id, name)
   values ('bbbbbbbb-0000-0000-0000-000000000001',
           '11111111-1111-1111-1111-111111111111', 'Amici del Martedì');
 
+-- Un amministratore vero, e ci si impersona: da superutente auth.uid() è
+-- nullo e l'autorizzazione non verrebbe mai esercitata.
+insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000000',
+  'e0000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated',
+  '390000000009', now(), '', '', '', '', now(), now());
+insert into public.facility_admins (facility_id, user_id)
+  values ('11111111-1111-1111-1111-111111111111',
+          'e0000000-0000-0000-0000-00000000000a');
+
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"e0000000-0000-0000-0000-00000000000a","role":"authenticated"}';
+
 -- ogni martedì di novembre 2030: 5, 12, 19, 26 → 4 occorrenze
 insert into public.recurrences (id, facility_id, field_id, member_id,
   weekday, start_min, duration_minutes, from_date, to_date)
@@ -64,5 +79,6 @@ select is(
   'le date occupate sono saltate e riportate una per una'
 );
 
+reset role;
 select * from finish();
 rollback;

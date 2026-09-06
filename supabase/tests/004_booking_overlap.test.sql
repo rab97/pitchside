@@ -17,6 +17,21 @@ insert into public.members (id, facility_id, name, phone)
   values ('bbbbbbbb-0000-0000-0000-000000000001',
           '11111111-1111-1111-1111-111111111111', 'Rossi', '3472201563');
 
+-- Un amministratore vero, e ci si impersona: da superutente auth.uid() è
+-- nullo e l'autorizzazione non verrebbe mai esercitata.
+insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000000',
+  'e0000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated',
+  '390000000009', now(), '', '', '', '', now(), now());
+insert into public.facility_admins (facility_id, user_id)
+  values ('11111111-1111-1111-1111-111111111111',
+          'e0000000-0000-0000-0000-00000000000a');
+
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"e0000000-0000-0000-0000-00000000000a","role":"authenticated"}';
+
 -- martedì 15 ottobre 2030, ora legale ancora in vigore (CEST, +02)
 
 -- prima prenotazione: passa e calcola il prezzo
@@ -76,8 +91,15 @@ select lives_ok(
 -- L'orizzonte di prenotazione limita il cliente, non il gestore: senza questa
 -- distinzione una ricorrenza di stagione perderebbe tutte le date oltre i 60
 -- giorni, che sono quasi tutte.
+-- Preparazione di superutente: nessuna di queste tabelle ha una policy di
+-- INSERT per authenticated, quindi si torna al ruolo di default finché non
+-- si è finito, poi si rientra nei panni del gestore.
+reset role;
 insert into public.facilities (id, slug, name, booking_horizon_days)
   values ('99999999-9999-9999-9999-999999999999', 'stretta', 'Orizzonte stretto', 30);
+insert into public.facility_admins (facility_id, user_id)
+  values ('99999999-9999-9999-9999-999999999999',
+          'e0000000-0000-0000-0000-00000000000a');
 insert into public.fields (id, facility_id, name, kind)
   values ('aaaaaaaa-0000-0000-0000-000000000009',
           '99999999-9999-9999-9999-999999999999', 'Campo 1', 'calcio5');
@@ -87,6 +109,9 @@ insert into public.price_bands (facility_id, field_id, weekdays, starts_min, end
 insert into public.members (id, facility_id, name)
   values ('bbbbbbbb-0000-0000-0000-000000000009',
           '99999999-9999-9999-9999-999999999999', 'Gruppo del martedì');
+
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"e0000000-0000-0000-0000-00000000000a","role":"authenticated"}';
 
 select throws_ok(
   $$select public.create_booking(
@@ -105,5 +130,6 @@ select lives_ok(
   'per una ricorrenza del gestore l orizzonte non vale'
 );
 
+reset role;
 select * from finish();
 rollback;

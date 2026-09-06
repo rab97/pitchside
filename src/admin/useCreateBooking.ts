@@ -13,6 +13,8 @@ const MESSAGES: Record<string, string> = {
   PS006: 'Non si può prenotare nel passato.',
   PS007: 'La data è troppo lontana: supera l’orizzonte di prenotazione.',
   PS008: 'La durata è inferiore al minimo consentito.',
+  PS012: 'Devi accedere per prenotare.',
+  PS013: 'Non puoi prenotare a nome di un altro.',
 }
 
 export function messageForError(code: string): string {
