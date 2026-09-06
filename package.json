@@ -1,0 +1,47 @@
+{
+  "name": "pitchside",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:db": "supabase test db",
+    "types": "supabase gen types typescript --local > src/lib/database.types.ts",
+    "db:reset": "supabase db reset",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
+    "@tanstack/react-query": "^5.102.8",
+    "date-fns": "^4.4.0",
+    "date-fns-tz": "^3.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3",
+    "sonner": "^2.0.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^26.4.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/ui": "^5.0.0",
+    "jsdom": "^30.0.1",
+    "oxlint": "^1.81.0",
+    "supabase": "^2.116.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  }
+}

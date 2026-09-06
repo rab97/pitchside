@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/* I token sono gli stessi di docs/mockups/01-proposta-design.html, con gli
+   stessi nomi: i mockup restano leggibili come documentazione viva.
+   Restano variabili CSS e non valori compilati, perché il branding di una
+   struttura le riscrive a runtime (vedi FacilityProvider). */
+:root{
+  --ground:#ECEFE9; --surface:#FFFFFF; --surface-2:#F5F7F2;
+  --ink:#131A15; --ink-2:#3F4A42; --muted:#6E786C;
+  --line:#D5DACE; --line-soft:#E3E7DE;
+
+  /* Il colore della struttura arriva dai dati (FacilityProvider lo scrive in
+     --brand). Non si applica direttamente a --pitch: un verde scelto per uno
+     sfondo chiaro, usato tale e quale sul tema scuro, rende il testo delle
+     prenotazioni illeggibile. Qui si deriva una resa per ciascuno schema. */
+  --brand:#146B3F;
+  --pitch: var(--brand);
+  --pitch-tint: color-mix(in oklab, var(--brand) 16%, #FFFFFF);
+
+  --terra:#A8431C; --terra-tint:#F3E3DA;
+  --slate:#4F6285; --slate-tint:#DFE4EE;
+  --ochre:#8A6510; --ochre-tint:#F0E7CF;
+  --shadow:0 1px 2px rgba(19,26,21,.06), 0 10px 28px -14px rgba(19,26,21,.22);
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E120F; --surface:#161C18; --surface-2:#1C231E;
+    --ink:#E7ECE5; --ink-2:#B4BDB2; --muted:#8A958A;
+    --line:#2B332C; --line-soft:#222A24;
+    --pitch: color-mix(in oklab, var(--brand) 55%, #DCEFE3);
+    --pitch-tint: color-mix(in oklab, var(--brand) 30%, #0E120F);
+    --terra:#E08B62; --terra-tint:#33201A;
+    --slate:#93A6C9; --slate-tint:#1C2432;
+    --ochre:#D7B25C; --ochre-tint:#2E2716;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E120F; --surface:#161C18; --surface-2:#1C231E;
+  --ink:#E7ECE5; --ink-2:#B4BDB2; --muted:#8A958A;
+  --line:#2B332C; --line-soft:#222A24;
+  --pitch: color-mix(in oklab, var(--brand) 55%, #DCEFE3);
+  --pitch-tint: color-mix(in oklab, var(--brand) 30%, #0E120F);
+  --terra:#E08B62; --terra-tint:#33201A;
+  --slate:#93A6C9; --slate-tint:#1C2432;
+  --ochre:#D7B25C; --ochre-tint:#2E2716;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+@theme inline{
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-pitch: var(--pitch);
+  --color-pitch-tint: var(--pitch-tint);
+  --color-terra: var(--terra);
+  --color-terra-tint: var(--terra-tint);
+  --color-slate: var(--slate);
+  --color-slate-tint: var(--slate-tint);
+  --color-ochre: var(--ochre);
+  --color-ochre-tint: var(--ochre-tint);
+
+  /* Una sola famiglia, per scelta. I mockup ne usano due — Montserrat per il
+     testo e IBM Plex Mono per orari, importi ed etichette — ma qui Montserrat
+     vale ovunque. L'incolonnamento delle cifre, che era il motivo tecnico del
+     mono, resta: gli elementi numerici portano `tabular-nums`, e Montserrat
+     espone le cifre a larghezza fissa. */
+  --font-sans: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI",
+               "Helvetica Neue", Arial, sans-serif;
+
+  --radius-card: var(--r);
+  --shadow-card: var(--shadow);
+}
+
+html { color-scheme: light dark; }
+
+/* Tutto ciò che si clicca mostra la manina. Tailwind v4 lascia ai bottoni il
+   cursore di default del browser — la freccia — e ogni cella della griglia,
+   ogni pulsante di durata e ogni voce dei suggerimenti è un <button>. Si
+   definisce qui una volta sola, invece di ricordarsene in ogni componente. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label:has(input[type="checkbox"]),
+label:has(input[type="radio"]),
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary {
+  cursor: pointer;
+}
+
+/* Un bottone spento non è cliccabile: dirlo col cursore evita il clic a vuoto. */
+button:disabled {
+  cursor: not-allowed;
+}
+
+body{
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}

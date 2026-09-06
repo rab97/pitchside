@@ -1,5 +1,16 @@
 node_modules/
 dist/
+dist-ssr/
+*.local
 .env
 .env.local
 .DS_Store
+
+# build / cache
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Supabase CLI (stato locale, non versionato)
+supabase/.temp/
+supabase/.branches/
