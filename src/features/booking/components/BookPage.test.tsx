@@ -76,56 +76,25 @@ describe('BookPage — elenco degli orari', () => {
   })
 })
 
-/**
- * `window.matchMedia` in jsdom non valuta le media query, e la soglia `lg`
- * dell'ancora si legge proprio da lì: qui la si decide a mano, una volta per
- * scenario, così il test dice «schermo stretto» invece di simulare pixel.
- */
-function stubViewport(wide: boolean) {
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: query.includes('min-width: 1024px') ? wide : false,
-    media: query,
-    onchange: null,
-    addListener() {}, removeListener() {},
-    addEventListener() {}, removeEventListener() {},
-    dispatchEvent: () => false,
-  }))
-}
-
-describe('BookPage — ancora al riepilogo su schermo stretto', () => {
-  // jsdom non implementa `scrollIntoView`: qui interessa **su cosa** è stato
-  // chiamato, non che qualcosa si sia mosso, quindi si registra `this`.
-  let scrolledInto: Element[]
-  const original = Element.prototype.scrollIntoView
-
+describe('BookPage — il foglio di conferma su telefono', () => {
   beforeEach(() => {
     vi.setSystemTime(new Date('2025-10-14T08:00:00+02:00'))
-    scrolledInto = []
-    Element.prototype.scrollIntoView = function scrollIntoViewStub(this: Element) {
-      scrolledInto.push(this)
-    }
   })
   afterEach(() => {
-    Element.prototype.scrollIntoView = original
-    vi.unstubAllGlobals()
     vi.useRealTimers()
   })
 
-  it('scelto un orario, porta la pagina sulla card di conferma', () => {
-    stubViewport(false)
-    const { container } = renderBookPage({})
-
-    expect(scrolledInto).toHaveLength(0)
-    fireEvent.click(screen.getByText('20:00–21:00').closest('button') as HTMLElement)
-
-    expect(scrolledInto).toEqual([container.querySelector('aside')])
-  })
-
-  it('da lg in su non muove la pagina: il riepilogo è già a fianco', () => {
-    stubViewport(true)
+  it('scelto un orario compare il foglio, con l\'importo già a schermo', () => {
     renderBookPage({})
 
+    // Prima della scelta il foglio non c'è: nessuna maniglia da aprire.
+    expect(screen.queryByRole('button', { name: 'Mostra il dettaglio' })).not.toBeInTheDocument()
+
     fireEvent.click(screen.getByText('20:00–21:00').closest('button') as HTMLElement)
-    expect(scrolledInto).toHaveLength(0)
+
+    const sheet = screen.getByRole('button', { name: 'Mostra il dettaglio' })
+    expect(sheet).toBeInTheDocument()
+    // L'importo si legge senza aprire niente: si sta confermando una spesa.
+    expect(sheet.parentElement).toHaveTextContent('30,00 €')
   })
 })

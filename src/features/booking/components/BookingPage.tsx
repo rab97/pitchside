@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { MobileFrame } from '@/shared/components/ui/MobileFrame'
 import { formatEuro } from '@/shared/lib/money'
 import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
@@ -35,7 +36,7 @@ function Kv({ label, children }: { label: string; children: React.ReactNode }) {
 function PageHeader() {
   const facility = useFacility()
   return (
-    <header className="border-b border-line bg-surface">
+    <header className="hidden border-b border-line bg-surface lg:block">
       <div className="mx-auto flex max-w-[1140px] items-center gap-3 px-4 py-3.5 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
           <div
@@ -61,12 +62,16 @@ export function BookingPage() {
   if (!session) return <LoginPage />
 
   return (
-    <div className="min-h-screen bg-ground">
+    // L'unica schermata cliente *spinta*: si arriva qui da un elenco, quindi
+    // la barra alta mostra il chevron che torna a quell'elenco invece del
+    // marchietto. Il titolo del contenuto — l'orario — resta l'`<h1>` della
+    // pagina, e la barra si limita a dire dove siamo.
+    <MobileFrame title="Prenotazione" backTo="/prenotazioni">
       <PageHeader />
       <main className="mx-auto max-w-[560px] px-4 py-6 sm:px-6">
         <BookingDetail id={id} />
       </main>
-    </div>
+    </MobileFrame>
   )
 }
 

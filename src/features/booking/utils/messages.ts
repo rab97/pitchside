@@ -29,3 +29,9 @@ export const MY_BOOKINGS_ERROR =
 
 export const BOOKING_ERROR =
   'Non siamo riusciti a caricare questa prenotazione. Riprova.'
+
+// Detta in due posti — il riepilogo a fianco su schermo largo e il foglio di
+// conferma su telefono — e per lo stesso motivo: una scelta ripristinata dopo
+// l'accesso può puntare a un orario che nel frattempo non è più fra quelli
+// prezzati. Il database risponderebbe PS005; è più onesto dirlo prima.
+export const SLOT_GONE = 'Questo orario non è più disponibile: scegline un altro.'

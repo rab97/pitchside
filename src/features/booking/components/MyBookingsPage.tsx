@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { MobileFrame } from '@/shared/components/ui/MobileFrame'
 import { formatEuro } from '@/shared/lib/money'
 import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
@@ -26,8 +27,8 @@ export function MyBookingsPage() {
   if (!session) return <LoginPage />
 
   return (
-    <div className="min-h-screen bg-ground">
-      <header className="border-b border-line bg-surface">
+    <MobileFrame title="Le tue prenotazioni">
+      <header className="hidden border-b border-line bg-surface lg:block">
         <div className="mx-auto flex max-w-[1140px] items-center gap-3 px-4 py-3.5 sm:px-6">
           <Link to="/" className="flex items-center gap-3">
             <div
@@ -44,16 +45,19 @@ export function MyBookingsPage() {
       </header>
 
       <main className="mx-auto max-w-[1140px] px-4 py-6 sm:px-6">
-        <p className="text-[11px] uppercase tracking-[.14em] text-pitch">
+        <p className="hidden text-[11px] uppercase tracking-[.14em] text-pitch lg:block">
           {facility.name}
         </p>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-[-.02em]">
+        {/* Su telefono il titolo visibile è quello della barra alta; qui resta
+            in `sr-only`, perché una pagina senza `<h1>` non dice a chi la
+            ascolta di cosa parla. */}
+        <h1 className="sr-only lg:not-sr-only lg:mt-1.5 lg:text-2xl lg:font-semibold lg:tracking-[-.02em]">
           Le tue prenotazioni
         </h1>
 
         <MyBookingsList />
       </main>
-    </div>
+    </MobileFrame>
   )
 }
 

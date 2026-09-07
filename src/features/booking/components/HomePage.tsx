@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { MobileFrame } from '@/shared/components/ui/MobileFrame'
 import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields, type FieldRow } from '@/shared/hooks/useFields'
@@ -22,7 +23,10 @@ export function HomePage() {
   const { session } = useAuth()
 
   return (
-    <div className="min-h-screen bg-ground">
+    // Senza titolo: questa schermata prende solo la barra dei tab. La sua
+    // intestazione mostra il nome della struttura, ed è il posto dove quel
+    // nome serve — chi apre l'app deve leggere dove sta prenotando.
+    <MobileFrame>
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1140px] items-center gap-3 px-4 py-3.5 sm:px-6">
           <div
@@ -84,7 +88,7 @@ export function HomePage() {
           )}
         </section>
       </main>
-    </div>
+    </MobileFrame>
   )
 }
 

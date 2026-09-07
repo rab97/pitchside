@@ -3,20 +3,25 @@ import { Link, useNavigate } from 'react-router-dom'
 import { format, isToday, subHours } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { MobileFrame } from '@/shared/components/ui/MobileFrame'
 import { formatEuro } from '@/shared/lib/money'
 import { parseRange } from '@/shared/lib/range'
+import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { dayKey, minToLabel, minutesOfDay, slotRange } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields, type FieldRow } from '@/shared/hooks/useFields'
 import { useAuth } from '@/features/auth/hooks/AuthProvider'
 import { freeSlots } from '../utils/freeSlots'
 import { fieldKind } from '../utils/fieldKind'
+import { durationLabel } from '../utils/durationLabel'
 import { savePendingSelection, takePendingSelection } from '../utils/pendingSelection'
-import { FIELDS_ERROR, NO_FIELDS, SLOTS_ERROR } from '../utils/messages'
+import { FIELDS_ERROR, NO_FIELDS, SLOT_GONE, SLOTS_ERROR } from '../utils/messages'
 import { horizonLimit, maxStartMinForDay } from '../utils/horizon'
 import { useAvailability } from '../hooks/useAvailability'
 import { useSlotPrices } from '../hooks/useSlotPrices'
 import { DayStrip } from './DayStrip'
+import { CancelNote, SummaryRows } from './BookingSummary'
+import { ConfirmSheet } from './ConfirmSheet'
 import { ConfirmBookingDialog } from './ConfirmBookingDialog'
 
 const DURATIONS = [60, 90, 120]
@@ -32,7 +37,6 @@ export function BookPage() {
   const [startMin, setStartMin] = useState<number | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const slotListRef = useRef<HTMLDivElement>(null)
-  const confirmRef = useRef<HTMLElement>(null)
 
   // Cambiando campo, giorno o durata lo slot scelto prima potrebbe non
   // esistere più tra quelli liberi: si riparte da capo invece di lasciare
@@ -54,28 +58,6 @@ export function BookPage() {
   useEffect(() => {
     if (slotListRef.current) slotListRef.current.scrollTop = 0
   }, [fieldId, day, minutes])
-
-  // Scelto un orario su schermo stretto, la pagina si porta sul riepilogo:
-  // lì sotto la card è fuori dallo schermo, e il cliente avrebbe scelto
-  // senza vedere che c'è un «Conferma» da premere. La soglia è la stessa del
-  // layout a due colonne (`lg`, 1024px) e si legge da `matchMedia` invece di
-  // fidarsi di una larghezza riscritta a mano: da `lg` in su la card è già a
-  // fianco, appiccicata in alto, e muovere la pagina sarebbe un salto senza
-  // motivo. Dipende da `startMin` e non dal giorno: cambiare giorno azzera
-  // l'orario, e portare sul riepilogo vuoto («Scegli un campo, un giorno e un
-  // orario») spingerebbe fuori schermo l'elenco proprio quando serve.
-  //
-  // Lo spostamento è immediato, non `behavior: 'smooth'`: dove il browser non
-  // sa animare uno scorrimento — scoperto provando qui, con lo scorrimento
-  // morbido disattivato — `'smooth'` non ripiega sull'istantaneo, non fa
-  // proprio niente, e l'ancora sparirebbe senza dirlo. `'end'` allinea il
-  // fondo della card al fondo dello schermo, così «Conferma» è sotto il
-  // pollice invece di restare appena fuori.
-  useEffect(() => {
-    if (startMin == null) return
-    if (window.matchMedia('(min-width: 1024px)').matches) return
-    confirmRef.current?.scrollIntoView({ block: 'end' })
-  }, [startMin])
 
   // All'apertura si sceglie un campo per mostrare subito fasce e prezzi, a
   // meno che non si stia tornando da /accedi?next=/prenota con una scelta
@@ -155,6 +137,21 @@ export function BookPage() {
   })
   const price = startMin != null ? prices.get(startMin) ?? null : null
 
+  // Il gesto di confermare sta qui, non nelle due cornici che lo mostrano
+  // (la card a fianco su schermo largo, il foglio in basso su telefono): è la
+  // parte che decide, e decidere due volte è il modo di farle divergere.
+  function handleConfirm() {
+    if (!field || startMin == null) return
+    if (!session) {
+      savePendingSelection({
+        fieldId: field.id, dayIso: day.toISOString(), minutes, startMin,
+      })
+      navigate(`${LOGIN_ROUTE}?next=${encodeURIComponent('/prenota')}`)
+      return
+    }
+    setConfirmOpen(true)
+  }
+
   const cancelDeadline = (() => {
     if (startMin == null) return null
     const [start] = parseRange(slotRange(dayKey(day), startMin, minutes))
@@ -162,8 +159,17 @@ export function BookPage() {
   })()
 
   return (
-    <div className="min-h-screen bg-ground">
-      <header className="border-b border-line bg-surface">
+    // `fill`: su telefono questa schermata è alta esattamente lo schermo e
+    // non scorre. Scorre solo l'elenco degli orari, qui sotto, che si
+    // dichiara l'unico scorrevole con `flex-1 min-h-0 overflow-y-auto`. È la
+    // catena che tiene ferme le scelte in alto — campo, giorno, durata —
+    // mentre si cerca l'ora: su un telefono, scorrendo tutta la pagina,
+    // uscivano dallo schermo proprio quando si voleva cambiarle.
+    <MobileFrame title="Prenota" fill>
+      {/* Su telefono il titolo è nella barra alta del guscio: qui resta
+          l'intestazione col nome della struttura, che è quella da schermo
+          largo. */}
+      <header className="hidden border-b border-line bg-surface lg:block">
         <div className="mx-auto flex max-w-[1140px] items-center gap-3 px-4 py-3.5 sm:px-6">
           <Link to="/" className="flex items-center gap-3">
             <div
@@ -179,11 +185,16 @@ export function BookPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1140px] px-4 py-6 sm:px-6">
-        <p className="text-[11px] uppercase tracking-[.14em] text-pitch">
+      <main className="mx-auto flex h-full min-h-0 max-w-[1140px] flex-col px-4 py-3 sm:px-6 lg:block lg:h-auto lg:py-6">
+        <p className="hidden text-[11px] uppercase tracking-[.14em] text-pitch lg:block">
           {facility.name}
         </p>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-[-.02em]">Prenota</h1>
+        {/* `sr-only` e non `hidden`: su telefono il titolo visibile è quello
+            della barra alta, ma la pagina deve comunque avere un `<h1>` per
+            chi la ascolta — `hidden` lo toglierebbe anche a loro. */}
+        <h1 className="sr-only lg:not-sr-only lg:mt-1.5 lg:text-2xl lg:font-semibold lg:tracking-[-.02em]">
+          Prenota
+        </h1>
 
         {fieldsError ? (
           <div className="mt-6">
@@ -194,8 +205,8 @@ export function BookPage() {
         ) : fields.length === 0 ? (
           <p className="mt-6 text-ink-2">{NO_FIELDS}</p>
         ) : (
-          <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px] lg:items-start">
-            <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-5 lg:mt-5 lg:grid lg:flex-none lg:grid-cols-[1fr_320px] lg:items-start">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-none">
               <FieldPicker fields={fields} selected={fieldId} onSelect={selectField} />
 
               <DayStrip day={day} onSelect={selectDay} horizonDays={facility.booking_horizon_days} />
@@ -216,31 +227,34 @@ export function BookPage() {
                           : 'border-line bg-surface text-ink-2 hover:border-pitch')
                       }
                     >
-                      {d === 60 ? '1h' : d === 90 ? '1h 30' : '2h'}
+                      {durationLabel(d)}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card lg:flex-none">
                 <div className="border-b border-line-soft bg-surface-2 px-3.5 py-2.5">
                   <span className="text-[11px] uppercase tracking-[.06em] text-muted">
                     Orari liberi
                     {field ? ` · ${field.name}` : ''}
                   </span>
                 </div>
-                {/* L'elenco ha un suo scorrimento solo da `lg` in su, dove
-                    il riepilogo sta a fianco e tenerlo fermo serve: su
-                    schermo stretto scorre la pagina. Un elenco alto 55vh con
-                    `overscroll-contain` copre quasi tutto un telefono, e il
-                    dito che scorre lì dentro non trascina più la pagina —
-                    arrivato in fondo all'elenco il gesto si ferma, per
-                    definizione di `overscroll-behavior: contain`, e il
-                    riepilogo qui sotto diventava irraggiungibile. */}
+                {/* L'unico elemento scorrevole della schermata su telefono:
+                    prende l'altezza che resta (`flex-1 min-h-0`) e scorre
+                    dentro di sé. `overscroll-contain` qui non intrappola più
+                    niente — la pagina intorno non scorre per scelta, e la
+                    conferma non sta più in fondo alla pagina ma fissa in
+                    basso. Da `lg` in su torna un tetto in vh, perché lì la
+                    pagina scorre e l'elenco non deve mangiarsela tutta.
+                    Il riempimento in basso è lo spazio del foglio di
+                    conferma: senza, gli ultimi orari resterebbero sotto di
+                    lui, e sono quelli che si cerca quando si gioca tardi. */}
                 <div
                   ref={slotListRef}
                   className={
-                    'lg:max-h-[55vh] lg:overflow-y-auto lg:overscroll-contain ' +
+                    'min-h-0 flex-1 overflow-y-auto overscroll-contain lg:max-h-[55vh] lg:flex-none ' +
+                    (field && startMin != null ? 'pb-28 lg:pb-0 ' : '') +
                     (isRefreshing ? 'opacity-60' : '')
                   }
                   aria-busy={isRefreshing}
@@ -292,10 +306,11 @@ export function BookPage() {
               </div>
             </div>
 
-            <aside
-              ref={confirmRef}
-              className="flex flex-col gap-3.5 rounded-card border border-line bg-surface p-4 shadow-card lg:sticky lg:top-6"
-            >
+            {/* La card a fianco è il riepilogo da schermo largo. Su telefono
+                al suo posto c'è `ConfirmSheet`, che appare in basso appena si
+                sceglie un orario: qui sotto sarebbe in fondo alla pagina, e
+                per raggiungerla bisognava spostare lo schermo da soli. */}
+            <aside className="hidden flex-col gap-3.5 rounded-card border border-line bg-surface p-4 shadow-card lg:sticky lg:top-6 lg:flex">
               <span className="text-[11px] uppercase tracking-[.06em] text-muted">
                 La tua prenotazione
               </span>
@@ -305,61 +320,21 @@ export function BookPage() {
                   <p className="text-[15px] font-semibold tracking-[-.01em]">
                     {format(day, 'EEE d MMM', { locale: it })} · {minToLabel(startMin)}
                   </p>
-                  <dl className="flex flex-col gap-1.5 text-[13px]">
-                    <div className="flex justify-between">
-                      <dt className="text-muted">Campo</dt>
-                      <dd className="font-medium">
-                        {field.name} · {fieldKind(field.kind)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-muted">Durata</dt>
-                      <dd className="tabular-nums font-medium">
-                        {minutes === 60 ? '1h' : minutes === 90 ? '1h 30' : '2h'}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between border-t border-line-soft pt-1.5">
-                      <dt className="text-muted">Totale</dt>
-                      <dd className="tabular-nums font-semibold">
-                        {price != null ? formatEuro(price) : '—'}
-                      </dd>
-                    </div>
-                  </dl>
+                  <SummaryRows field={field} minutes={minutes} price={price} />
 
-                  {/* Senza prezzo non si conferma: succede solo a una scelta
-                      ripristinata dopo l'accesso, se nel frattempo quello slot
-                      non è più fra quelli prezzati. Il database risponderebbe
-                      PS005; è più onesto dirlo prima. */}
                   {price == null && (
-                    <p className="text-[12.5px] text-terra">
-                      Questo orario non è più disponibile: scegline un altro.
-                    </p>
+                    <p className="text-[12.5px] text-terra">{SLOT_GONE}</p>
                   )}
 
                   <button
                     type="button"
                     disabled={authLoading || price == null}
-                    onClick={() => {
-                      if (!field || startMin == null) return
-                      if (!session) {
-                        savePendingSelection({
-                          fieldId: field.id, dayIso: day.toISOString(), minutes, startMin,
-                        })
-                        navigate(`/accedi?next=${encodeURIComponent('/prenota')}`)
-                        return
-                      }
-                      setConfirmOpen(true)
-                    }}
+                    onClick={handleConfirm}
                     className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
                   >
                     Conferma
                   </button>
-                  <p className="text-[11.5px] leading-[1.5] text-muted">
-                    Si paga in struttura.
-                    {cancelDeadline
-                      ? ` Puoi disdire gratis fino a ${format(cancelDeadline, 'EEE d MMM', { locale: it })} alle ${format(cancelDeadline, 'HH:mm')}.`
-                      : ''}
-                  </p>
+                  <CancelNote cancelDeadline={cancelDeadline} />
                 </>
               ) : (
                 <>
@@ -380,6 +355,19 @@ export function BookPage() {
         )}
       </main>
 
+      {field && startMin != null && (
+        <ConfirmSheet
+          field={field}
+          day={day}
+          startMin={startMin}
+          minutes={minutes}
+          price={price}
+          cancelDeadline={cancelDeadline}
+          disabled={authLoading || price == null}
+          onConfirm={handleConfirm}
+        />
+      )}
+
       <ConfirmBookingDialog
         open={confirmOpen && !!field && startMin != null}
         onClose={() => setConfirmOpen(false)}
@@ -391,7 +379,7 @@ export function BookPage() {
         price={price}
         cancelDeadline={cancelDeadline}
       />
-    </div>
+    </MobileFrame>
   )
 }
 
