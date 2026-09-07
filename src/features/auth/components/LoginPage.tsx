@@ -59,9 +59,13 @@ export function LoginPage() {
     setError(null)
     // Redirect esterno: nessun effetto React sopravvive al giro su Google,
     // quindi la destinazione va scritta nell'URL di ritorno. Senza `next`
-    // torniamo dove siamo già (utile dentro RequireAdmin, che sta su /admin),
-    // non su una rotta fissa.
-    const target = next ?? window.location.pathname
+    // torniamo dove siamo già (utile dentro RequireAdmin, che sta su /admin:
+    // l'URL resta lì, e tornarci è corretto). Ma quel "dove siamo già" non
+    // può mai essere /accedi stessa: chi ci arriva dalla home (senza `next`)
+    // ci resterebbe bloccato al ritorno da Google, senza nessun modo di
+    // proseguire — il ripiego va alla home, non alla pagina di accesso.
+    const fallback = window.location.pathname === '/accedi' ? '/' : window.location.pathname
+    const target = next ?? fallback
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}${target}` },

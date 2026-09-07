@@ -93,7 +93,7 @@ export function ConfirmBookingDialog({
         <dl className="flex flex-col gap-1.5 rounded-lg border border-line-soft bg-surface-2 px-3 py-2.5 text-[13px]">
           <div className="flex justify-between">
             <dt className="text-muted">Durata</dt>
-            <dd className="tabular-nums font-medium">{durationLabel(minutes)}</dd>
+            <dd className="font-medium">{durationLabel(minutes)}</dd>
           </div>
           <div className="flex justify-between border-t border-line-soft pt-1.5">
             <dt className="text-muted">Totale</dt>
