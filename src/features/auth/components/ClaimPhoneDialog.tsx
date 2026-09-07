@@ -143,7 +143,7 @@ function PhoneStep({ phone, busy, error, onChange, onSubmit, onSkip }: {
       </p>
 
       <label className="flex flex-col gap-1.5">
-        <span className="tabular-nums text-[10.5px] uppercase tracking-[.1em] text-muted">
+        <span className="text-[10.5px] uppercase tracking-[.1em] text-muted">
           Numero di telefono
         </span>
         <input
@@ -205,7 +205,7 @@ function CodeStep({ phone, code, busy, error, onChange, onSubmit, onBack }: {
           value={code}
           onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
         />
-        <div className="flex gap-2" aria-hidden onClick={() => inputRef.current?.focus()}>
+        <div className="flex gap-2" aria-hidden>
           {digits.map((d, i) => (
             <span
               key={i}

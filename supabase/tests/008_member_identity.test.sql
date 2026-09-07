@@ -1,5 +1,5 @@
 begin;
-select plan(4);
+select plan(10);
 
 insert into public.facilities (id, slug, name) values
   ('c0000000-0000-0000-0000-00000000aa01', 'uno', 'Uno'),
@@ -53,6 +53,90 @@ set local request.jwt.claims to '{"sub":"c0000000-0000-0000-0000-00000000bb01","
 select isnt(
   (select public.ensure_my_member('c0000000-0000-0000-0000-00000000aa03')),
   null, 'ensure_my_member crea la scheda se non c e'
+);
+
+-- Casi negativi: non basta che il proprietario riesca, serve provare che
+-- un altro (o nessuno) fallisca. Il ruolo resta authenticated — le
+-- funzioni hanno grant solo a quel ruolo — ma senza "sub" nei claim
+-- auth.uid() è nullo, com'è da superutente.
+reset role;
+set local role authenticated;
+set local request.jwt.claims to '{"role":"authenticated"}';
+
+select throws_ok(
+  $$select public.claim_members_by_verified_phone()$$,
+  'PS012', 'Devi accedere.',
+  'la rivendicazione senza identità fallisce con PS012'
+);
+
+select throws_ok(
+  $$select public.ensure_my_member('c0000000-0000-0000-0000-00000000aa01')$$,
+  'PS012', 'Devi accedere.',
+  'ensure_my_member senza identità fallisce con PS012'
+);
+
+-- Un utente autenticato ma senza telefono verificato: ramo distinto dal
+-- precedente, PS012 controlla l'identità, PS014 il numero.
+reset role;
+insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000000',
+  'c0000000-0000-0000-0000-00000000bb02', 'authenticated', 'authenticated',
+  null, null, '', '', '', '', now(), now());
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"c0000000-0000-0000-0000-00000000bb02","role":"authenticated"}';
+
+select throws_ok(
+  $$select public.claim_members_by_verified_phone()$$,
+  'PS014', 'Il numero non è ancora verificato.',
+  'la rivendicazione senza telefono verificato fallisce con PS014'
+);
+
+-- Il cuore della difesa contro members_facility_user_uniq: l'utente ha già
+-- una scheda propria in aa01, e in aa01 c'è anche una scheda spaiata con
+-- lo stesso numero. Senza il filtro "not exists" nella funzione, la update
+-- proverebbe ad agganciare pure quella e violerebbe l'indice unico
+-- (facility_id, user_id): l'intera chiamata fallirebbe invece di limitarsi
+-- a saltare quella struttura.
+reset role;
+insert into public.facilities (id, slug, name)
+  values ('c0000000-0000-0000-0000-00000000aa04', 'quattro', 'Quattro');
+
+insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000000',
+  'c0000000-0000-0000-0000-00000000bb03', 'authenticated', 'authenticated',
+  '393355566778', now(), '', '', '', '', now(), now());
+
+-- la scheda che l'utente possiede già in aa01
+insert into public.members (facility_id, user_id, name) values
+  ('c0000000-0000-0000-0000-00000000aa01', 'c0000000-0000-0000-0000-00000000bb03', 'Bb03 Titolare');
+-- una scheda spaiata nella stessa struttura, con lo stesso numero
+insert into public.members (facility_id, name, phone) values
+  ('c0000000-0000-0000-0000-00000000aa01', 'Bb03 Duplicato', '3355566778');
+-- una scheda spaiata altrove, che invece va rivendicata regolarmente
+insert into public.members (facility_id, name, phone) values
+  ('c0000000-0000-0000-0000-00000000aa04', 'Bb03 Altrove', '335 556 67 78');
+
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"c0000000-0000-0000-0000-00000000bb03","role":"authenticated"}';
+
+select lives_ok(
+  $$select public.claim_members_by_verified_phone()$$,
+  'una struttura già posseduta non fa fallire l''intera rivendicazione'
+);
+
+select is(
+  (select user_id from public.members where name = 'Bb03 Duplicato'),
+  null, 'la scheda duplicata nella struttura già posseduta resta libera'
+);
+
+select is(
+  (select user_id from public.members where name = 'Bb03 Altrove'),
+  'c0000000-0000-0000-0000-00000000bb03',
+  'la scheda in un''altra struttura viene comunque rivendicata'
 );
 
 reset role;
