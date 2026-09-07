@@ -8,12 +8,12 @@ import { formatEuro } from '@/shared/lib/money'
 import { supabase } from '@/shared/lib/supabase'
 import { dayKey, minToLabel } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
+import type { FieldRow } from '@/shared/hooks/useFields'
 import { pickExistingMember } from '../utils/pickMember'
 import { defaultSeasonEnd } from '../utils/recurrence'
 import { RecurrenceForm } from './RecurrenceForm'
 import { useCreateBooking } from '../hooks/useCreateBooking'
 import { useCreateRecurrence } from '../hooks/useCreateRecurrence'
-import type { FieldRow } from '../hooks/useFields'
 
 const DURATIONS = [60, 90, 120]
 

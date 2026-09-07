@@ -1,33 +1,25 @@
+import { lazy, Suspense } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { AdminPage } from '@/features/admin/components/AdminPage'
 import { AuthProvider } from '@/features/auth/hooks/AuthProvider'
 import { RequireAdmin } from '@/features/auth/components/RequireAdmin'
-import { FacilityProvider, useFacility } from '@/shared/tenant/FacilityProvider'
+import { LoginPage } from '@/features/auth/components/LoginPage'
+import { FacilityProvider } from '@/shared/tenant/FacilityProvider'
+import { HomePage } from '@/features/booking/components/HomePage'
+import { BookPage } from '@/features/booking/components/BookPage'
+import { MyBookingsPage } from '@/features/booking/components/MyBookingsPage'
+import { BookingPage } from '@/features/booking/components/BookingPage'
+
+// Il pannello del gestore è pesante — griglia, dialoghi, ricorrenze — e chi
+// apre la home come cliente non deve scaricarlo. lazy() lo mette in un file
+// a parte, caricato solo entrando su /admin.
+const AdminPage = lazy(() =>
+  import('@/features/admin/components/AdminPage').then((m) => ({ default: m.AdminPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
-
-/** Segnaposto: la home pubblica è materia della fase 1B. */
-function Home() {
-  const facility = useFacility()
-  return (
-    <main className="p-8">
-      <p className="tabular-nums text-[11px] uppercase tracking-[.14em] text-pitch">
-        Prenota Campi
-      </p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">{facility.name}</h1>
-      <p className="mt-2 max-w-[60ch] text-ink-2">
-        {facility.address} · {facility.phone}
-      </p>
-      <Link className="mt-6 inline-block text-pitch underline" to="/admin">
-        Pannello del gestore →
-      </Link>
-    </main>
-  )
-}
 
 export function App() {
   return (
@@ -35,13 +27,19 @@ export function App() {
       <BrowserRouter>
         <FacilityProvider>
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route
-                path="/admin"
-                element={<RequireAdmin><AdminPage /></RequireAdmin>}
-              />
-            </Routes>
+            <Suspense fallback={<div className="p-8 text-muted">Caricamento…</div>}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/accedi" element={<LoginPage />} />
+                <Route path="/prenota" element={<BookPage />} />
+                <Route path="/prenotazioni" element={<MyBookingsPage />} />
+                <Route path="/prenotazioni/:id" element={<BookingPage />} />
+                <Route
+                  path="/admin"
+                  element={<RequireAdmin><AdminPage /></RequireAdmin>}
+                />
+              </Routes>
+            </Suspense>
           </AuthProvider>
         </FacilityProvider>
       </BrowserRouter>

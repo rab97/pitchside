@@ -4,7 +4,7 @@ import { endOfDay, startOfDay } from 'date-fns'
 import { parseRange } from '@/shared/lib/range'
 import { supabase } from '@/shared/lib/supabase'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
-import { useFields } from './useFields'
+import { useFields } from '@/shared/hooks/useFields'
 
 export type BookingRow = {
   id: string
