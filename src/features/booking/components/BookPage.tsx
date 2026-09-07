@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { addDays, format, isSameDay, isToday, subHours } from 'date-fns'
+import { format, isToday, subHours } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
@@ -13,6 +13,7 @@ import { freeSlots } from '../utils/freeSlots'
 import { fieldKind } from '../utils/fieldKind'
 import { savePendingSelection, takePendingSelection } from '../utils/pendingSelection'
 import { FIELDS_ERROR, NO_FIELDS, SLOTS_ERROR } from '../utils/messages'
+import { horizonLimit, maxStartMinForDay } from '../utils/horizon'
 import { useAvailability } from '../hooks/useAvailability'
 import { useSlotPrices } from '../hooks/useSlotPrices'
 import { DayStrip } from './DayStrip'
@@ -98,13 +99,12 @@ export function BookPage() {
   // L'orizzonte di prenotazione è un istante, non un giorno intero:
   // `create_booking` rifiuta con PS007 tutto ciò che parte dopo
   // `now() + booking_horizon_days`. L'ultimo giorno della striscia è quindi
-  // prenotabile solo fino all'ora in cui siamo adesso, e mostrarlo pieno di
-  // orari prezzati significava proporre al cliente una conferma che il
-  // database rifiuta. Negli altri giorni il limite non c'entra.
-  const horizonLimit = addDays(new Date(), facility.booking_horizon_days)
-  const maxStartMin = isSameDay(day, horizonLimit)
-    ? minutesOfDay(horizonLimit)
-    : undefined
+  // prenotabile solo fino a quell'ora, e mostrarlo pieno di orari prezzati
+  // significava proporre al cliente una conferma che il database rifiuta.
+  // Il calcolo del limite sta in `utils/horizon.ts`, che spiega perché si
+  // contano ore e non giorni di calendario.
+  const maxStartMin = maxStartMinForDay(
+    day, horizonLimit(new Date(), facility.booking_horizon_days))
 
   const slots = freeSlots({
     starts: Array.from(prices.keys()),
