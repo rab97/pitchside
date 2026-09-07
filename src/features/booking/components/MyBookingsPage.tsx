@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
+import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
 import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
@@ -8,6 +9,7 @@ import { useAuth } from '@/features/auth/hooks/AuthProvider'
 import { LoginPage } from '@/features/auth/components/LoginPage'
 import { fieldKind } from '../utils/fieldKind'
 import { useMyBookings, type MyBooking } from '../hooks/useMyBookings'
+import { MY_BOOKINGS_ERROR } from '../utils/messages'
 
 // Solo gli stati diversi da "active" portano un'etichetta: una prenotazione
 // ancora attiva si capisce già dalla sezione in cui compare.
@@ -56,7 +58,18 @@ export function MyBookingsPage() {
 }
 
 function MyBookingsList() {
-  const { future, past, isPending } = useMyBookings()
+  const { future, past, isPending, error } = useMyBookings()
+
+  // L'errore prima del caricamento, e non dopo: se è `ensure_my_member` a
+  // fallire questa query non parte nemmeno, `isPending` resta vero per sempre
+  // e la pagina resterebbe in «Caricamento…» senza dire niente.
+  if (error) {
+    return (
+      <div className="mt-6">
+        <ErrorNote message={MY_BOOKINGS_ERROR} />
+      </div>
+    )
+  }
 
   if (isPending) return <p className="mt-6 text-ink-2">Caricamento…</p>
 
@@ -108,34 +121,51 @@ function MyBookingsList() {
   )
 }
 
+// La riga è un collegamento, non un blocco inerte: il dettaglio — e quindi
+// la disdetta — era raggiungibile solo digitando un UUID a mano.
+//
+// Il `Link` avvolge tutta la riga perché tutta la riga è il bersaglio, ma il
+// testo del collegamento sarebbe la concatenazione di data, ora, campo,
+// prezzo e stato: `aria-label` lo sostituisce con una frase sola, così chi
+// scorre i collegamenti con uno screen reader sente quale prenotazione apre.
 function BookingRow({ booking }: { booking: MyBooking }) {
   const statusLabel = STATUS_LABEL[booking.status]
+  const label =
+    `Prenotazione del ${format(booking.slot_start, 'd MMMM', { locale: it })}` +
+    ` alle ${minToLabel(minutesOfDay(booking.slot_start))}, ${booking.field_name}` +
+    (statusLabel ? `, ${statusLabel.toLowerCase()}` : '')
 
   return (
-    <li className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-[15px] font-semibold tracking-[-.01em]">
-          {format(booking.slot_start, 'EEE d MMM', { locale: it })}
-          {' · '}
-          <span className="tabular-nums">
-            {minToLabel(minutesOfDay(booking.slot_start))}–{minToLabel(minutesOfDay(booking.slot_end))}
-          </span>
-        </p>
-        <p className="mt-1 text-[13px] text-ink-2">
-          {booking.field_name} · {fieldKind(booking.field_kind)}
-        </p>
-      </div>
+    <li>
+      <Link
+        to={`/prenotazioni/${booking.id}`}
+        aria-label={label}
+        className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card transition hover:border-pitch sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <p className="text-[15px] font-semibold tracking-[-.01em]">
+            {format(booking.slot_start, 'EEE d MMM', { locale: it })}
+            {' · '}
+            <span className="tabular-nums">
+              {minToLabel(minutesOfDay(booking.slot_start))}–{minToLabel(minutesOfDay(booking.slot_end))}
+            </span>
+          </p>
+          <p className="mt-1 text-[13px] text-ink-2">
+            {booking.field_name} · {fieldKind(booking.field_kind)}
+          </p>
+        </div>
 
-      <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1.5">
-        <span className="tabular-nums text-[13.5px] font-medium">
-          {formatEuro(booking.price_cents)}
-        </span>
-        {statusLabel && (
-          <span className="rounded-full border border-terra bg-terra-tint px-2 py-0.5 text-[11px] font-medium text-terra">
-            {statusLabel}
+        <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1.5">
+          <span className="tabular-nums text-[13.5px] font-medium">
+            {formatEuro(booking.price_cents)}
           </span>
-        )}
-      </div>
+          {statusLabel && (
+            <span className="rounded-full border border-terra bg-terra-tint px-2 py-0.5 text-[11px] font-medium text-terra">
+              {statusLabel}
+            </span>
+          )}
+        </div>
+      </Link>
     </li>
   )
 }

@@ -8,7 +8,7 @@ export function useMyMember() {
   const { session } = useAuth()
   const facility = useFacility()
 
-  const { data, isPending } = useQuery({
+  const { data, isPending, error } = useQuery({
     queryKey: ['my-member', facility.id, session?.user.id],
     enabled: !!session,
     queryFn: async () => {
@@ -20,5 +20,8 @@ export function useMyMember() {
     },
   })
 
-  return { memberId: data ?? null, isPending: !!session && isPending }
+  // L'errore non si butta: è `ensure_my_member` a fallire, e quando fallisce
+  // «Conferma» resta disabilitata e /prenotazioni resta in caricamento senza
+  // che niente dica perché.
+  return { memberId: data ?? null, isPending: !!session && isPending, error }
 }

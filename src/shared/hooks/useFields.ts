@@ -10,9 +10,16 @@ export type FieldRow = {
   sort_order: number
 }
 
-export function useFields(): FieldRow[] {
+/**
+ * I campi attivi della struttura.
+ *
+ * Restituisce anche `isPending` ed `error`: senza il primo, chi la chiama
+ * dice «nessun campo» mentre l'elenco sta arrivando; senza il secondo lo dice
+ * anche quando la richiesta è fallita, che è un'affermazione sbagliata.
+ */
+export function useFields() {
   const facility = useFacility()
-  const { data } = useQuery({
+  const { data, isPending, error } = useQuery({
     queryKey: ['fields', facility.id],
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<FieldRow[]> => {
@@ -26,5 +33,5 @@ export function useFields(): FieldRow[] {
       return data
     },
   })
-  return data ?? []
+  return { fields: data ?? [], isPending, error }
 }

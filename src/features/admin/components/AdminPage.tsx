@@ -13,7 +13,7 @@ export function AdminPage() {
   const [day, setDay] = useState<Date>(() => new Date())
   const [selected, setSelected] = useState<BookingRow | null>(null)
   const [target, setTarget] = useState<NewBookingTarget | null>(null)
-  const fields = useFields()
+  const { fields } = useFields()
 
   return (
     <div className="min-h-screen bg-ground p-4 sm:p-6">

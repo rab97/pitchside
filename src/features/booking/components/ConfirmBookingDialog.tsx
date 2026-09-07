@@ -3,12 +3,14 @@ import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
+import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
 import { dayKey, minToLabel } from '@/shared/lib/tz'
 import { useMyMember } from '@/features/auth/hooks/useMyMember'
 import type { FieldRow } from '@/shared/hooks/useFields'
 import { fieldKind } from '../utils/fieldKind'
 import { useBookAsMember } from '../hooks/useBookAsMember'
+import { MEMBER_ERROR } from '../utils/messages'
 
 function durationLabel(minutes: number): string {
   return minutes === 60 ? '1h' : minutes === 90 ? '1h 30' : '2h'
@@ -36,7 +38,7 @@ export function ConfirmBookingDialog({
   price: number | null
   cancelDeadline: Date | null
 }) {
-  const { memberId, isPending: memberPending } = useMyMember()
+  const { memberId, isPending: memberPending, error: memberError } = useMyMember()
   const book = useBookAsMember()
   const [error, setError] = useState<string | null>(null)
 
@@ -71,7 +73,7 @@ export function ConfirmBookingDialog({
     }
   }
 
-  const disabled = book.isPending || memberPending || !memberId
+  const disabled = book.isPending || memberPending || !memberId || price == null
 
   return (
     <Dialog open={open} onClose={onClose} labelledBy="confirm-title">
@@ -110,11 +112,10 @@ export function ConfirmBookingDialog({
             : ''}
         </p>
 
-        {error && (
-          <p role="alert" className="rounded-lg border border-terra bg-terra-tint px-3 py-2 text-[12.5px] text-terra">
-            {error}
-          </p>
-        )}
+        {/* «Conferma» disabilitata senza una riga di spiegazione era il
+            sintomo con cui si presentava il guasto di `ensure_my_member`:
+            l'errore c'era e nessuno lo mostrava. */}
+        <ErrorNote message={error ?? (memberError ? MEMBER_ERROR : null)} />
 
         <div className="flex justify-end gap-2 pt-0.5">
           <button

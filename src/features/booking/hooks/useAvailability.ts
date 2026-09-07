@@ -13,7 +13,7 @@ import { parseRange } from '@/shared/lib/range'
 export function useAvailability(day: Date, fieldId: string | null) {
   const facility = useFacility()
 
-  const { data, isPending } = useQuery({
+  const { data, isPending, error } = useQuery({
     queryKey: ['busy', facility.id, fieldId, startOfDay(day).toISOString()],
     enabled: !!fieldId,
     queryFn: async (): Promise<[number, number][]> => {
@@ -33,5 +33,5 @@ export function useAvailability(day: Date, fieldId: string | null) {
     },
   })
 
-  return { busy: data ?? [], isPending }
+  return { busy: data ?? [], isPending, error }
 }

@@ -6,6 +6,9 @@ import { slotRange } from '@/shared/lib/tz'
 // frasi diverse: chi sta al telefono con un cliente deve sapere cosa è
 // successo, chi sta prenotando da solo deve sapere cosa fare adesso.
 const MESSAGES: Record<string, string> = {
+  // Raggiungibile: il gestore può disattivare un campo mentre il cliente ha
+  // la pagina aperta. La mappa del gestore lo traduceva, questa no.
+  PS002: 'Questo campo non è più prenotabile. Scegline un altro.',
   PS003: 'Il campo è chiuso in quell’orario.',
   PS004: 'Qualcuno ha appena preso questo slot. Scegline un altro.',
   PS005: 'A quell’ora l’impianto è chiuso.',

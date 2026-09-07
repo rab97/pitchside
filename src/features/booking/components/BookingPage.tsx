@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
 import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
@@ -12,6 +13,7 @@ import { CancelBookingError, isLateCancel, useCancelBooking } from '@/shared/hoo
 import { fieldKind } from '../utils/fieldKind'
 import { messageForCustomer } from '../utils/cancelBookingMessage'
 import { useBooking } from '../hooks/useBooking'
+import { BOOKING_ERROR } from '../utils/messages'
 
 // Solo gli stati diversi da "active" portano un'etichetta: se la
 // prenotazione è ancora attiva la pagina lo mostra col resto del dettaglio,
@@ -70,11 +72,23 @@ export function BookingPage() {
 
 function BookingDetail({ id }: { id: string | undefined }) {
   const navigate = useNavigate()
-  const { booking, isPending } = useBooking(id)
+  const { booking, isPending, error } = useBooking(id)
   const cancel = useCancelBooking()
   const [confirming, setConfirming] = useState(false)
 
   useEffect(() => { setConfirming(false) }, [id])
+
+  // «Questa prenotazione non esiste» è un'affermazione: si dice solo quando
+  // la si è potuta cercare. Un guasto è un'altra cosa, e va detta per quello
+  // che è — anche perché con `ensure_my_member` in errore la ricerca non
+  // parte, e `isPending` non tornerebbe mai falso.
+  if (error) {
+    return (
+      <div className="rounded-card border border-line bg-surface p-6 shadow-card">
+        <ErrorNote message={BOOKING_ERROR} />
+      </div>
+    )
+  }
 
   if (isPending) return <p className="mt-6 text-ink-2">Caricamento…</p>
 

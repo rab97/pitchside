@@ -42,9 +42,9 @@ export type MyBooking = {
 export function useMyBookings() {
   const facility = useFacility()
   const { session } = useAuth()
-  const { memberId } = useMyMember()
+  const { memberId, error: memberError } = useMyMember()
 
-  const { data, isPending } = useQuery({
+  const { data, isPending, error } = useQuery({
     queryKey: ['my-bookings', facility.id, memberId],
     enabled: !!session && !!memberId,
     queryFn: async (): Promise<MyBooking[]> => {
@@ -74,5 +74,13 @@ export function useMyBookings() {
 
   const { future, past } = splitBookings(data ?? [], new Date())
 
-  return { future, past, isPending: session ? isPending : false }
+  return {
+    future,
+    past,
+    isPending: session ? isPending : false,
+    // Anche il guasto di `ensure_my_member` finisce qui: senza la scheda
+    // questa query non parte nemmeno, e senza il suo errore la pagina
+    // resterebbe in «Caricamento…» per sempre.
+    error: memberError ?? error,
+  }
 }

@@ -15,7 +15,7 @@ import { dayKey } from '@/shared/lib/tz'
  * codice: vedi il commento in cima alla migrazione.
  */
 export function useSlotPrices(day: Date, fieldId: string | null, durationMinutes: number) {
-  const { data, isPending } = useQuery({
+  const { data, isPending, error } = useQuery({
     queryKey: ['slot-prices', fieldId, dayKey(day), durationMinutes],
     enabled: !!fieldId,
     queryFn: async (): Promise<Map<number, number>> => {
@@ -29,5 +29,5 @@ export function useSlotPrices(day: Date, fieldId: string | null, durationMinutes
     },
   })
 
-  return { prices: data ?? new Map<number, number>(), isPending }
+  return { prices: data ?? new Map<number, number>(), isPending, error }
 }

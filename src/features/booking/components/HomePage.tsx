@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
+import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields, type FieldRow } from '@/shared/hooks/useFields'
 import { useAuth } from '@/features/auth/hooks/AuthProvider'
+import { FIELDS_ERROR, NO_FIELDS } from '../utils/messages'
 
 const KIND_LABELS: Record<string, string> = {
   calcio5: 'Calcio a 5',
@@ -16,7 +18,7 @@ function kindLabel(kind: string): string {
 
 export function HomePage() {
   const facility = useFacility()
-  const fields = useFields()
+  const { fields, isPending, error } = useFields()
   const { session } = useAuth()
 
   return (
@@ -65,8 +67,14 @@ export function HomePage() {
           <h2 className="text-[13px] font-medium uppercase tracking-[.08em] text-muted">
             I campi
           </h2>
-          {fields.length === 0 ? (
-            <p className="mt-3 text-ink-2">Nessun campo disponibile al momento.</p>
+          {error ? (
+            <div className="mt-3">
+              <ErrorNote message={FIELDS_ERROR} />
+            </div>
+          ) : isPending ? (
+            <p className="mt-3 text-ink-2">Caricamento…</p>
+          ) : fields.length === 0 ? (
+            <p className="mt-3 text-ink-2">{NO_FIELDS}</p>
           ) : (
             <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {fields.map((field) => (

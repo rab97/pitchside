@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { format, isToday, subHours } from 'date-fns'
+import { addDays, format, isSameDay, isToday, subHours } from 'date-fns'
 import { it } from 'date-fns/locale'
+import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
 import { parseRange } from '@/shared/lib/range'
 import { dayKey, minToLabel, minutesOfDay, slotRange } from '@/shared/lib/tz'
@@ -11,6 +12,7 @@ import { useAuth } from '@/features/auth/hooks/AuthProvider'
 import { freeSlots } from '../utils/freeSlots'
 import { fieldKind } from '../utils/fieldKind'
 import { savePendingSelection, takePendingSelection } from '../utils/pendingSelection'
+import { FIELDS_ERROR, NO_FIELDS, SLOTS_ERROR } from '../utils/messages'
 import { useAvailability } from '../hooks/useAvailability'
 import { useSlotPrices } from '../hooks/useSlotPrices'
 import { DayStrip } from './DayStrip'
@@ -20,7 +22,7 @@ const DURATIONS = [60, 90, 120]
 
 export function BookPage() {
   const facility = useFacility()
-  const fields = useFields()
+  const { fields, isPending: fieldsPending, error: fieldsError } = useFields()
   const navigate = useNavigate()
   const { session, loading: authLoading } = useAuth()
   const [day, setDay] = useState<Date>(() => new Date())
@@ -77,23 +79,36 @@ export function BookPage() {
   }, [openAfterRestore, session])
 
   const field = fields.find((f) => f.id === fieldId) ?? null
-  const { busy, isPending: busyPending } = useAvailability(day, fieldId)
-  const { prices, isPending: pricesPending } = useSlotPrices(day, fieldId, minutes)
+  const { busy, isPending: busyPending, error: busyError } = useAvailability(day, fieldId)
+  const { prices, isPending: pricesPending, error: pricesError } = useSlotPrices(day, fieldId, minutes)
   const isPending = busyPending || pricesPending
+  const slotsError = busyError ?? pricesError
 
-  // L'orario apribile del giorno non è più una costante: è l'insieme delle
-  // partenze che `slot_prices` ha già prezzato, ricavate a sua volta dalle
-  // `price_bands` del campo (vedi supabase/migrations/0014_slot_prices.sql).
+  // Le partenze sono le chiavi che `slot_prices` ha restituito, non una
+  // griglia rigenerata da apertura, chiusura e passo: quella faceva
+  // ricomparire in elenco, con «—» al posto del prezzo, le partenze che
+  // `slot_prices` salta perché cadono in un buco fra due fasce. Erano
+  // selezionabili, arrivavano al riepilogo con «Totale —» e la conferma
+  // moriva con PS005. Su una schermata che riguarda denaro l'elenco degli
+  // orari e la fonte del prezzo sono lo stesso insieme.
   // Un campo chiuso quel giorno della settimana non ha partenze, e la lista
   // resta vuota senza bisogno di un caso speciale.
-  const starts = Array.from(prices.keys())
-  const openMin = starts.length > 0 ? Math.min(...starts) : 0
-  const closeMin = starts.length > 0 ? Math.max(...starts) + minutes : 0
-
   const nowMin = isToday(day) ? minutesOfDay(new Date()) : undefined
+
+  // L'orizzonte di prenotazione è un istante, non un giorno intero:
+  // `create_booking` rifiuta con PS007 tutto ciò che parte dopo
+  // `now() + booking_horizon_days`. L'ultimo giorno della striscia è quindi
+  // prenotabile solo fino all'ora in cui siamo adesso, e mostrarlo pieno di
+  // orari prezzati significava proporre al cliente una conferma che il
+  // database rifiuta. Negli altri giorni il limite non c'entra.
+  const horizonLimit = addDays(new Date(), facility.booking_horizon_days)
+  const maxStartMin = isSameDay(day, horizonLimit)
+    ? minutesOfDay(horizonLimit)
+    : undefined
+
   const slots = freeSlots({
-    openMin, closeMin, stepMin: facility.slot_minutes,
-    durationMin: minutes, busy, nowMin,
+    starts: Array.from(prices.keys()),
+    durationMin: minutes, busy, nowMin, maxStartMin,
   })
   const price = startMin != null ? prices.get(startMin) ?? null : null
 
@@ -127,8 +142,14 @@ export function BookPage() {
         </p>
         <h1 className="mt-1.5 text-2xl font-semibold tracking-[-.02em]">Prenota</h1>
 
-        {fields.length === 0 ? (
-          <p className="mt-6 text-ink-2">Nessun campo attivo in questa struttura.</p>
+        {fieldsError ? (
+          <div className="mt-6">
+            <ErrorNote message={FIELDS_ERROR} />
+          </div>
+        ) : fieldsPending ? (
+          <p className="mt-6 text-ink-2">Caricamento…</p>
+        ) : fields.length === 0 ? (
+          <p className="mt-6 text-ink-2">{NO_FIELDS}</p>
         ) : (
           <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px] lg:items-start">
             <div className="flex flex-col gap-4">
@@ -165,7 +186,11 @@ export function BookPage() {
                     {field ? ` · ${field.name}` : ''}
                   </span>
                 </div>
-                {isPending ? (
+                {slotsError ? (
+                  <div className="p-2.5">
+                    <ErrorNote message={SLOTS_ERROR} />
+                  </div>
+                ) : isPending ? (
                   <p className="p-4 text-ink-2">Caricamento…</p>
                 ) : slots.length === 0 ? (
                   <p className="p-4 text-ink-2">
@@ -174,7 +199,10 @@ export function BookPage() {
                 ) : (
                   <ul className="flex flex-col gap-1.5 p-2.5">
                     {slots.map((s) => {
-                      const slotPrice = prices.get(s) ?? null
+                      // `slots` è un sottoinsieme delle chiavi di `prices`:
+                      // il prezzo c'è per costruzione, e non esiste più uno
+                      // slot selezionabile senza importo.
+                      const slotPrice = prices.get(s) as number
                       const selected = s === startMin
                       return (
                         <li key={s}>
@@ -193,7 +221,7 @@ export function BookPage() {
                               {minToLabel(s)}–{minToLabel(s + minutes)}
                             </span>
                             <span className="tabular-nums text-[12.5px]">
-                              {slotPrice != null ? formatEuro(slotPrice) : '—'}
+                              {formatEuro(slotPrice)}
                             </span>
                           </button>
                         </li>
@@ -235,9 +263,19 @@ export function BookPage() {
                     </div>
                   </dl>
 
+                  {/* Senza prezzo non si conferma: succede solo a una scelta
+                      ripristinata dopo l'accesso, se nel frattempo quello slot
+                      non è più fra quelli prezzati. Il database risponderebbe
+                      PS005; è più onesto dirlo prima. */}
+                  {price == null && (
+                    <p className="text-[12.5px] text-terra">
+                      Questo orario non è più disponibile: scegline un altro.
+                    </p>
+                  )}
+
                   <button
                     type="button"
-                    disabled={authLoading}
+                    disabled={authLoading || price == null}
                     onClick={() => {
                       if (!field || startMin == null) return
                       if (!session) {

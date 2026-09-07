@@ -352,6 +352,14 @@ email_optional = false
 enabled = true
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+# Resta a true di proposito, ed e' innocuo: lo dice il commento di Supabase
+# stesso qui sopra, «Required for local sign in with Google auth», e questo
+# file configura SOLO l'ambiente locale. In produzione la configurazione di
+# Google sta nel dashboard del progetto, dove questa opzione deve essere
+# false: il nonce e' cio' che lega la risposta di Google alla richiesta che
+# l'ha chiesta, e senza il controllo un id_token ottenuto altrove sarebbe
+# accettato. Metterla a false qui non renderebbe la produzione piu' sicura,
+# renderebbe soltanto impossibile provare l'accesso Google in locale.
 skip_nonce_check = true
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.

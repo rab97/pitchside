@@ -8,6 +8,13 @@ import { it } from 'date-fns/locale'
  * la finestra di sette giorni alla volta, non uno: è il limite notato nella
  * griglia del gestore (vedi memoria `navigazione-data-rimandata`), qui evitato
  * fin da subito perché l'orizzonte di prenotazione arriva oltre una settimana.
+ *
+ * `horizonDays` si conta in giorni interi, e l'ultimo giorno resta
+ * selezionabile: `create_booking` però confronta istanti, quindi di quel
+ * giorno è prenotabile solo la parte fino all'ora in cui siamo adesso. A
+ * escludere le partenze oltre il limite ci pensa `BookPage`, che passa
+ * `maxStartMin` a `freeSlots` — qui si sceglie un giorno, non un orario, e
+ * togliere l'ultimo giorno per intero butterebbe le ore ancora buone.
  */
 export function DayStrip({ day, onSelect, horizonDays }: {
   day: Date

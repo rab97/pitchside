@@ -33,9 +33,9 @@ export type BookingDetail = {
 export function useBooking(id: string | undefined) {
   const facility = useFacility()
   const { session } = useAuth()
-  const { memberId, isPending: memberPending } = useMyMember()
+  const { memberId, isPending: memberPending, error: memberError } = useMyMember()
 
-  const { data, isPending } = useQuery({
+  const { data, isPending, error } = useQuery({
     queryKey: ['my-booking', facility.id, memberId, id],
     enabled: !!session && !!memberId && !!id,
     queryFn: async (): Promise<BookingDetail | null> => {
@@ -66,5 +66,8 @@ export function useBooking(id: string | undefined) {
   return {
     booking: data ?? null,
     isPending: session ? memberPending || isPending : false,
+    // Un guasto non è «questa prenotazione non esiste»: sono due frasi
+    // diverse e la pagina deve poterle distinguere.
+    error: memberError ?? error,
   }
 }

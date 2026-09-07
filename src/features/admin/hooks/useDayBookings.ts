@@ -23,7 +23,7 @@ export type BookingRow = {
 export function useDayBookings(day: Date) {
   const facility = useFacility()
   const qc = useQueryClient()
-  const fields = useFields()
+  const { fields } = useFields()
 
   const bookingsQ = useQuery({
     queryKey: ['bookings', facility.id, startOfDay(day).toISOString()],
