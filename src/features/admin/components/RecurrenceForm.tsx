@@ -1,6 +1,6 @@
 import { format, getISODay } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { countOccurrences } from './recurrence'
+import { countOccurrences } from '../utils/recurrence'
 
 const WEEKDAY = ['', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica']
 

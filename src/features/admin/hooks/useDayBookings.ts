@@ -1,16 +1,10 @@
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { endOfDay, startOfDay } from 'date-fns'
-import { supabase } from '../lib/supabase'
-import { useFacility } from '../tenant/FacilityProvider'
-
-export type FieldRow = {
-  id: string
-  name: string
-  kind: string
-  covered: boolean
-  sort_order: number
-}
+import { parseRange } from '@/shared/lib/range'
+import { supabase } from '@/shared/lib/supabase'
+import { useFacility } from '@/shared/tenant/FacilityProvider'
+import { useFields } from './useFields'
 
 export type BookingRow = {
   id: string
@@ -24,31 +18,6 @@ export type BookingRow = {
   price_cents: number
   status: string
   cancel_deadline: string
-}
-
-// Postgres restituisce tstzrange come '["2025-10-14 20:00:00+02","...")'
-export function parseRange(raw: string): [Date, Date] {
-  const [a, b] = raw.slice(1, -1).split(',').map((s) => s.replace(/"/g, ''))
-  return [new Date(a), new Date(b)]
-}
-
-export function useFields(): FieldRow[] {
-  const facility = useFacility()
-  const { data } = useQuery({
-    queryKey: ['fields', facility.id],
-    staleTime: 5 * 60 * 1000,
-    queryFn: async (): Promise<FieldRow[]> => {
-      const { data, error } = await supabase
-        .from('fields')
-        .select('id, name, kind, covered, sort_order')
-        .eq('facility_id', facility.id)
-        .eq('active', true)
-        .order('sort_order')
-      if (error) throw error
-      return data
-    },
-  })
-  return data ?? []
 }
 
 export function useDayBookings(day: Date) {

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { useFacility } from '../tenant/FacilityProvider'
+import { supabase } from '@/shared/lib/supabase'
+import { useFacility } from '@/shared/tenant/FacilityProvider'
 
 /**
  * Supabase vuole il numero in E.164. Il gestore digita "347 220 15 63".

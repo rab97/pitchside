@@ -1,5 +1,5 @@
-import { minToLabel, minutesOfDay } from '../lib/tz'
-import type { BookingRow } from './DayGrid.hooks'
+import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
+import type { BookingRow } from '../hooks/useDayBookings'
 
 // Gli stessi quattro toni della legenda del mockup: chi guarda la griglia
 // capisce l'origine di una prenotazione dal colore, senza leggere.

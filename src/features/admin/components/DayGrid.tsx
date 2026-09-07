@@ -1,6 +1,6 @@
-import { minToLabel, minutesOfDay } from '../lib/tz'
+import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { BookingCell } from './BookingCell'
-import { useDayBookings, type BookingRow } from './DayGrid.hooks'
+import { useDayBookings, type BookingRow } from '../hooks/useDayBookings'
 
 // Orario di apertura del Palacalcetto. In fase 1B arriva dalla struttura:
 // oggi non esiste ancora una colonna che lo dica.

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
-import { slotRange } from '../lib/tz'
+import { supabase } from '@/shared/lib/supabase'
+import { slotRange } from '@/shared/lib/tz'
 
 // Le chiavi sono gli SQLSTATE alzati dalle funzioni plpgsql: PostgREST li
 // restituisce tali e quali in `error.code`. Il messaggio del database è già

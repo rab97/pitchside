@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DayGrid } from './DayGrid'
-import * as hooks from './DayGrid.hooks'
+import * as hooks from '../hooks/useDayBookings'
 
 const fields = [{ id: 'c1', name: 'Campo 1', kind: 'calcio5', covered: true, sort_order: 1 }]
 

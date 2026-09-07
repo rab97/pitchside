@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { AdminPage } from './admin/AdminPage'
-import { AuthProvider } from './auth/AuthProvider'
-import { RequireAdmin } from './auth/RequireAdmin'
-import { FacilityProvider, useFacility } from './tenant/FacilityProvider'
+import { AdminPage } from '@/features/admin/components/AdminPage'
+import { AuthProvider } from '@/features/auth/hooks/AuthProvider'
+import { RequireAdmin } from '@/features/auth/components/RequireAdmin'
+import { FacilityProvider, useFacility } from '@/shared/tenant/FacilityProvider'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },

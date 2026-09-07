@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { addDays, format, isToday } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { useFacility } from '../tenant/FacilityProvider'
+import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { DayGrid } from './DayGrid'
-import { useFields, type BookingRow } from './DayGrid.hooks'
+import { useFields } from '../hooks/useFields'
+import type { BookingRow } from '../hooks/useDayBookings'
 import { BookingDetailDialog } from './BookingDetailDialog'
 import { NewBookingDialog, type NewBookingTarget } from './NewBookingDialog'
 

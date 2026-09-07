@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useAuth } from './AuthProvider'
+import { useAuth } from '../hooks/AuthProvider'
 import { LoginPage } from './LoginPage'
 
 export function RequireAdmin({ children }: { children: ReactNode }) {

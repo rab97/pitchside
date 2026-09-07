@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { RequireAdmin } from './RequireAdmin'
-import * as auth from './AuthProvider'
+import * as auth from '../hooks/AuthProvider'
 
 describe('RequireAdmin', () => {
   it('mostra i figli a un amministratore', () => {

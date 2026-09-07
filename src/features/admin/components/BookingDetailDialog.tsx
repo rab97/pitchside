@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { Dialog } from '../components/Dialog'
-import { formatEuro } from '../lib/money'
-import { minToLabel, minutesOfDay } from '../lib/tz'
-import type { BookingRow } from './DayGrid.hooks'
-import { isLateCancel, useCancelBooking } from './useCancelBooking'
+import { Dialog } from '@/shared/components/ui/Dialog'
+import { formatEuro } from '@/shared/lib/money'
+import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
+import type { BookingRow } from '../hooks/useDayBookings'
+import { isLateCancel, useCancelBooking } from '../hooks/useCancelBooking'
 
 const SOURCE_LABEL: Record<string, string> = {
   phone: 'Telefonata',

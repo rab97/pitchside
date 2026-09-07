@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { getISODay } from 'date-fns'
-import { supabase } from '../lib/supabase'
-import { dayKey } from '../lib/tz'
+import { supabase } from '@/shared/lib/supabase'
+import { dayKey } from '@/shared/lib/tz'
 
 export type NewRecurrence = {
   facilityId: string

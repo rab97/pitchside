@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
-import { useFacility } from '../tenant/FacilityProvider'
+import { supabase } from '@/shared/lib/supabase'
+import { useFacility } from '@/shared/tenant/FacilityProvider'
 
 type AuthState = { session: Session | null; isAdmin: boolean; loading: boolean }
 const Ctx = createContext<AuthState>({ session: null, isAdmin: false, loading: true })
