@@ -116,7 +116,7 @@ function BookingDetail({ id }: { id: string | undefined }) {
       </p>
 
       <div className="rounded-card border border-line bg-surface p-4 shadow-card">
-        <p className="tabular-nums text-[13px] text-muted">
+        <p className="text-[13px] text-muted">
           {format(booking.slot_start, 'EEEE d MMMM', { locale: it })}
         </p>
         <h1 className="tabular-nums text-xl font-semibold tracking-[-.01em]">
