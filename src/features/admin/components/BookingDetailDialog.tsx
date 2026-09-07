@@ -5,8 +5,9 @@ import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { formatEuro } from '@/shared/lib/money'
 import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
+import { CancelBookingError, isLateCancel, useCancelBooking } from '@/shared/hooks/useCancelBooking'
 import type { BookingRow } from '../hooks/useDayBookings'
-import { isLateCancel, useCancelBooking } from '../hooks/useCancelBooking'
+import { messageForError } from '../utils/cancelBookingMessage'
 
 const SOURCE_LABEL: Record<string, string> = {
   phone: 'Telefonata',
@@ -47,7 +48,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
       toast.success(`Disdetta: ${booking.member_name}. Lo slot è di nuovo libero.`)
       onClose()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'La disdetta non è riuscita.')
+      toast.error(messageForError(e instanceof CancelBookingError ? e.code : ''))
     }
   }
 
