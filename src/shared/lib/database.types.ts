@@ -567,29 +567,6 @@ export type Database = {
         }
       }
       ensure_my_member: { Args: { p_facility: string }; Returns: string }
-      find_members_by_phone: {
-        Args: { p_phone: string }
-        Returns: {
-          created_at: string
-          email: string | null
-          facility_id: string
-          honored_count: number
-          id: string
-          kind: string
-          missed_count: number
-          name: string
-          notes: string | null
-          phone: string | null
-          price_list: string
-          user_id: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "members"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
       generate_recurrence: {
         Args: { p_recurrence_id: string }
         Returns: {

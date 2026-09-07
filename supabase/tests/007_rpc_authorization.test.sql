@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(8);
 
 insert into public.facilities (id, slug, name, booking_horizon_days)
   values ('d0000000-0000-0000-0000-000000000001', 'test', 'Test', 3650);
@@ -84,8 +84,18 @@ select lives_ok(
 -- IL CASO CHE CONTA: l'estraneo non può disdire la prenotazione di un altro
 select throws_ok(
   $$select public.cancel_booking(current_setting('test.booking_id')::uuid, 'furto')$$,
-  'PS013', 'Non puoi disdire la prenotazione di un altro.',
+  'PS013', 'Non puoi disdire questa prenotazione.',
   'un estraneo non disdice la prenotazione di un altro'
+);
+
+-- E una prenotazione che non esiste risponde ESATTAMENTE come una che esiste
+-- e non è sua: stesso codice, stesso messaggio. Se rispondesse PS009,
+-- provare un UUID a caso diventerebbe un modo per sapere cosa c'è nel
+-- database senza avere il diritto di leggerlo.
+select throws_ok(
+  $$select public.cancel_booking('d0000000-0000-0000-0000-00000000dead', 'sonda')$$,
+  'PS013', 'Non puoi disdire questa prenotazione.',
+  'una prenotazione inesistente non si distingue da una non propria'
 );
 
 -- il proprietario sì
