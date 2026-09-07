@@ -127,9 +127,9 @@ function BookingDetail({ id }: { id: string | undefined }) {
         </p>
 
         <div className="mt-3">
-          <Kv label="Da pagare in struttura">{formatEuro(booking.price_cents)}</Kv>
+          <Kv label="Da pagare in struttura"><span className="tabular-nums">{formatEuro(booking.price_cents)}</span></Kv>
           <Kv label="Disdetta gratuita entro">
-            <span className={late ? 'text-terra' : undefined}>
+            <span className={`tabular-nums ${late ? 'text-terra' : ''}`}>
               {format(booking.cancel_deadline, "EEE d MMM, HH:mm", { locale: it })}
               {late ? ' · scaduta' : ''}
             </span>

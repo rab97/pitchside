@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields, type FieldRow } from '@/shared/hooks/useFields'
 import { useAuth } from '@/features/auth/hooks/AuthProvider'
@@ -33,7 +34,7 @@ export function HomePage() {
           </span>
           <Link
             className="ml-auto text-[13.5px] font-medium text-pitch underline"
-            to={session ? '/prenotazioni' : '/accedi'}
+            to={session ? '/prenotazioni' : LOGIN_ROUTE}
           >
             {session ? 'Le mie prenotazioni' : 'Accedi'}
           </Link>
@@ -41,7 +42,7 @@ export function HomePage() {
       </header>
 
       <main className="mx-auto max-w-[1140px] px-4 py-10 sm:px-6">
-        <p className="tabular-nums text-[11px] uppercase tracking-[.14em] text-pitch">
+        <p className="text-[11px] uppercase tracking-[.14em] text-pitch">
           Prenota Campi
         </p>
         <h1 className="mt-2 max-w-[24ch] text-3xl font-bold tracking-tight sm:text-4xl">

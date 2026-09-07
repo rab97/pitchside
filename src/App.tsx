@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/hooks/AuthProvider'
 import { RequireAdmin } from '@/features/auth/components/RequireAdmin'
 import { LoginPage } from '@/features/auth/components/LoginPage'
+import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { FacilityProvider } from '@/shared/tenant/FacilityProvider'
 import { HomePage } from '@/features/booking/components/HomePage'
 import { BookPage } from '@/features/booking/components/BookPage'
@@ -30,7 +31,7 @@ export function App() {
             <Suspense fallback={<div className="p-8 text-muted">Caricamento…</div>}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/accedi" element={<LoginPage />} />
+                <Route path={LOGIN_ROUTE} element={<LoginPage />} />
                 <Route path="/prenota" element={<BookPage />} />
                 <Route path="/prenotazioni" element={<MyBookingsPage />} />
                 <Route path="/prenotazioni/:id" element={<BookingPage />} />

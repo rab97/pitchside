@@ -8,6 +8,9 @@ describe('messageForError', () => {
   it('dice che non esiste più', () => {
     expect(messageForError('PS009')).toBe('Questa prenotazione non esiste più.')
   })
+  it('dice che devi accedere', () => {
+    expect(messageForError('PS012')).toBe('Devi accedere per disdire.')
+  })
   it('ha un messaggio di riserva per un codice ignoto', () => {
     expect(messageForError('ZZZZZ')).toMatch(/non è riuscita/i)
   })

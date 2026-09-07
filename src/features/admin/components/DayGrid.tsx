@@ -37,7 +37,7 @@ export function DayGrid({ day, onSlotClick, onBookingClick }: {
         {fields.map((f) => (
           <div key={f.id} className="border-b border-line pb-2 pl-1.5 text-[11.5px] font-medium text-ink-2">
             {f.name}
-            <span className="block tabular-nums text-[10px] tracking-[.04em] text-muted">
+            <span className="block text-[10px] tracking-[.04em] text-muted">
               {f.kind === 'calcio7' ? 'a 7' : f.kind === 'calcio11' ? 'a 11' : 'a 5'}
               {f.covered ? ' · coperto' : ' · scoperto'}
             </span>

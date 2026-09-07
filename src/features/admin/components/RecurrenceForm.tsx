@@ -34,7 +34,7 @@ export function RecurrenceForm({ day, enabled, until, onToggle, onUntil }: {
 
       {enabled && (
         <label className="flex items-center justify-between gap-2 text-[11.5px] text-muted">
-          <span className="tabular-nums uppercase tracking-[.06em]">Fino al</span>
+          <span className="uppercase tracking-[.06em]">Fino al</span>
           <input
             type="date"
             value={until}

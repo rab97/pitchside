@@ -146,7 +146,7 @@ export function BookPage() {
                       aria-pressed={minutes === d}
                       onClick={() => selectMinutes(d)}
                       className={
-                        'flex-1 rounded-lg border py-2 text-center tabular-nums text-[13px] ' +
+                        'flex-1 rounded-lg border py-2 text-center text-[13px] ' +
                         (minutes === d
                           ? 'border-pitch bg-pitch text-white'
                           : 'border-line bg-surface text-ink-2')

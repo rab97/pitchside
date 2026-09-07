@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/shared/lib/supabase'
+import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useAuth } from '../hooks/AuthProvider'
 
@@ -64,7 +65,7 @@ export function LoginPage() {
     // può mai essere /accedi stessa: chi ci arriva dalla home (senza `next`)
     // ci resterebbe bloccato al ritorno da Google, senza nessun modo di
     // proseguire — il ripiego va alla home, non alla pagina di accesso.
-    const fallback = window.location.pathname === '/accedi' ? '/' : window.location.pathname
+    const fallback = window.location.pathname === LOGIN_ROUTE ? '/' : window.location.pathname
     const target = next ?? fallback
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -129,7 +130,7 @@ function LoginArt({ name, address }: { name: string; address: string | null }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="tabular-nums text-[10.5px] uppercase tracking-[.1em] text-muted">
+      <span className="text-[10.5px] uppercase tracking-[.1em] text-muted">
         {label}
       </span>
       {children}

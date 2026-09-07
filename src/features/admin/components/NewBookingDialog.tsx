@@ -152,7 +152,7 @@ export function NewBookingDialog({ target, onClose }: {
         </h3>
 
         <label className="flex flex-col gap-1.5">
-          <span className="tabular-nums text-[11px] uppercase tracking-[.06em] text-muted">Nome</span>
+          <span className="text-[11px] uppercase tracking-[.06em] text-muted">Nome</span>
           <input
             ref={nameRef}
             className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
@@ -181,7 +181,7 @@ export function NewBookingDialog({ target, onClose }: {
         )}
 
         <label className="flex flex-col gap-1.5">
-          <span className="tabular-nums text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
+          <span className="text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
           <input
             className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none placeholder:text-muted focus:border-pitch"
             value={phone}
@@ -193,7 +193,7 @@ export function NewBookingDialog({ target, onClose }: {
         </label>
 
         <div className="flex flex-col gap-1.5">
-          <span className="tabular-nums text-[11px] uppercase tracking-[.06em] text-muted">Durata</span>
+          <span className="text-[11px] uppercase tracking-[.06em] text-muted">Durata</span>
           <div className="flex gap-1.5">
             {DURATIONS.map((d) => (
               <button
@@ -202,7 +202,7 @@ export function NewBookingDialog({ target, onClose }: {
                 aria-pressed={minutes === d}
                 onClick={() => setMinutes(d)}
                 className={
-                  'flex-1 rounded-[7px] border py-1.5 text-center tabular-nums text-xs ' +
+                  'flex-1 rounded-[7px] border py-1.5 text-center text-xs ' +
                   (minutes === d
                     ? 'border-pitch bg-pitch text-surface'
                     : 'border-line bg-surface-2 text-ink-2')
