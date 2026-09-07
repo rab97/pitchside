@@ -32,6 +32,7 @@ export function BookPage() {
   const [startMin, setStartMin] = useState<number | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const slotListRef = useRef<HTMLDivElement>(null)
+  const confirmRef = useRef<HTMLElement>(null)
 
   // Cambiando campo, giorno o durata lo slot scelto prima potrebbe non
   // esistere più tra quelli liberi: si riparte da capo invece di lasciare
@@ -53,6 +54,28 @@ export function BookPage() {
   useEffect(() => {
     if (slotListRef.current) slotListRef.current.scrollTop = 0
   }, [fieldId, day, minutes])
+
+  // Scelto un orario su schermo stretto, la pagina si porta sul riepilogo:
+  // lì sotto la card è fuori dallo schermo, e il cliente avrebbe scelto
+  // senza vedere che c'è un «Conferma» da premere. La soglia è la stessa del
+  // layout a due colonne (`lg`, 1024px) e si legge da `matchMedia` invece di
+  // fidarsi di una larghezza riscritta a mano: da `lg` in su la card è già a
+  // fianco, appiccicata in alto, e muovere la pagina sarebbe un salto senza
+  // motivo. Dipende da `startMin` e non dal giorno: cambiare giorno azzera
+  // l'orario, e portare sul riepilogo vuoto («Scegli un campo, un giorno e un
+  // orario») spingerebbe fuori schermo l'elenco proprio quando serve.
+  //
+  // Lo spostamento è immediato, non `behavior: 'smooth'`: dove il browser non
+  // sa animare uno scorrimento — scoperto provando qui, con lo scorrimento
+  // morbido disattivato — `'smooth'` non ripiega sull'istantaneo, non fa
+  // proprio niente, e l'ancora sparirebbe senza dirlo. `'end'` allinea il
+  // fondo della card al fondo dello schermo, così «Conferma» è sotto il
+  // pollice invece di restare appena fuori.
+  useEffect(() => {
+    if (startMin == null) return
+    if (window.matchMedia('(min-width: 1024px)').matches) return
+    confirmRef.current?.scrollIntoView({ block: 'end' })
+  }, [startMin])
 
   // All'apertura si sceglie un campo per mostrare subito fasce e prezzi, a
   // meno che non si stia tornando da /accedi?next=/prenota con una scelta
@@ -206,10 +229,18 @@ export function BookPage() {
                     {field ? ` · ${field.name}` : ''}
                   </span>
                 </div>
+                {/* L'elenco ha un suo scorrimento solo da `lg` in su, dove
+                    il riepilogo sta a fianco e tenerlo fermo serve: su
+                    schermo stretto scorre la pagina. Un elenco alto 55vh con
+                    `overscroll-contain` copre quasi tutto un telefono, e il
+                    dito che scorre lì dentro non trascina più la pagina —
+                    arrivato in fondo all'elenco il gesto si ferma, per
+                    definizione di `overscroll-behavior: contain`, e il
+                    riepilogo qui sotto diventava irraggiungibile. */}
                 <div
                   ref={slotListRef}
                   className={
-                    'max-h-[55vh] overflow-y-auto overscroll-contain ' +
+                    'lg:max-h-[55vh] lg:overflow-y-auto lg:overscroll-contain ' +
                     (isRefreshing ? 'opacity-60' : '')
                   }
                   aria-busy={isRefreshing}
@@ -261,7 +292,10 @@ export function BookPage() {
               </div>
             </div>
 
-            <aside className="flex flex-col gap-3.5 rounded-card border border-line bg-surface p-4 shadow-card">
+            <aside
+              ref={confirmRef}
+              className="flex flex-col gap-3.5 rounded-card border border-line bg-surface p-4 shadow-card lg:sticky lg:top-6"
+            >
               <span className="text-[11px] uppercase tracking-[.06em] text-muted">
                 La tua prenotazione
               </span>

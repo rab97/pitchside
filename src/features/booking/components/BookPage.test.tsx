@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -73,5 +73,59 @@ describe('BookPage — elenco degli orari', () => {
     const { container } = renderBookPage({})
     expect(screen.getByText('20:00–21:00')).toBeInTheDocument()
     expect(container.querySelector('[aria-busy="true"]')).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * `window.matchMedia` in jsdom non valuta le media query, e la soglia `lg`
+ * dell'ancora si legge proprio da lì: qui la si decide a mano, una volta per
+ * scenario, così il test dice «schermo stretto» invece di simulare pixel.
+ */
+function stubViewport(wide: boolean) {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query.includes('min-width: 1024px') ? wide : false,
+    media: query,
+    onchange: null,
+    addListener() {}, removeListener() {},
+    addEventListener() {}, removeEventListener() {},
+    dispatchEvent: () => false,
+  }))
+}
+
+describe('BookPage — ancora al riepilogo su schermo stretto', () => {
+  // jsdom non implementa `scrollIntoView`: qui interessa **su cosa** è stato
+  // chiamato, non che qualcosa si sia mosso, quindi si registra `this`.
+  let scrolledInto: Element[]
+  const original = Element.prototype.scrollIntoView
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2025-10-14T08:00:00+02:00'))
+    scrolledInto = []
+    Element.prototype.scrollIntoView = function scrollIntoViewStub(this: Element) {
+      scrolledInto.push(this)
+    }
+  })
+  afterEach(() => {
+    Element.prototype.scrollIntoView = original
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
+  it('scelto un orario, porta la pagina sulla card di conferma', () => {
+    stubViewport(false)
+    const { container } = renderBookPage({})
+
+    expect(scrolledInto).toHaveLength(0)
+    fireEvent.click(screen.getByText('20:00–21:00').closest('button') as HTMLElement)
+
+    expect(scrolledInto).toEqual([container.querySelector('aside')])
+  })
+
+  it('da lg in su non muove la pagina: il riepilogo è già a fianco', () => {
+    stubViewport(true)
+    renderBookPage({})
+
+    fireEvent.click(screen.getByText('20:00–21:00').closest('button') as HTMLElement)
+    expect(scrolledInto).toHaveLength(0)
   })
 })
