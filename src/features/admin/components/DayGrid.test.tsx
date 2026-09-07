@@ -29,4 +29,26 @@ describe('DayGrid', () => {
     render(<DayGrid day={new Date()} onSlotClick={() => {}} />)
     expect(screen.getByText('Campo 1')).toBeInTheDocument()
   })
+
+  it('durante un aggiornamento resta visibile la griglia, non un segnaposto', () => {
+    vi.spyOn(hooks, 'useDayBookings').mockReturnValue({
+      isPending: false,
+      isPlaceholderData: true,
+      fields,
+      bookings: [{
+        id: 'b1', field_id: 'c1', member_name: 'Rossi',
+        slot_start: new Date('2025-10-14T20:00:00+02:00'),
+        slot_end: new Date('2025-10-14T21:30:00+02:00'),
+        source: 'phone', price_cents: 3750, status: 'active',
+      }],
+    } as never)
+
+    const { container } = render(
+      <DayGrid day={new Date('2025-10-14T00:00:00+02:00')} onSlotClick={() => {}} />)
+
+    // Le prenotazioni restano a schermo: niente «Caricamento…» al loro posto.
+    expect(screen.getByText('Rossi')).toBeInTheDocument()
+    expect(screen.queryByText('Caricamento…')).not.toBeInTheDocument()
+    expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument()
+  })
 })

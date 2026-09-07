@@ -80,9 +80,18 @@ export function BookPage() {
   }, [openAfterRestore, session])
 
   const field = fields.find((f) => f.id === fieldId) ?? null
-  const { busy, isPending: busyPending, error: busyError } = useAvailability(day, fieldId)
-  const { prices, isPending: pricesPending, error: pricesError } = useSlotPrices(day, fieldId, minutes)
+  const {
+    busy, isPending: busyPending, isPlaceholderData: busyPlaceholder, error: busyError,
+  } = useAvailability(day, fieldId)
+  const {
+    prices, isPending: pricesPending, isPlaceholderData: pricesPlaceholder, error: pricesError,
+  } = useSlotPrices(day, fieldId, minutes)
   const isPending = busyPending || pricesPending
+  // Vero mentre l'una o l'altra sta ancora servendo i dati della chiave
+  // precedente (giorno, campo o durata cambiati): l'elenco resta quello di
+  // prima, con un segnale discreto, invece di svuotarsi per i millisecondi
+  // della richiesta — vedi placeholderData in useAvailability/useSlotPrices.
+  const isRefreshing = busyPlaceholder || pricesPlaceholder
   const slotsError = busyError ?? pricesError
 
   // Le partenze sono le chiavi che `slot_prices` ha restituito, non una
@@ -186,49 +195,54 @@ export function BookPage() {
                     {field ? ` · ${field.name}` : ''}
                   </span>
                 </div>
-                {slotsError ? (
-                  <div className="p-2.5">
-                    <ErrorNote message={SLOTS_ERROR} />
-                  </div>
-                ) : isPending ? (
-                  <p className="p-4 text-ink-2">Caricamento…</p>
-                ) : slots.length === 0 ? (
-                  <p className="p-4 text-ink-2">
-                    Nessun orario libero per questa durata, in questo giorno.
-                  </p>
-                ) : (
-                  <ul className="flex flex-col gap-1.5 p-2.5">
-                    {slots.map((s) => {
-                      // `slots` è un sottoinsieme delle chiavi di `prices`:
-                      // il prezzo c'è per costruzione, e non esiste più uno
-                      // slot selezionabile senza importo.
-                      const slotPrice = prices.get(s) as number
-                      const selected = s === startMin
-                      return (
-                        <li key={s}>
-                          <button
-                            type="button"
-                            aria-pressed={selected}
-                            onClick={() => setStartMin(s)}
-                            className={
-                              'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition ' +
-                              (selected
-                                ? 'border-pitch bg-pitch-tint text-pitch'
-                                : 'border-line bg-surface text-ink hover:border-pitch')
-                            }
-                          >
-                            <span className="tabular-nums text-[13.5px] font-medium">
-                              {minToLabel(s)}–{minToLabel(s + minutes)}
-                            </span>
-                            <span className="tabular-nums text-[12.5px]">
-                              {formatEuro(slotPrice)}
-                            </span>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
+                <div
+                  className={isRefreshing ? 'opacity-60' : ''}
+                  aria-busy={isRefreshing}
+                >
+                  {slotsError ? (
+                    <div className="p-2.5">
+                      <ErrorNote message={SLOTS_ERROR} />
+                    </div>
+                  ) : isPending ? (
+                    <p className="p-4 text-ink-2">Caricamento…</p>
+                  ) : slots.length === 0 ? (
+                    <p className="p-4 text-ink-2">
+                      Nessun orario libero per questa durata, in questo giorno.
+                    </p>
+                  ) : (
+                    <ul className="flex flex-col gap-1.5 p-2.5">
+                      {slots.map((s) => {
+                        // `slots` è un sottoinsieme delle chiavi di `prices`:
+                        // il prezzo c'è per costruzione, e non esiste più uno
+                        // slot selezionabile senza importo.
+                        const slotPrice = prices.get(s) as number
+                        const selected = s === startMin
+                        return (
+                          <li key={s}>
+                            <button
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => setStartMin(s)}
+                              className={
+                                'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition ' +
+                                (selected
+                                  ? 'border-pitch bg-pitch-tint text-pitch'
+                                  : 'border-line bg-surface text-ink hover:border-pitch')
+                              }
+                            >
+                              <span className="tabular-nums text-[13.5px] font-medium">
+                                {minToLabel(s)}–{minToLabel(s + minutes)}
+                              </span>
+                              <span className="tabular-nums text-[12.5px]">
+                                {formatEuro(slotPrice)}
+                              </span>
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
 

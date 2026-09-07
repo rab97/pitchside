@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { endOfDay, startOfDay } from 'date-fns'
 import { supabase } from '@/shared/lib/supabase'
 import { minutesOfDay } from '@/shared/lib/tz'
@@ -13,9 +13,13 @@ import { parseRange } from '@/shared/lib/range'
 export function useAvailability(day: Date, fieldId: string | null) {
   const facility = useFacility()
 
-  const { data, isPending, error } = useQuery({
+  const { data, isPending, isPlaceholderData, error } = useQuery({
     queryKey: ['busy', facility.id, fieldId, startOfDay(day).toISOString()],
     enabled: !!fieldId,
+    // Cambiando giorno o campo si mostrano ancora gli orari occupati di
+    // prima finché non arrivano i nuovi, invece di svuotare l'elenco per la
+    // durata della richiesta: vedi lo stesso pattern in useDayBookings.
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<[number, number][]> => {
       const { data, error } = await supabase
         .from('busy_slots')
@@ -33,5 +37,5 @@ export function useAvailability(day: Date, fieldId: string | null) {
     },
   })
 
-  return { busy: data ?? [], isPending, error }
+  return { busy: data ?? [], isPending, isPlaceholderData, error }
 }

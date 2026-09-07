@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { supabase } from '@/shared/lib/supabase'
 import { dayKey } from '@/shared/lib/tz'
 
@@ -15,9 +15,12 @@ import { dayKey } from '@/shared/lib/tz'
  * codice: vedi il commento in cima alla migrazione.
  */
 export function useSlotPrices(day: Date, fieldId: string | null, durationMinutes: number) {
-  const { data, isPending, error } = useQuery({
+  const { data, isPending, isPlaceholderData, error } = useQuery({
     queryKey: ['slot-prices', fieldId, dayKey(day), durationMinutes],
     enabled: !!fieldId,
+    // Stesso motivo di useAvailability: cambiando giorno, campo o durata si
+    // conservano i prezzi precedenti finché non arrivano quelli nuovi.
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<Map<number, number>> => {
       const { data, error } = await supabase.rpc('slot_prices', {
         p_field_id: fieldId!,
@@ -29,5 +32,5 @@ export function useSlotPrices(day: Date, fieldId: string | null, durationMinutes
     },
   })
 
-  return { prices: data ?? new Map<number, number>(), isPending, error }
+  return { prices: data ?? new Map<number, number>(), isPending, isPlaceholderData, error }
 }

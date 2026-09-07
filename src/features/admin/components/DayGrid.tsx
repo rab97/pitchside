@@ -21,7 +21,7 @@ export function DayGrid({ day, onSlotClick, onBookingClick }: {
   onSlotClick: (fieldId: string, startMin: number) => void
   onBookingClick?: (booking: BookingRow) => void
 }) {
-  const { fields, bookings, isPending } = useDayBookings(day)
+  const { fields, bookings, isPending, isPlaceholderData } = useDayBookings(day)
   if (isPending) return <div className="p-6 text-muted">Caricamento…</div>
   if (fields.length === 0) {
     return <div className="p-6 text-muted">Nessun campo attivo in questa struttura.</div>
@@ -31,7 +31,10 @@ export function DayGrid({ day, onSlotClick, onBookingClick }: {
   const columns = `52px repeat(${fields.length}, minmax(112px, 1fr))`
 
   return (
-    <div className="overflow-x-auto px-3.5 pb-3.5">
+    <div
+      className={'overflow-x-auto px-3.5 pb-3.5' + (isPlaceholderData ? ' opacity-60' : '')}
+      aria-busy={isPlaceholderData}
+    >
       <div className="grid min-w-[480px] pt-3 pb-1.5" style={{ gridTemplateColumns: columns }}>
         <div />
         {fields.map((f) => (

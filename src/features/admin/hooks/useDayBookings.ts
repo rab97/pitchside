@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { endOfDay, startOfDay } from 'date-fns'
 import { parseRange } from '@/shared/lib/range'
 import { supabase } from '@/shared/lib/supabase'
@@ -55,6 +55,12 @@ export function useDayBookings(day: Date) {
         }
       })
     },
+    // Cambiando giorno si conservano le prenotazioni del giorno precedente
+    // finché non arrivano quelle nuove: senza, la griglia si svuota per i
+    // pochi millisecondi della richiesta e poi si riempie di nuovo — uno
+    // sfarfallio, non un caricamento. `isPlaceholderData` (sotto) segnala
+    // che il contenuto mostrato è ancora quello di prima.
+    placeholderData: keepPreviousData,
   })
 
   // Si invalida la query invece di applicare al volo la riga che arriva dal
@@ -75,5 +81,6 @@ export function useDayBookings(day: Date) {
     fields,
     bookings: bookingsQ.data ?? [],
     isPending: bookingsQ.isPending,
+    isPlaceholderData: bookingsQ.isPlaceholderData,
   }
 }
