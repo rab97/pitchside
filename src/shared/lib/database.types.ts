@@ -605,6 +605,13 @@ export type Database = {
       }
       owns_member: { Args: { p_member_id: string }; Returns: boolean }
       phone_key: { Args: { p_phone: string }; Returns: string }
+      slot_prices: {
+        Args: { p_day: string; p_duration_minutes: number; p_field_id: string }
+        Returns: {
+          price_cents: number
+          start_min: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -2,16 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format, isToday, subHours } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { OPEN_MIN, CLOSE_MIN, STEP } from '@/shared/lib/openingHours'
 import { formatEuro } from '@/shared/lib/money'
 import { parseRange } from '@/shared/lib/range'
-import { dayKey, isoWeekday, minToLabel, minutesOfDay, slotRange } from '@/shared/lib/tz'
+import { dayKey, minToLabel, minutesOfDay, slotRange } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields, type FieldRow } from '@/shared/hooks/useFields'
 import { freeSlots } from '../utils/freeSlots'
-import { estimatePrice } from '../utils/estimatePrice'
 import { useAvailability } from '../hooks/useAvailability'
-import { usePriceBands } from '../hooks/usePriceBands'
+import { useSlotPrices } from '../hooks/useSlotPrices'
 import { DayStrip } from './DayStrip'
 
 const DURATIONS = [60, 90, 120]
@@ -41,16 +39,25 @@ export function BookPage() {
   useEffect(() => { setStartMin(null) }, [fieldId, day, minutes])
 
   const field = fields.find((f) => f.id === fieldId) ?? null
-  const { busy, isPending } = useAvailability(day, fieldId)
-  const bands = usePriceBands(fieldId)
+  const { busy, isPending: busyPending } = useAvailability(day, fieldId)
+  const { prices, isPending: pricesPending } = useSlotPrices(day, fieldId, minutes)
+  const isPending = busyPending || pricesPending
+
+  // L'orario apribile del giorno non è più una costante: è l'insieme delle
+  // partenze che `slot_prices` ha già prezzato, ricavate a sua volta dalle
+  // `price_bands` del campo (vedi supabase/migrations/0014_slot_prices.sql).
+  // Un campo chiuso quel giorno della settimana non ha partenze, e la lista
+  // resta vuota senza bisogno di un caso speciale.
+  const starts = Array.from(prices.keys())
+  const openMin = starts.length > 0 ? Math.min(...starts) : 0
+  const closeMin = starts.length > 0 ? Math.max(...starts) + minutes : 0
 
   const nowMin = isToday(day) ? minutesOfDay(new Date()) : undefined
   const slots = freeSlots({
-    openMin: OPEN_MIN, closeMin: CLOSE_MIN, stepMin: STEP,
+    openMin, closeMin, stepMin: facility.slot_minutes,
     durationMin: minutes, busy, nowMin,
   })
-  const weekday = isoWeekday(day)
-  const price = startMin != null ? estimatePrice(bands, weekday, startMin, minutes) : null
+  const price = startMin != null ? prices.get(startMin) ?? null : null
 
   const cancelDeadline = (() => {
     if (startMin == null) return null
@@ -129,7 +136,7 @@ export function BookPage() {
                 ) : (
                   <ul className="flex flex-col gap-1.5 p-2.5">
                     {slots.map((s) => {
-                      const slotPrice = estimatePrice(bands, weekday, s, minutes)
+                      const slotPrice = prices.get(s) ?? null
                       const selected = s === startMin
                       return (
                         <li key={s}>
