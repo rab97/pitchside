@@ -40,6 +40,15 @@ export function LoginPage() {
     if (error) setError('Codice non valido o scaduto.')
   }
 
+  async function signInWithGoogle() {
+    setError(null)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/prenota` },
+    })
+    if (error) setError('Non siamo riusciti ad aprire l’accesso con Google.')
+  }
+
   return (
     <div className="min-h-screen bg-ground p-0 sm:p-6 grid place-items-center">
       <div className="w-full max-w-[880px] overflow-hidden rounded-card border border-line bg-surface shadow-card grid md:grid-cols-[1.05fr_.95fr]">
@@ -62,6 +71,7 @@ export function LoginPage() {
               error={error}
               onChange={setPhone}
               onSubmit={sendCode}
+              onGoogle={signInWithGoogle}
             />
           )}
         </div>
@@ -120,12 +130,13 @@ function ErrorNote({ error }: { error: string | null }) {
   )
 }
 
-function PhoneForm({ phone, busy, error, onChange, onSubmit }: {
+function PhoneForm({ phone, busy, error, onChange, onSubmit, onGoogle }: {
   phone: string
   busy: boolean
   error: string | null
   onChange: (v: string) => void
   onSubmit: () => void
+  onGoogle: () => void
 }) {
   return (
     <form
@@ -137,6 +148,23 @@ function PhoneForm({ phone, busy, error, onChange, onSubmit }: {
         Ti mandiamo un codice via SMS. Se hai già prenotato al telefono,
         ritrovi tutto il tuo storico.
       </p>
+
+      {/* Google è la strada che vogliamo far prendere: gratuita per noi,
+          l'SMS resta sotto come ripiego per chi non ha un account Google. */}
+      <div className="oauth flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={onGoogle}
+          className="obtn flex items-center justify-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] font-medium text-ink"
+        >
+          <GoogleIcon />
+          Continua con Google
+        </button>
+      </div>
+      <div className="orline flex items-center gap-3 text-[11px] text-muted before:h-px before:flex-1 before:bg-line before:content-[''] after:h-px after:flex-1 after:bg-line after:content-['']">
+        oppure
+      </div>
+
       <Field label="Numero di telefono">
         <input
           className={inputClass}
@@ -158,6 +186,17 @@ function PhoneForm({ phone, busy, error, onChange, onSubmit }: {
         pubblicità.
       </p>
     </form>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+      <path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.3-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14Z" />
+      <path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1Z" />
+    </svg>
   )
 }
 
