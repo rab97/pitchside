@@ -31,7 +31,26 @@ Supabase. Il nome che vede l'utente arriva dai dati della struttura, non da qui.
 
 ## Convenzioni
 - Identificatori in inglese, testo utente e messaggi d'errore in italiano.
-- Un file, una responsabilità. Le query stanno in `*.hooks.ts`, non nei componenti.
+- Un file, una responsabilità.
+- Le query non stanno nei componenti: stanno in `hooks/`, un gancio per file,
+  con il nome che inizia per `use`.
+- Import: `@/...` quando si attraversa il confine di una feature o si va in
+  `shared/`; relativi solo dentro la stessa cartella. Un `../../../shared/lib/tz`
+  è illeggibile e si rompe al primo spostamento.
+
+## Struttura di `src/`
+```
+features/<area>/            admin · booking (cliente) · auth
+  components/               ciò che si disegna
+  hooks/                    ciò che interroga il database
+  utils/                    logica pura, provabile senza database né React
+shared/
+  components/ui/            componenti usati da più aree
+  lib/                      supabase, tz, money, range, database.types
+  tenant/                   risoluzione della struttura e branding
+```
+Una feature non importa dai `components/` di un'altra: ciò che serve a due aree
+si sposta in `shared/`. I test stanno accanto al file che provano.
 
 ## Ambiente locale
 Questa macchina condivide Docker e le porte con altri progetti dell'utente.

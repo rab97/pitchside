@@ -19,7 +19,7 @@
 - **Ogni RPC ha un test sul caso negativo.** Non basta che il proprietario riesca: serve provare che un altro fallisca.
 - **Codici di errore nella classe privata `PS`**, mai in `P0`, che è riservata a PL/pgSQL — `P0004` è `assert_failure` e `when others` non lo cattura.
 - **Denaro in centesimi.** Orari delle fasce in minuti da mezzanotte (0..1440).
-- **Ogni istante è `timestamptz`.** Fuso `Europe/Rome`, dalla costante in `src/lib/tz.ts`.
+- **Ogni istante è `timestamptz`.** Fuso `Europe/Rome`, dalla costante in `src/shared/lib/tz.ts`.
 - **Nessuna `insert`/`update` diretta su `bookings` dal client.** Solo RPC.
 - **RLS attiva su ogni tabella**, nella stessa migrazione che la crea.
 - **Identificatori in inglese, testo utente e messaggi d'errore in italiano.**
@@ -56,21 +56,29 @@ supabase/
     006_recurrences.test.sql      (modificato: idem)
 
 src/
-  public/
-    HomePage.tsx              home pubblica, disponibilità di oggi
-    freeSlots.ts              calcolo delle fasce libere, funzione pura
-    BookPage.tsx              scelta campo, giorno, ora
-    BookPage.hooks.ts         busy_slots + campi + fasce
-    ConfirmBookingDialog.tsx  riepilogo, conferma, accesso se serve
-    MyBookingsPage.tsx        le tue prenotazioni
-    BookingPage.tsx           dettaglio e disdetta lato cliente
-  auth/
-    ClaimPhoneDialog.tsx      telefono, verifica via SMS, rivendicazione
-    useMyMember.ts            il member dell'utente in questa struttura
-  App.tsx                     rotte pubbliche, /admin pigro
+  features/
+    booking/
+      components/
+        HomePage.tsx              home pubblica, disponibilità di oggi
+        BookPage.tsx              scelta campo, giorno, ora
+        ConfirmBookingDialog.tsx  riepilogo, conferma, accesso se serve
+        MyBookingsPage.tsx        le tue prenotazioni
+        BookingPage.tsx           dettaglio e disdetta lato cliente
+      hooks/
+        useAvailability.ts        busy_slots del campo scelto
+        useBookAsMember.ts        create_booking come cliente
+        useMyBookings.ts          le proprie prenotazioni
+      utils/
+        freeSlots.ts              calcolo delle fasce libere, funzione pura
+    auth/
+      components/
+        ClaimPhoneDialog.tsx      telefono, verifica via SMS, rivendicazione
+      hooks/
+        useMyMember.ts            il member dell'utente in questa struttura
+  App.tsx                         rotte pubbliche, /admin pigro
 ```
 
-`freeSlots.ts` è separato da `BookPage.hooks.ts` di proposito: il calcolo delle fasce libere è la sola logica non banale di questa metà del prodotto, e va provato con dati finti invece che con il database.
+`freeSlots.ts` sta in `utils/` e non fra i ganci di proposito: il calcolo delle fasce libere è la sola logica non banale di questa metà del prodotto, e va provato con dati finti invece che con il database.
 
 ---
 
@@ -81,7 +89,7 @@ src/
 - Create: `supabase/tests/007_rpc_authorization.test.sql`
 - Modify: `supabase/tests/004_booking_overlap.test.sql`
 - Modify: `supabase/tests/006_recurrences.test.sql`
-- Modify: `src/admin/useCreateBooking.ts`
+- Modify: `src/features/admin/hooks/useCreateBooking.ts`
 
 **Interfaces:**
 - Consumes: `is_facility_admin(uuid)`, `create_booking(uuid, tstzrange, uuid, text)`, `cancel_booking(uuid, text)` dalla fase 1A
@@ -375,7 +383,7 @@ subito dopo la creazione di quella struttura. Prima di `select * from finish();`
 
 - [ ] **Step 5: Aggiornare i messaggi d'errore del client**
 
-In `src/admin/useCreateBooking.ts`, dentro `MESSAGES`:
+In `src/features/admin/hooks/useCreateBooking.ts`, dentro `MESSAGES`:
 
 ```ts
   PS012: 'Devi accedere per prenotare.',
@@ -415,23 +423,23 @@ git commit -m "fix(db): le RPC di prenotazione autorizzano il chiamante"
 
 **Files:**
 - Modify: `supabase/config.toml`
-- Modify: `src/auth/LoginPage.tsx`
-- Create: `src/auth/LoginPage.test.tsx`
+- Modify: `src/features/auth/components/LoginPage.tsx`
+- Create: `src/features/auth/components/LoginPage.test.tsx`
 - Create: `.env.local.example` (aggiunta di due chiavi)
 
 **Interfaces:**
-- Consumes: `supabase` da `src/lib/supabase.ts`
+- Consumes: `supabase` da `src/shared/lib/supabase.ts`
 - Produces: `toE164(raw: string): string` (già esistente, ora coperta da test); pulsante «Continua con Google» in `LoginPage`
 
 - [ ] **Step 1: Scrivere i test che falliscono**
 
-`src/auth/LoginPage.test.tsx`:
+`src/features/auth/components/LoginPage.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { LoginPage, toE164 } from './LoginPage'
-import * as tenant from '../tenant/FacilityProvider'
+import { LoginPage, toE164 } from '@/features/auth/components/LoginPage'
+import * as tenant from '@/shared/tenant/FacilityProvider'
 
 describe('toE164', () => {
   it('aggiunge il prefisso italiano a un numero nazionale', () => {
@@ -518,8 +526,8 @@ git commit -m "feat(auth): accesso con Google, SMS come ripiego"
 **Files:**
 - Create: `supabase/migrations/0012_member_identity.sql`
 - Create: `supabase/tests/008_member_identity.test.sql`
-- Create: `src/auth/ClaimPhoneDialog.tsx`
-- Create: `src/auth/useMyMember.ts`
+- Create: `src/features/auth/components/ClaimPhoneDialog.tsx`
+- Create: `src/features/auth/hooks/useMyMember.ts`
 
 **Interfaces:**
 - Consumes: `owns_member(uuid)` dal Task 1
@@ -704,9 +712,9 @@ Atteso: `# All 4 tests passed`.
 
 ```ts
 import { useQuery } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
-import { useAuth } from './AuthProvider'
-import { useFacility } from '../tenant/FacilityProvider'
+import { supabase } from '@/shared/lib/supabase'
+import { useAuth } from '@/features/auth/hooks/AuthProvider'
+import { useFacility } from '@/shared/tenant/FacilityProvider'
 
 /** La scheda dell'utente in questa struttura. Null se non ha fatto accesso. */
 export function useMyMember() {
@@ -762,7 +770,7 @@ git commit -m "feat(auth): telefono verificato e ricongiungimento dello storico"
 
 **Files:**
 - Modify: `src/App.tsx`
-- Create: `src/public/HomePage.tsx`
+- Create: `src/features/booking/components/HomePage.tsx`
 
 **Interfaces:**
 - Produces: rotte `/`, `/prenota`, `/prenotazioni`, `/prenotazioni/:id`, `/accedi`; `/admin` caricato con `lazy()`
@@ -775,7 +783,7 @@ In `src/App.tsx`:
 import { lazy, Suspense } from 'react'
 
 const AdminPage = lazy(() =>
-  import('./admin/AdminPage').then((m) => ({ default: m.AdminPage })))
+  import('@/features/admin/components/AdminPage').then((m) => ({ default: m.AdminPage })))
 ```
 
 e avvolgi le rotte in `<Suspense fallback={<div className="p-8 text-muted">Caricamento…</div>}>`.
@@ -799,7 +807,7 @@ Le rotte dei Task 5-9 non esistono ancora: creale come componenti vuoti che rend
 
 - [ ] **Step 3: Implementare `HomePage.tsx`**
 
-Markup come da `docs/mockups/02-catalogo-schermate.html`, area cliente. Contiene: nome e contatti della struttura da `useFacility()`, i campi con tipo e copertura, e un invito a `/prenota`. Nessuna query nuova: i campi arrivano da `useFields()`, già esistente in `src/admin/DayGrid.hooks.ts`.
+Markup come da `docs/mockups/02-catalogo-schermate.html`, area cliente. Contiene: nome e contatti della struttura da `useFacility()`, i campi con tipo e copertura, e un invito a `/prenota`. Nessuna query nuova: i campi arrivano da `useFields()`, già esistente in `src/features/admin/hooks/useFields.ts`.
 
 - [ ] **Step 4: Verificare che il pacchetto si sia diviso**
 
@@ -820,19 +828,19 @@ git commit -m "feat(app): rotte pubbliche e pannello a caricamento pigro"
 ### Task 5: Il calcolo delle fasce libere
 
 **Files:**
-- Create: `src/public/freeSlots.ts`
-- Create: `src/public/freeSlots.test.ts`
+- Create: `src/features/booking/utils/freeSlots.ts`
+- Create: `src/features/booking/utils/freeSlots.test.ts`
 
 **Interfaces:**
 - Produces: `freeSlots(input: FreeSlotsInput): number[]` — minuti di inizio delle fasce prenotabili
 
 - [ ] **Step 1: Scrivere i test che falliscono**
 
-`src/public/freeSlots.test.ts`:
+`src/features/booking/utils/freeSlots.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { freeSlots } from './freeSlots'
+import { freeSlots } from '@/features/booking/utils/freeSlots'
 
 const base = { openMin: 15 * 60, closeMin: 24 * 60, stepMin: 30, durationMin: 60 }
 
@@ -936,11 +944,11 @@ git commit -m "feat(cliente): calcolo delle fasce libere"
 ### Task 6: La schermata Prenota
 
 **Files:**
-- Create: `src/public/BookPage.hooks.ts`
-- Create: `src/public/BookPage.tsx`
+- Create: `src/features/booking/hooks/useAvailability.ts`
+- Create: `src/features/booking/components/BookPage.tsx`
 
 **Interfaces:**
-- Consumes: `freeSlots()` dal Task 5, `useFields()` da `src/admin/DayGrid.hooks.ts`, `parseRange()` idem
+- Consumes: `freeSlots()` dal Task 5, `useFields()` da `src/features/admin/hooks/useFields.ts`, `parseRange()` idem
 - Produces: `useAvailability(day: Date, fieldId: string | null): { busy: [number, number][]; isPending: boolean }`
 
 - [ ] **Step 1: Implementare `BookPage.hooks.ts`**
@@ -950,10 +958,10 @@ Legge la vista pubblica, non la tabella: funziona anche senza account.
 ```ts
 import { useQuery } from '@tanstack/react-query'
 import { endOfDay, startOfDay } from 'date-fns'
-import { supabase } from '../lib/supabase'
-import { minutesOfDay } from '../lib/tz'
-import { useFacility } from '../tenant/FacilityProvider'
-import { parseRange } from '../admin/DayGrid.hooks'
+import { supabase } from '@/shared/lib/supabase'
+import { minutesOfDay } from '@/shared/lib/tz'
+import { useFacility } from '@/shared/tenant/FacilityProvider'
+import { parseRange } from '@/shared/lib/range'
 
 export function useAvailability(day: Date, fieldId: string | null) {
   const facility = useFacility()
@@ -1004,21 +1012,21 @@ git commit -m "feat(cliente): schermata di prenotazione con disponibilità pubbl
 ### Task 7: Confermare la prenotazione
 
 **Files:**
-- Create: `src/public/ConfirmBookingDialog.tsx`
-- Create: `src/public/useBookAsMember.ts`
-- Create: `src/public/useBookAsMember.test.ts`
+- Create: `src/features/booking/components/ConfirmBookingDialog.tsx`
+- Create: `src/features/booking/hooks/useBookAsMember.ts`
+- Create: `src/features/booking/hooks/useBookAsMember.test.ts`
 
 **Interfaces:**
-- Consumes: `useMyMember()` dal Task 3, `create_booking` dal Task 1, `slotRange()` da `src/lib/tz.ts`
+- Consumes: `useMyMember()` dal Task 3, `create_booking` dal Task 1, `slotRange()` da `src/shared/lib/tz.ts`
 - Produces: `useBookAsMember(): { mutateAsync, isPending }`
 
 - [ ] **Step 1: Scrivere il test che fallisce**
 
-`src/public/useBookAsMember.test.ts`:
+`src/features/booking/hooks/useBookAsMember.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { messageForCustomer } from './useBookAsMember'
+import { messageForCustomer } from '@/features/booking/hooks/useBookAsMember'
 
 describe('messageForCustomer', () => {
   it('la collisione diventa una frase, non un codice', () => {
@@ -1048,8 +1056,8 @@ I messaggi sono diversi da quelli del gestore: lo stesso codice, letto da un cli
 
 ```ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
-import { slotRange } from '../lib/tz'
+import { supabase } from '@/shared/lib/supabase'
+import { slotRange } from '@/shared/lib/tz'
 
 const MESSAGES: Record<string, string> = {
   PS003: 'Il campo è chiuso in quell’orario.',
@@ -1117,13 +1125,13 @@ git commit -m "feat(cliente): conferma della prenotazione"
 ### Task 8: Le tue prenotazioni
 
 **Files:**
-- Create: `src/public/MyBookingsPage.tsx`
-- Create: `src/public/MyBookingsPage.hooks.ts`
+- Create: `src/features/booking/components/MyBookingsPage.tsx`
+- Create: `src/features/booking/hooks/useMyBookings.ts`
 
 **Interfaces:**
 - Produces: il tipo `MyBooking` e `useMyBookings(): { future: MyBooking[]; past: MyBooking[]; isPending: boolean }`
 
-`MyBooking` è un tipo suo, non il `BookingRow` di `src/admin/DayGrid.hooks.ts`: quello porta nome e telefono del cliente perché serve al gestore, questo porta il nome del campo perché serve a chi ha prenotato. Riusarlo obbligherebbe a riempire di `null` metà delle sue proprietà.
+`MyBooking` è un tipo suo, non il `BookingRow` di `src/features/admin/hooks/useFields.ts`: quello porta nome e telefono del cliente perché serve al gestore, questo porta il nome del campo perché serve a chi ha prenotato. Riusarlo obbligherebbe a riempire di `null` metà delle sue proprietà.
 
 - [ ] **Step 1: Implementare `MyBookingsPage.hooks.ts`**
 
@@ -1147,7 +1155,7 @@ const { data, error } = await supabase
   .order('slot', { ascending: false })
 ```
 
-Converti ogni riga con `parseRange()` di `src/admin/DayGrid.hooks.ts`, come fa la griglia.
+Converti ogni riga con `parseRange()` di `src/features/admin/hooks/useFields.ts`, come fa la griglia.
 
 Dividi in future e passate confrontando `slot_start` con adesso. Le disdette restano visibili fra le passate, con l'etichetta: sparire non è la stessa cosa che essere disdetta, e il cliente deve ritrovarle.
 
@@ -1171,10 +1179,10 @@ git commit -m "feat(cliente): le tue prenotazioni"
 ### Task 9: Dettaglio e disdetta lato cliente
 
 **Files:**
-- Create: `src/public/BookingPage.tsx`
+- Create: `src/features/booking/components/BookingPage.tsx`
 
 **Interfaces:**
-- Consumes: `useCancelBooking()` e `isLateCancel()` da `src/admin/useCancelBooking.ts`, `cancel_booking` corretta dal Task 1
+- Consumes: `useCancelBooking()` e `isLateCancel()` da `src/features/admin/hooks/useCancelBooking.ts`, `cancel_booking` corretta dal Task 1
 
 - [ ] **Step 1: Implementare `BookingPage.tsx`**
 
