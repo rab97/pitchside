@@ -22,6 +22,17 @@ export function dayKey(d: Date): string {
 }
 
 /**
+ * Un istante → giorno ISO nel fuso della struttura: 1 lunedì … 7 domenica,
+ * come `extract(isodow from …)` in Postgres. Le fasce di `price_bands`
+ * indicizzano i giorni così, non con la domenica a 0 di `Date.getDay()`.
+ */
+export function isoWeekday(d: Date): number {
+  const local = toZonedTime(d, TZ)
+  const day = local.getDay()
+  return day === 0 ? 7 : day
+}
+
+/**
  * Costruisce il letterale tstzrange che Postgres si aspetta, semiaperto:
  * l'estremo destro è escluso, per questo due slot adiacenti non collidono.
  *

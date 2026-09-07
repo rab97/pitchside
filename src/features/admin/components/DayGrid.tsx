@@ -1,12 +1,7 @@
 import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
+import { OPEN_MIN, CLOSE_MIN, STEP } from '@/shared/lib/openingHours'
 import { BookingCell } from './BookingCell'
 import { useDayBookings, type BookingRow } from '../hooks/useDayBookings'
-
-// Orario di apertura del Palacalcetto. In fase 1B arriva dalla struttura:
-// oggi non esiste ancora una colonna che lo dica.
-export const OPEN_MIN = 15 * 60   // 15:00
-export const CLOSE_MIN = 24 * 60  // 24:00
-export const STEP = 30
 
 // minutesOfDay converte nel fuso della struttura: usare getHours() darebbe
 // la riga sbagliata su un dispositivo con fuso diverso.
