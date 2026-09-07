@@ -66,10 +66,18 @@ begin
         )
       );
       return next;
-    exception when others then
+    exception when sqlstate 'PS005' then
       -- PS005: un tratto dello slot cade in un buco fra due fasce dello
       -- stesso giorno (l'unione copre l'apertura, non garantisce che sia
       -- continua). Si salta quella partenza, non tutta la giornata.
+      --
+      -- Solo questo codice si cattura. `calc_booking_price` solleva PS001
+      -- anche quando il suo contatore di sicurezza supera le 100 iterazioni,
+      -- cioe' quando le price_bands sono configurate in modo incoerente: un
+      -- `when others` avrebbe fatto sparire in silenzio quella fascia dalla
+      -- lista, facendo sembrare un difetto di configurazione un giorno
+      -- normale senza tariffa. Un errore del genere deve propagare, non
+      -- essere inghiottito qui.
       null;
     end;
     v_start := v_start + v_slot_minutes;

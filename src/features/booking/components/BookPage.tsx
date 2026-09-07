@@ -84,7 +84,7 @@ export function BookPage() {
       </header>
 
       <main className="mx-auto max-w-[1140px] px-4 py-6 sm:px-6">
-        <p className="tabular-nums text-[11px] uppercase tracking-[.14em] text-pitch">
+        <p className="text-[11px] uppercase tracking-[.14em] text-pitch">
           {facility.name}
         </p>
         <h1 className="mt-1.5 text-2xl font-semibold tracking-[-.02em]">Prenota</h1>
@@ -255,7 +255,7 @@ function FieldPicker({ fields, selected, onSelect }: {
             }
           >
             <span className="block text-[13px] font-medium">{f.name}</span>
-            <span className="block tabular-nums text-[10.5px] text-muted">
+            <span className="block text-[10.5px] text-muted">
               {fieldKind(f.kind)} · {f.covered ? 'coperto' : 'scoperto'}
             </span>
           </button>

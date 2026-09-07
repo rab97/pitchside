@@ -55,11 +55,15 @@ select is(
   17, 'una partenza ogni 30 minuti da 15:00 a 23:00 incluse'
 );
 
--- la disponibilità si guarda senza account: anon deve poter eseguire la RPC.
-select ok(
-  has_function_privilege('anon', 'public.slot_prices(uuid,date,integer)', 'execute'),
-  'anon può eseguire slot_prices'
+-- la disponibilità si guarda senza account: non basta che il grant esista
+-- nel catalogo, anon deve poter chiamare la RPC davvero e ricevere le righe.
+set local role anon;
+select is(
+  (select count(*)::integer from public.slot_prices(
+     'aaaaaaaa-0000-0000-0000-000000000001', '2025-10-14'::date, 60)),
+  17, 'anon esegue slot_prices e riceve le partenze'
 );
+reset role;
 
 select * from finish();
 rollback;
