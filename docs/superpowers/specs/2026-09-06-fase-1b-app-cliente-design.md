@@ -301,3 +301,66 @@ Fino ad allora si lavora con l'ambiente locale: i numeri di prova in
 - Specifica di progetto: `docs/superpowers/specs/2026-09-05-prenota-campi-design.md`
 - Piano fase 1A: `docs/superpowers/plans/2026-09-05-fase-1a-prenotazioni.md`
 - Mockup: `docs/mockups/` — schermate cliente e rotte reali
+
+---
+
+## 11. Note di messa in produzione
+
+Emerse dal riesame finale del branch, il 7 settembre 2026. Non sono difetti aperti:
+sono cose che si pagano al primo cliente reale se nessuno le sa.
+
+### Prima di importare l'anagrafica del Palacalcetto
+
+La migrazione `0016_member_adoption.sql` sostituisce l'indice unico sui telefoni
+con uno su `phone_key(phone)`, cioè sulle ultime dieci cifre. Serve perché il
+gestore scrive «347 220 15 63» e gotrue scrive «393472201563», e il
+ricongiungimento dello storico li deve riconoscere come lo stesso numero.
+
+Conseguenza: due schede il cui numero coincide nelle ultime dieci cifre dentro
+la stessa struttura non possono più convivere. Sui dati di prova non ce ne sono.
+Sull'anagrafica vera, **prima** dell'importazione, va eseguito:
+
+```sql
+select facility_id, public.phone_key(phone), count(*)
+from public.members
+where phone is not null
+group by 1, 2 having count(*) > 1;
+```
+
+Se restituisce righe, quelle schede vanno fuse a mano prima di applicare la
+migrazione: altrimenti la `create unique index` fallisce e la migrazione si
+ferma. È il comportamento voluto — meglio fermarsi che collegare l'account
+sbagliato a uno storico.
+
+### Da sistemare quando si tocca il codice, non prima
+
+Tre residui da una riga ciascuno, tutti di gravità bassa:
+
+1. `claim_members_by_verified_phone()` restituisce `setof members`, quindi anche
+   la colonna `notes`, che la `0004` dichiara «note interne: mai esposte al
+   cliente». Il client usa solo il conteggio. Farle restituire un `integer`
+   chiude la questione.
+2. La stessa funzione, adottando la scheda storica, scarta l'email dell'account.
+   Non è una perdita — vive in `auth.users` — ma il gestore preferisce averla
+   nell'anagrafica: un `coalesce` nell'`update` che già scrive il telefono.
+3. Il confine dell'orizzonte di prenotazione è corretto perché la sessione del
+   database è in UTC: `now() + make_interval(days => n)` vale n × 24 ore solo
+   così. Renderlo incondizionato con `make_interval(hours => n * 24)` in
+   `create_booking` toglie l'ipotesi.
+
+### Da provare al primo ambiente con credenziali Google
+
+Il giro OAuth non è mai stato eseguito: in locale non esistono credenziali. Sono
+mai stati provati il reindirizzamento vero, `skip_nonce_check`, e il fatto che
+`raw_user_meta_data->>'full_name'` arrivi popolato da Google. Va verificato
+insieme al passaggio di `skip_nonce_check` a `false` nel dashboard di
+produzione: in `config.toml` resta `true` perché serve all'accesso Google in
+locale, e quel file configura solo l'ambiente di sviluppo.
+
+### Una cosa che compare dove non serve
+
+`ClaimPhoneDialog` è montato in `App.tsx`, fuori dalle rotte, quindi si apre
+anche su `/admin`: un gestore entrato con Google e senza numero verificato si
+vede chiedere «Hai già prenotato al telefono?» sopra la griglia. Non è un
+problema di sicurezza e si chiude con «Non ora». Si risolve con una guardia su
+`isAdmin` o montandolo dentro un contenitore delle sole rotte cliente.
