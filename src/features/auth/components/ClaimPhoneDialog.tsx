@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Dialog } from '@/shared/components/ui/Dialog'
+import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { supabase } from '@/shared/lib/supabase'
 import { useAuth } from '@/features/auth/hooks/AuthProvider'
 import { toE164 } from './LoginPage'
@@ -8,16 +9,24 @@ import { toE164 } from './LoginPage'
 type Step = 'phone' | 'code' | 'done'
 
 /**
- * Chi entra con Google non ha mai dato un numero: senza, non c'è modo di
- * ritrovare le schede che il gestore ha creato al telefono negli anni. Si
- * apre dopo il primo accesso, quando `session.user.phone` è vuoto, e chiede
- * il numero solo per verificarlo — la rivendicazione vera e propria non
- * accetta parametri, legge il numero da dove l'ha scritto Supabase.
+ * Il telefono e il ricongiungimento dello storico, per tutte le rotte
+ * cliente: è `App` a montarlo, una volta, dentro i provider e fuori dalle
+ * rotte, perché la domanda vale su qualunque schermata (spec 1B §2.2, §5.4).
+ *
+ * I due percorsi d'accesso arrivano qui in stati diversi:
+ *
+ * - **Google**: nessun numero. Si chiede, si verifica con un SMS, e solo dopo
+ *   si rivendica — la funzione del database legge il numero dal token, non da
+ *   questo campo di testo, ed è per quello che non accetta parametri.
+ * - **SMS**: il numero è già verificato da prima del primo accesso. Non gli
+ *   si chiede niente, ma la rivendicazione non era mai stata fatta per lui:
+ *   parte da sé, in silenzio, e il dialogo si apre solo se ha trovato
+ *   qualcosa da mostrare.
  */
 export function ClaimPhoneDialog() {
   const { session } = useAuth()
   const qc = useQueryClient()
-  const [dismissed, setDismissed] = useState(false)
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null)
   const [step, setStep] = useState<Step>('phone')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
@@ -25,10 +34,37 @@ export function ClaimPhoneDialog() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const open = !!session && !session.user.phone && !dismissed
+  const userId = session?.user.id ?? null
+  // Solo un numero confermato conta: `phone` senza `phone_confirmed_at` è la
+  // verifica a metà di chi ha chiuso la pagina dopo il primo passo, e va
+  // richiesto di nuovo. È la stessa condizione che guarda il database.
+  const verifiedPhone = session?.user.phone_confirmed_at ? session.user.phone : null
+  const dismissed = !!userId && dismissedFor === userId
+  const open = !!session && !dismissed && (!verifiedPhone || step === 'code' || step === 'done')
+
+  // La rivendicazione per chi è entrato via SMS. Il `ref` tiene l'utente per
+  // cui è già partita: senza, i doppi effetti di StrictMode la chiamerebbero
+  // due volte, e ogni cambio di sessione la ripeterebbe. Un errore qui resta
+  // silenzioso di proposito — nessuno ha chiesto niente, e un avviso su una
+  // schermata che l'utente non ha toccato spaventerebbe senza dire cosa fare;
+  // se non ha trovato nulla, il dialogo non si apre nemmeno.
+  const claimedFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (!userId || !verifiedPhone || claimedFor.current === userId) return
+    claimedFor.current = userId
+    supabase.rpc('claim_members_by_verified_phone').then(({ data, error }) => {
+      if (error) return
+      qc.invalidateQueries({ queryKey: ['my-member'] })
+      qc.invalidateQueries({ queryKey: ['my-bookings'] })
+      if (data && data.length > 0) {
+        setClaimedCount(data.length)
+        setStep('done')
+      }
+    })
+  }, [userId, verifiedPhone, qc])
 
   function close() {
-    setDismissed(true)
+    setDismissedFor(userId)
     setStep('phone')
     setPhone('')
     setCode('')
@@ -60,6 +96,7 @@ export function ClaimPhoneDialog() {
 
     // Solo ora si rivendica: la funzione legge il numero dal token, non da
     // qui, ed è per questo che non prende parametri.
+    claimedFor.current = userId
     const { data, error: claimError } = await supabase.rpc('claim_members_by_verified_phone')
     setBusy(false)
     if (claimError) {
@@ -68,6 +105,7 @@ export function ClaimPhoneDialog() {
     }
 
     qc.invalidateQueries({ queryKey: ['my-member'] })
+    qc.invalidateQueries({ queryKey: ['my-bookings'] })
 
     const count = data?.length ?? 0
     if (count === 0) {
@@ -116,15 +154,6 @@ const buttonClass =
   'w-full rounded-lg bg-pitch px-3 py-2.5 text-center text-sm font-medium ' +
   'text-white transition disabled:opacity-50'
 
-function ErrorNote({ error }: { error: string | null }) {
-  if (!error) return null
-  return (
-    <p role="alert" className="rounded-lg border border-terra bg-terra-tint px-3 py-2 text-[12.5px] text-terra">
-      {error}
-    </p>
-  )
-}
-
 function PhoneStep({ phone, busy, error, onChange, onSubmit, onSkip }: {
   phone: string
   busy: boolean
@@ -157,7 +186,7 @@ function PhoneStep({ phone, busy, error, onChange, onSubmit, onSkip }: {
           onChange={(e) => onChange(e.target.value)}
         />
       </label>
-      <ErrorNote error={error} />
+      <ErrorNote message={error} />
       <button className={buttonClass} type="submit" disabled={busy || phone.replace(/\D/g, '').length < 9}>
         {busy ? 'Invio…' : 'Mandami il codice'}
       </button>
@@ -222,7 +251,7 @@ function CodeStep({ phone, code, busy, error, onChange, onSubmit, onBack }: {
         </div>
       </div>
 
-      <ErrorNote error={error} />
+      <ErrorNote message={error} />
       <button className={buttonClass} type="submit" disabled={busy || code.length < 6}>
         {busy ? 'Verifica…' : 'Conferma'}
       </button>

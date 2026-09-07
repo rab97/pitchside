@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/features/auth/hooks/AuthProvider'
 import { RequireAdmin } from '@/features/auth/components/RequireAdmin'
 import { LoginPage } from '@/features/auth/components/LoginPage'
+import { ClaimPhoneDialog } from '@/features/auth/components/ClaimPhoneDialog'
 import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { FacilityProvider } from '@/shared/tenant/FacilityProvider'
 import { HomePage } from '@/features/booking/components/HomePage'
@@ -28,6 +29,11 @@ export function App() {
       <BrowserRouter>
         <FacilityProvider>
           <AuthProvider>
+            {/* Dentro i provider e fuori dalle rotte: la domanda sul telefono
+                e il ricongiungimento dello storico valgono per tutte le rotte
+                cliente autenticate, non per una schermata sola. È il
+                componente a decidere da sé se aprirsi, e per chi. */}
+            <ClaimPhoneDialog />
             <Suspense fallback={<div className="p-8 text-muted">Caricamento…</div>}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
