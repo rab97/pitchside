@@ -438,7 +438,7 @@ git commit -m "fix(db): le RPC di prenotazione autorizzano il chiamante"
 ```tsx
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { LoginPage, toE164 } from '@/features/auth/components/LoginPage'
+import { LoginPage, toE164 } from './LoginPage'
 import * as tenant from '@/shared/tenant/FacilityProvider'
 
 describe('toE164', () => {
@@ -840,7 +840,7 @@ git commit -m "feat(app): rotte pubbliche e pannello a caricamento pigro"
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { freeSlots } from '@/features/booking/utils/freeSlots'
+import { freeSlots } from './freeSlots'
 
 const base = { openMin: 15 * 60, closeMin: 24 * 60, stepMin: 30, durationMin: 60 }
 
@@ -1026,7 +1026,7 @@ git commit -m "feat(cliente): schermata di prenotazione con disponibilità pubbl
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { messageForCustomer } from '@/features/booking/hooks/useBookAsMember'
+import { messageForCustomer } from './useBookAsMember'
 
 describe('messageForCustomer', () => {
   it('la collisione diventa una frase, non un codice', () => {
