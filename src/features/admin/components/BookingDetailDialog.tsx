@@ -106,7 +106,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
                 type="button"
                 disabled={cancel.isPending}
                 onClick={doCancel}
-                className="rounded-[7px] bg-terra px-3 py-1.5 font-medium text-white transition-colors hover:bg-terra-strong disabled:opacity-50 disabled:hover:bg-terra"
+                className="rounded-[7px] bg-terra px-3 py-1.5 font-medium text-on-terra transition-colors hover:bg-terra-strong"
               >
                 {cancel.isPending ? 'Disdico…' : 'Conferma la disdetta'}
               </button>

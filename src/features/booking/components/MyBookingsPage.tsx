@@ -31,7 +31,7 @@ export function MyBookingsPage() {
         <div className="mx-auto flex max-w-[1140px] items-center gap-3 px-4 py-3.5 sm:px-6">
           <Link to="/" className="flex items-center gap-3">
             <div
-              className="grid h-8 w-8 place-items-center rounded-full bg-pitch text-sm font-semibold text-white"
+              className="grid h-8 w-8 place-items-center rounded-full bg-pitch text-sm font-semibold text-on-pitch"
               aria-hidden
             >
               {facility.name.charAt(0)}

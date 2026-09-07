@@ -239,7 +239,7 @@ export function NewBookingDialog({ target, onClose }: {
           <button
             type="submit"
             disabled={create.isPending || createRecurrence.isPending || !name.trim()}
-            className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch"
+            className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
           >
             {create.isPending || createRecurrence.isPending ? 'Salvo…' : 'Conferma'}
           </button>

@@ -129,7 +129,7 @@ export function ConfirmBookingDialog({
             type="button"
             onClick={confirm}
             disabled={disabled}
-            className="rounded-lg bg-pitch px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch"
+            className="rounded-lg bg-pitch px-4 py-2 text-[13px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
           >
             {book.isPending ? 'Confermo…' : 'Conferma'}
           </button>

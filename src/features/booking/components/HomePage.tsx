@@ -26,7 +26,7 @@ export function HomePage() {
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1140px] items-center gap-3 px-4 py-3.5 sm:px-6">
           <div
-            className="grid h-8 w-8 place-items-center rounded-full bg-pitch text-sm font-semibold text-white"
+            className="grid h-8 w-8 place-items-center rounded-full bg-pitch text-sm font-semibold text-on-pitch"
             aria-hidden
           >
             {facility.name.charAt(0)}
@@ -58,7 +58,7 @@ export function HomePage() {
 
         <Link
           to="/prenota"
-          className="mt-6 inline-block rounded-lg bg-pitch px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-pitch-strong"
+          className="mt-6 inline-block rounded-lg bg-pitch px-5 py-2.5 text-sm font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
         >
           Prenota un campo →
         </Link>

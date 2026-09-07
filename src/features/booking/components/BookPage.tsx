@@ -144,7 +144,7 @@ export function BookPage() {
         <div className="mx-auto flex max-w-[1140px] items-center gap-3 px-4 py-3.5 sm:px-6">
           <Link to="/" className="flex items-center gap-3">
             <div
-              className="grid h-8 w-8 place-items-center rounded-full bg-pitch text-sm font-semibold text-white"
+              className="grid h-8 w-8 place-items-center rounded-full bg-pitch text-sm font-semibold text-on-pitch"
               aria-hidden
             >
               {facility.name.charAt(0)}
@@ -189,7 +189,7 @@ export function BookPage() {
                       className={
                         'flex-1 rounded-lg border py-2 text-center text-[13px] transition-colors ' +
                         (minutes === d
-                          ? 'border-pitch bg-pitch text-white'
+                          ? 'border-pitch bg-pitch text-on-pitch'
                           : 'border-line bg-surface text-ink-2 hover:border-pitch')
                       }
                     >
@@ -316,7 +316,7 @@ export function BookPage() {
                       }
                       setConfirmOpen(true)
                     }}
-                    className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch"
+                    className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
                   >
                     Conferma
                   </button>
@@ -335,7 +335,7 @@ export function BookPage() {
                   <button
                     type="button"
                     disabled
-                    className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-white"
+                    className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-on-pitch"
                   >
                     Conferma
                   </button>

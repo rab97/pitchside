@@ -62,7 +62,7 @@ export function AdminPage() {
                 disabled={isToday(day)}
                 aria-label="Torna a oggi"
                 onClick={() => setDay(new Date())}
-                className="ml-1 h-6 rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-pitch hover:text-pitch disabled:border-line-soft disabled:bg-surface-2 disabled:text-muted disabled:hover:border-line-soft disabled:hover:text-muted"
+                className="ml-1 h-6 rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
               >
                 Oggi
               </button>

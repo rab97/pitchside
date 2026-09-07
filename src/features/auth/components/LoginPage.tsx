@@ -144,7 +144,7 @@ const inputClass =
 
 const buttonClass =
   'w-full rounded-lg bg-pitch px-3 py-2.5 text-center text-sm font-medium ' +
-  'text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch'
+  'text-on-pitch transition-colors hover:bg-pitch-strong'
 
 function ErrorNote({ error }: { error: string | null }) {
   if (!error) return null
