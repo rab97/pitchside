@@ -256,8 +256,13 @@ otp_expiry = 3600
 [auth.sms]
 # Il telefono e' l'identita' del prodotto: la registrazione via SMS e' aperta.
 enable_signup = true
-# In locale non si conferma nulla: il codice arriva dalla mappa test_otp.
-enable_confirmations = false
+# Da questo campo dipende la sicurezza del ricongiungimento: con le
+# conferme disattivate, updateUser({phone}) scriverebbe subito
+# phone_confirmed_at senza che nessuno abbia verificato niente, e
+# claim_members_by_verified_phone() si fida esattamente di quel campo.
+# A true, updateUser mette il numero in phone_change e serve comunque
+# verifyOtp col codice (dalla mappa test_otp in locale) per confermarlo.
+enable_confirmations = true
 template = "Il tuo codice per Prenota Campi e' {{ .Code }}"
 max_frequency = "5s"
 
