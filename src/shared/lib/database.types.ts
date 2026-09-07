@@ -513,6 +513,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_members_by_verified_phone: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string | null
+          facility_id: string
+          honored_count: number
+          id: string
+          kind: string
+          missed_count: number
+          name: string
+          notes: string | null
+          phone: string | null
+          price_list: string
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "members"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       create_booking: {
         Args: {
           p_field_id: string
@@ -543,6 +566,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      ensure_my_member: { Args: { p_facility: string }; Returns: string }
       find_members_by_phone: {
         Args: { p_phone: string }
         Returns: {
@@ -580,6 +604,7 @@ export type Database = {
         Returns: number
       }
       owns_member: { Args: { p_member_id: string }; Returns: boolean }
+      phone_key: { Args: { p_phone: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
