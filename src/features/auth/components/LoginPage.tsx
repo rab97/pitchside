@@ -144,7 +144,7 @@ const inputClass =
 
 const buttonClass =
   'w-full rounded-lg bg-pitch px-3 py-2.5 text-center text-sm font-medium ' +
-  'text-white transition disabled:opacity-50'
+  'text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch'
 
 function ErrorNote({ error }: { error: string | null }) {
   if (!error) return null
@@ -180,7 +180,7 @@ function PhoneForm({ phone, busy, error, onChange, onSubmit, onGoogle }: {
         <button
           type="button"
           onClick={onGoogle}
-          className="obtn flex items-center justify-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] font-medium text-ink"
+          className="obtn flex items-center justify-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] font-medium text-ink transition-colors hover:border-pitch hover:text-pitch"
         >
           <GoogleIcon />
           Continua con Google
@@ -247,7 +247,7 @@ function OtpForm({ phone, code, busy, error, onChange, onSubmit, onBack }: {
       </h1>
       <p className="-mt-1.5 text-[13px] leading-[1.55] text-muted">
         L’abbiamo mandato al {phone}.{' '}
-        <button type="button" className="text-pitch underline" onClick={onBack}>
+        <button type="button" className="text-pitch underline transition-colors hover:text-pitch-strong" onClick={onBack}>
           Numero sbagliato?
         </button>
       </p>

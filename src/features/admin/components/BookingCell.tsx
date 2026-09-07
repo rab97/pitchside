@@ -27,7 +27,15 @@ export function BookingCell({ booking, column, rowStart, rowEnd, onClick }: {
       type="button"
       onClick={() => onClick?.(booking)}
       style={{ gridColumn: column, gridRow: `${rowStart} / ${rowEnd}` }}
-      className={`z-10 mt-[2px] mb-[2px] ml-[1px] mr-[3px] flex flex-col justify-center gap-px overflow-hidden rounded-md border-l-[3px] px-[7px] py-1 text-left ${tone}`}
+      // Le quattro varianti di TONE cambiano tinta, non un solo hover scritto
+      // andrebbe bene per tutte. Un anello interno in `currentColor` risolve
+      // il problema senza quattro regole: prende il colore del testo di
+      // ciascun tono (già diverso per tema, come --pitch/--terra sopra) e lo
+      // usa per infoltire il bordo, invece di sostituire lo sfondo. Il
+      // progetto non definisce una variante `dark:` (i temi passano da
+      // `data-theme`, non da quella), quindi qualunque hover qui deve
+      // adattarsi da solo al tema — `currentColor` lo fa gratis.
+      className={`z-10 mt-[2px] mb-[2px] ml-[1px] mr-[3px] flex flex-col justify-center gap-px overflow-hidden rounded-md border-l-[3px] px-[7px] py-1 text-left transition-shadow hover:shadow-[inset_0_0_0_1px_currentColor] ${tone}`}
     >
       <div className="truncate text-[11.5px] font-medium leading-[1.25]">
         {booking.member_name}

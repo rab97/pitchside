@@ -187,10 +187,10 @@ export function BookPage() {
                       aria-pressed={minutes === d}
                       onClick={() => selectMinutes(d)}
                       className={
-                        'flex-1 rounded-lg border py-2 text-center text-[13px] ' +
+                        'flex-1 rounded-lg border py-2 text-center text-[13px] transition-colors ' +
                         (minutes === d
                           ? 'border-pitch bg-pitch text-white'
-                          : 'border-line bg-surface text-ink-2')
+                          : 'border-line bg-surface text-ink-2 hover:border-pitch')
                       }
                     >
                       {d === 60 ? '1h' : d === 90 ? '1h 30' : '2h'}
@@ -316,7 +316,7 @@ export function BookPage() {
                       }
                       setConfirmOpen(true)
                     }}
-                    className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-white disabled:opacity-50"
+                    className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch"
                   >
                     Conferma
                   </button>

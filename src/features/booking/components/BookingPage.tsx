@@ -101,7 +101,7 @@ function BookingDetail({ id }: { id: string | undefined }) {
       <div className="rounded-card border border-line bg-surface p-6 shadow-card">
         <p className="text-ink-2">
           Questa prenotazione non esiste.{' '}
-          <Link to="/prenotazioni" className="font-medium text-pitch underline">
+          <Link to="/prenotazioni" className="font-medium text-pitch underline transition-colors hover:text-pitch-strong">
             Torna alle tue prenotazioni →
           </Link>
         </p>
@@ -157,7 +157,7 @@ function BookingDetail({ id }: { id: string | undefined }) {
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="w-full rounded-lg border border-terra py-2 text-sm text-terra"
+              className="w-full rounded-lg border border-terra py-2 text-sm text-terra transition-colors hover:bg-terra-tint"
             >
               Disdici la prenotazione
             </button>
@@ -170,7 +170,7 @@ function BookingDetail({ id }: { id: string | undefined }) {
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
-                  className="rounded-[7px] border border-line px-3 py-1.5 text-ink-2"
+                  className="rounded-[7px] border border-line px-3 py-1.5 text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
                 >
                   Annulla
                 </button>
@@ -178,7 +178,7 @@ function BookingDetail({ id }: { id: string | undefined }) {
                   type="button"
                   disabled={cancel.isPending}
                   onClick={doCancel}
-                  className="rounded-[7px] bg-terra px-3 py-1.5 font-medium text-white disabled:opacity-50"
+                  className="rounded-[7px] bg-terra px-3 py-1.5 font-medium text-white transition-colors hover:bg-terra-strong disabled:opacity-50 disabled:hover:bg-terra"
                 >
                   {cancel.isPending ? 'Disdico…' : 'Conferma la disdetta'}
                 </button>

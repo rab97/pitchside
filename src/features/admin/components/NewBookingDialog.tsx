@@ -202,10 +202,10 @@ export function NewBookingDialog({ target, onClose }: {
                 aria-pressed={minutes === d}
                 onClick={() => setMinutes(d)}
                 className={
-                  'flex-1 rounded-[7px] border py-1.5 text-center text-xs ' +
+                  'flex-1 rounded-[7px] border py-1.5 text-center text-xs transition-colors ' +
                   (minutes === d
                     ? 'border-pitch bg-pitch text-surface'
-                    : 'border-line bg-surface-2 text-ink-2')
+                    : 'border-line bg-surface-2 text-ink-2 hover:border-pitch')
                 }
               >
                 {d === 60 ? '1h' : d === 90 ? '1h 30' : '2h'}
@@ -232,14 +232,14 @@ export function NewBookingDialog({ target, onClose }: {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-[7px] border border-line px-3 py-1.5 text-[12.5px] text-ink-2"
+            className="rounded-[7px] border border-line px-3 py-1.5 text-[12.5px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
           >
             Annulla
           </button>
           <button
             type="submit"
             disabled={create.isPending || createRecurrence.isPending || !name.trim()}
-            className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-white disabled:opacity-50"
+            className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch"
           >
             {create.isPending || createRecurrence.isPending ? 'Salvo…' : 'Conferma'}
           </button>

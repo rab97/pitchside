@@ -78,7 +78,7 @@ function MyBookingsList() {
       <div className="mt-6 rounded-card border border-line bg-surface p-6 shadow-card">
         <p className="text-ink-2">
           Non hai ancora prenotazioni.{' '}
-          <Link to="/prenota" className="font-medium text-pitch underline">
+          <Link to="/prenota" className="font-medium text-pitch underline transition-colors hover:text-pitch-strong">
             Guarda i campi liberi →
           </Link>
         </p>

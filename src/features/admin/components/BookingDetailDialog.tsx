@@ -85,7 +85,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="w-full rounded-lg border border-terra py-2 text-sm text-terra"
+            className="w-full rounded-lg border border-terra py-2 text-sm text-terra transition-colors hover:bg-terra-tint"
           >
             Disdici la prenotazione
           </button>
@@ -98,7 +98,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
-                className="rounded-[7px] border border-line px-3 py-1.5 text-ink-2"
+                className="rounded-[7px] border border-line px-3 py-1.5 text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
               >
                 Annulla
               </button>
@@ -106,7 +106,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
                 type="button"
                 disabled={cancel.isPending}
                 onClick={doCancel}
-                className="rounded-[7px] bg-terra px-3 py-1.5 font-medium text-white disabled:opacity-50"
+                className="rounded-[7px] bg-terra px-3 py-1.5 font-medium text-white transition-colors hover:bg-terra-strong disabled:opacity-50 disabled:hover:bg-terra"
               >
                 {cancel.isPending ? 'Disdico…' : 'Conferma la disdetta'}
               </button>
@@ -117,7 +117,7 @@ export function BookingDetailDialog({ booking, fieldName, onClose }: {
         <button
           type="button"
           onClick={onClose}
-          className="self-end text-[12.5px] text-muted"
+          className="self-end text-[12.5px] text-muted transition-colors hover:text-ink"
         >
           Chiudi
         </button>

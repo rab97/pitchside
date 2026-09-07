@@ -35,7 +35,7 @@ export function HomePage() {
             {facility.name}
           </span>
           <Link
-            className="ml-auto text-[13.5px] font-medium text-pitch underline"
+            className="ml-auto text-[13.5px] font-medium text-pitch underline transition-colors hover:text-pitch-strong"
             to={session ? '/prenotazioni' : LOGIN_ROUTE}
           >
             {session ? 'Le mie prenotazioni' : 'Accedi'}
@@ -58,7 +58,7 @@ export function HomePage() {
 
         <Link
           to="/prenota"
-          className="mt-6 inline-block rounded-lg bg-pitch px-5 py-2.5 text-sm font-medium text-white transition"
+          className="mt-6 inline-block rounded-lg bg-pitch px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-pitch-strong"
         >
           Prenota un campo →
         </Link>

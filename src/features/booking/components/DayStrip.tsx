@@ -36,7 +36,7 @@ export function DayStrip({ day, onSelect, horizonDays }: {
         aria-label="Settimana precedente"
         disabled={!canGoBack}
         onClick={() => setWindowStart((w) => addDays(w, -7))}
-        className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 disabled:opacity-40"
+        className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink-2"
       >
         ‹
       </button>
@@ -56,7 +56,7 @@ export function DayStrip({ day, onSelect, horizonDays }: {
                 'flex-1 rounded-lg border py-1.5 text-center transition disabled:opacity-40 ' +
                 (selected
                   ? 'border-pitch bg-pitch text-white'
-                  : 'border-line bg-surface text-ink-2 hover:border-pitch')
+                  : 'border-line bg-surface text-ink-2 hover:border-pitch disabled:hover:border-line')
               }
             >
               <span className="block text-[10px] uppercase tracking-[.06em] opacity-80">
@@ -75,7 +75,7 @@ export function DayStrip({ day, onSelect, horizonDays }: {
         aria-label="Settimana successiva"
         disabled={!canGoForward}
         onClick={() => setWindowStart((w) => addDays(w, 7))}
-        className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 disabled:opacity-40"
+        className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink-2"
       >
         ›
       </button>

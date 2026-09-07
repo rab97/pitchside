@@ -152,7 +152,7 @@ const inputClass =
 
 const buttonClass =
   'w-full rounded-lg bg-pitch px-3 py-2.5 text-center text-sm font-medium ' +
-  'text-white transition disabled:opacity-50'
+  'text-white transition-colors hover:bg-pitch-strong disabled:opacity-50 disabled:hover:bg-pitch'
 
 function PhoneStep({ phone, busy, error, onChange, onSubmit, onSkip }: {
   phone: string
@@ -190,7 +190,7 @@ function PhoneStep({ phone, busy, error, onChange, onSubmit, onSkip }: {
       <button className={buttonClass} type="submit" disabled={busy || phone.replace(/\D/g, '').length < 9}>
         {busy ? 'Invio…' : 'Mandami il codice'}
       </button>
-      <button type="button" className="text-[12.5px] text-muted underline" onClick={onSkip}>
+      <button type="button" className="text-[12.5px] text-muted underline transition-colors hover:text-ink" onClick={onSkip}>
         Non ora
       </button>
     </form>
@@ -216,7 +216,7 @@ function CodeStep({ phone, code, busy, error, onChange, onSubmit, onBack }: {
       </h2>
       <p className="-mt-1.5 text-[13px] leading-[1.55] text-muted">
         L’abbiamo mandato al {phone}.{' '}
-        <button type="button" className="text-pitch underline" onClick={onBack}>
+        <button type="button" className="text-pitch underline transition-colors hover:text-pitch-strong" onClick={onBack}>
           Numero sbagliato?
         </button>
       </p>
