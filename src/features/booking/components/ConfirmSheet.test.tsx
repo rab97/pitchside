@@ -39,25 +39,73 @@ describe('ConfirmSheet', () => {
     expect(confirm).toBeEnabled()
   })
 
-  it('si apre e si richiude dalla maniglia', () => {
-    const { container } = renderSheet()
-    const detail = container.querySelector('#confirm-sheet-detail') as HTMLElement
+  it('si apre e si richiude toccando la maniglia', () => {
+    renderSheet()
 
     const handle = screen.getByRole('button', { name: 'Mostra il dettaglio' })
     expect(handle).toHaveAttribute('aria-expanded', 'false')
-    // `max-h-0` è il modo in cui il foglio sta chiuso: jsdom non calcola le
-    // altezze, e `toBeVisible` non guarda `max-height` — quindi si controlla
-    // il meccanismo, oltre al contratto di accessibilità qui sopra.
-    expect(detail.className).toContain('max-h-0')
 
     fireEvent.click(handle)
 
     const open = screen.getByRole('button', { name: 'Chiudi il dettaglio' })
     expect(open).toHaveAttribute('aria-expanded', 'true')
-    expect(detail.className).not.toContain('max-h-0')
     expect(screen.getByText('Campo 1 · a 5')).toBeInTheDocument()
 
     fireEvent.click(open)
+    expect(screen.getByRole('button', { name: 'Mostra il dettaglio' }))
+      .toHaveAttribute('aria-expanded', 'false')
+  })
+
+  // Il gesto: `settleDrag` e `heightWhileDragging` sono provate da sole in
+  // `utils/sheetDrag.test.ts`, dove si può ragionare sulle distanze. Qui
+  // interessa il cablaggio — che il puntatore arrivi a quelle regole, e che
+  // un trascinamento non venga poi ribaltato dal `click` che lo segue.
+  function drag(el: HTMLElement, from: number, to: number) {
+    fireEvent.pointerDown(el, { pointerId: 1, pointerType: 'touch', clientY: from })
+    fireEvent.pointerMove(el, { pointerId: 1, pointerType: 'touch', clientY: to })
+    fireEvent.pointerUp(el, { pointerId: 1, pointerType: 'touch', clientY: to })
+    // Il browser, dopo un puntatore andato e tornato, manda anche un click.
+    fireEvent.click(el)
+  }
+
+  it('trascinando in su si apre del tutto', () => {
+    renderSheet()
+
+    drag(screen.getByRole('button', { name: 'Mostra il dettaglio' }), 700, 560)
+
+    expect(screen.getByRole('button', { name: 'Chiudi il dettaglio' }))
+      .toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('trascinando in giù si chiude', () => {
+    renderSheet()
+    fireEvent.click(screen.getByRole('button', { name: 'Mostra il dettaglio' }))
+
+    drag(screen.getByRole('button', { name: 'Chiudi il dettaglio' }), 560, 700)
+
+    expect(screen.getByRole('button', { name: 'Mostra il dettaglio' }))
+      .toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('un gesto troppo corto lascia il foglio dov’era', () => {
+    renderSheet()
+
+    // Dieci pixel: più della tolleranza del tocco, meno della soglia. Non è
+    // né un tocco (che aprirebbe) né un trascinamento deciso.
+    drag(screen.getByRole('button', { name: 'Mostra il dettaglio' }), 700, 690)
+
+    expect(screen.getByRole('button', { name: 'Mostra il dettaglio' }))
+      .toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('un tocco fuori lo richiude, al primo tocco', () => {
+    const { container } = renderSheet()
+    fireEvent.click(screen.getByRole('button', { name: 'Mostra il dettaglio' }))
+
+    const velo = container.querySelector('.fixed.inset-0') as HTMLElement
+    // `pointerDown` e non `click`: è ciò che su iOS arriva al primo tocco.
+    fireEvent.pointerDown(velo, { pointerId: 1, pointerType: 'touch' })
+
     expect(screen.getByRole('button', { name: 'Mostra il dettaglio' }))
       .toHaveAttribute('aria-expanded', 'false')
   })

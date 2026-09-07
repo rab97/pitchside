@@ -267,7 +267,16 @@ function OtpForm({ phone, code, busy, error, onChange, onSubmit, onBack }: {
           value={code}
           onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
         />
-        <div className="flex gap-2" aria-hidden onClick={() => inputRef.current?.focus()}>
+        {/* `pointerdown` e non `click`: su iOS il primo tocco su un `<div>`
+            non cliccabile non diventa un click. Qui il ripiego servirebbe
+            raramente — l'input trasparente copre le caselle e prende il tocco
+            da sé — ma un ripiego che su telefono ha bisogno di due tocchi non
+            è un ripiego. */}
+        <div
+          className="flex gap-2"
+          aria-hidden
+          onPointerDown={() => inputRef.current?.focus()}
+        >
           {digits.map((d, i) => (
             <span
               key={i}
