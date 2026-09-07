@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { LoginPage, toE164 } from '@/features/auth/components/LoginPage'
+import { LoginPage, toE164 } from './LoginPage'
 import * as tenant from '@/shared/tenant/FacilityProvider'
 
 describe('toE164', () => {
