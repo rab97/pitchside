@@ -3,6 +3,7 @@ import { addDays, format, isToday } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields } from '@/shared/hooks/useFields'
+import { DateJump } from '@/shared/components/ui/DateJump'
 import { DayGrid } from './DayGrid'
 import type { BookingRow } from '../hooks/useDayBookings'
 import { BookingDetailDialog } from './BookingDetailDialog'
@@ -66,6 +67,13 @@ export function AdminPage() {
               >
                 Oggi
               </button>
+              {/* Nessun min/max: il gestore deve poter guardare indietro —
+                  cosa è successo sabato scorso — e prenotare oltre
+                  l'orizzonte, che vale solo per `source = 'app'` (vedi
+                  `supabase/migrations/0013_member_facility_check.sql`,
+                  PS007). Dargli gli stessi limiti del cliente su `/prenota`
+                  gli toglierebbe entrambe le cose. */}
+              <DateJump onSelect={setDay} label="Vai a una data" />
             </div>
           </div>
 
