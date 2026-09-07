@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   PS008: 'La durata è inferiore al minimo consentito.',
   PS012: 'Devi accedere per prenotare.',
   PS013: 'Non puoi prenotare a nome di un altro.',
+  PS015: 'Il cliente non appartiene a questa struttura.',
 }
 
 export function messageForError(code: string): string {
