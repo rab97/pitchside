@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { LoginPage, toE164 } from './LoginPage'
 import * as tenant from '@/shared/tenant/FacilityProvider'
+import * as auth from '../hooks/AuthProvider'
 
 describe('toE164', () => {
   it('aggiunge il prefisso italiano a un numero nazionale', () => {
@@ -19,7 +21,9 @@ describe('LoginPage', () => {
   it('offre Google come prima strada e l’SMS come ripiego', () => {
     vi.spyOn(tenant, 'useFacility').mockReturnValue(
       { id: 'f1', name: 'Palacalcetto', address: 'Alba' } as never)
-    render(<LoginPage />)
+    vi.spyOn(auth, 'useAuth').mockReturnValue(
+      { session: null, isAdmin: false, loading: false })
+    render(<MemoryRouter><LoginPage /></MemoryRouter>)
     expect(screen.getByRole('button', { name: /continua con google/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/numero di telefono/i)).toBeInTheDocument()
   })

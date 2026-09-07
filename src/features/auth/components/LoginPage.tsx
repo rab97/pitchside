@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/shared/lib/supabase'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
+import { useAuth } from '../hooks/AuthProvider'
 
 /**
  * Supabase vuole il numero in E.164. Il gestore digita "347 220 15 63".
@@ -16,11 +18,24 @@ export function toE164(raw: string): string {
 
 export function LoginPage() {
   const facility = useFacility()
+  const { session } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const next = searchParams.get('next')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Chi ci ha mandato qui con una destinazione esplicita (BookPage, con
+  // `next=/prenota`) la ritrova appena la sessione arriva — anche per
+  // l'accesso via SMS, che non ricarica la pagina da solo. Senza `next` non
+  // navighiamo: dentro RequireAdmin, per esempio, l'URL resta su /admin e a
+  // sostituire il figlio ci pensa già lui quando la sessione arriva.
+  useEffect(() => {
+    if (session && next) navigate(next, { replace: true })
+  }, [session, next, navigate])
 
   async function sendCode() {
     setError(null)
@@ -42,9 +57,14 @@ export function LoginPage() {
 
   async function signInWithGoogle() {
     setError(null)
+    // Redirect esterno: nessun effetto React sopravvive al giro su Google,
+    // quindi la destinazione va scritta nell'URL di ritorno. Senza `next`
+    // torniamo dove siamo già (utile dentro RequireAdmin, che sta su /admin),
+    // non su una rotta fissa.
+    const target = next ?? window.location.pathname
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/prenota` },
+      options: { redirectTo: `${window.location.origin}${target}` },
     })
     if (error) setError('Non siamo riusciti ad aprire l’accesso con Google.')
   }

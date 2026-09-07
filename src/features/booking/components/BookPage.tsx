@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { format, isToday, subHours } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { formatEuro } from '@/shared/lib/money'
@@ -7,36 +7,74 @@ import { parseRange } from '@/shared/lib/range'
 import { dayKey, minToLabel, minutesOfDay, slotRange } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields, type FieldRow } from '@/shared/hooks/useFields'
+import { useAuth } from '@/features/auth/hooks/AuthProvider'
 import { freeSlots } from '../utils/freeSlots'
+import { fieldKind } from '../utils/fieldKind'
+import { savePendingSelection, takePendingSelection } from '../utils/pendingSelection'
 import { useAvailability } from '../hooks/useAvailability'
 import { useSlotPrices } from '../hooks/useSlotPrices'
 import { DayStrip } from './DayStrip'
+import { ConfirmBookingDialog } from './ConfirmBookingDialog'
 
 const DURATIONS = [60, 90, 120]
-
-function fieldKind(kind: string): string {
-  return kind === 'calcio7' ? 'a 7' : kind === 'calcio11' ? 'a 11' : 'a 5'
-}
 
 export function BookPage() {
   const facility = useFacility()
   const fields = useFields()
+  const navigate = useNavigate()
+  const { session, loading: authLoading } = useAuth()
   const [day, setDay] = useState<Date>(() => new Date())
   const [fieldId, setFieldId] = useState<string | null>(null)
   const [minutes, setMinutes] = useState(facility.min_duration_minutes || 60)
   const [startMin, setStartMin] = useState<number | null>(null)
-
-  // Nessun campo scelto all'apertura: si prende il primo appena arriva, così
-  // chi guarda senza account vede subito fasce e prezzi, non una pagina vuota
-  // in attesa di un clic.
-  useEffect(() => {
-    if (!fieldId && fields.length > 0) setFieldId(fields[0].id)
-  }, [fieldId, fields])
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   // Cambiando campo, giorno o durata lo slot scelto prima potrebbe non
   // esistere più tra quelli liberi: si riparte da capo invece di lasciare
-  // selezionato un orario che la lista non mostra.
-  useEffect(() => { setStartMin(null) }, [fieldId, day, minutes])
+  // selezionato un orario che la lista non mostra. Questo succede solo per
+  // una scelta dell'utente (non per il ripristino post-accedi, sotto), quindi
+  // sta nei gestori di clic stessi — non in un effetto che osserva i cambi —
+  // ed è già così che il ripristino può impostare tutti e quattro i valori
+  // insieme senza che nulla li annulli di nuovo nel giro successivo.
+  function selectField(id: string) { setFieldId(id); setStartMin(null) }
+  function selectDay(d: Date) { setDay(d); setStartMin(null) }
+  function selectMinutes(m: number) { setMinutes(m); setStartMin(null) }
+
+  // All'apertura si sceglie un campo per mostrare subito fasce e prezzi, a
+  // meno che non si stia tornando da /accedi?next=/prenota con una scelta
+  // in sospeso: in quel caso la si ritrova in sessionStorage (vedi
+  // utils/pendingSelection, scritta da chi ha premuto "Conferma" senza
+  // sessione) e si apre subito il riepilogo, invece di far ricominciare la
+  // scelta da capo. La guardia è un `ref`, non uno stato: in sviluppo React
+  // invoca due volte gli effect al montaggio, e uno stato aggiornato in coda
+  // non è ancora visibile alla seconda chiamata — sessionStorage sì, e
+  // verrebbe consumato a vuoto la seconda volta.
+  const initRef = useRef(false)
+  const [openAfterRestore, setOpenAfterRestore] = useState(false)
+  useEffect(() => {
+    if (initRef.current || fields.length === 0) return
+    initRef.current = true
+
+    const pending = takePendingSelection()
+    const restored = pending && fields.some((f) => f.id === pending.fieldId) ? pending : null
+
+    if (restored) {
+      setFieldId(restored.fieldId)
+      setDay(new Date(restored.dayIso))
+      setMinutes(restored.minutes)
+      setStartMin(restored.startMin)
+      setOpenAfterRestore(true)
+    } else if (!fieldId) {
+      setFieldId(fields[0].id)
+    }
+  }, [fields, fieldId])
+
+  useEffect(() => {
+    if (openAfterRestore && session) {
+      setConfirmOpen(true)
+      setOpenAfterRestore(false)
+    }
+  }, [openAfterRestore, session])
 
   const field = fields.find((f) => f.id === fieldId) ?? null
   const { busy, isPending: busyPending } = useAvailability(day, fieldId)
@@ -94,9 +132,9 @@ export function BookPage() {
         ) : (
           <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px] lg:items-start">
             <div className="flex flex-col gap-4">
-              <FieldPicker fields={fields} selected={fieldId} onSelect={setFieldId} />
+              <FieldPicker fields={fields} selected={fieldId} onSelect={selectField} />
 
-              <DayStrip day={day} onSelect={setDay} horizonDays={facility.booking_horizon_days} />
+              <DayStrip day={day} onSelect={selectDay} horizonDays={facility.booking_horizon_days} />
 
               <div className="flex flex-col gap-1.5">
                 <span className="text-[11px] uppercase tracking-[.06em] text-muted">Durata</span>
@@ -106,7 +144,7 @@ export function BookPage() {
                       key={d}
                       type="button"
                       aria-pressed={minutes === d}
-                      onClick={() => setMinutes(d)}
+                      onClick={() => selectMinutes(d)}
                       className={
                         'flex-1 rounded-lg border py-2 text-center tabular-nums text-[13px] ' +
                         (minutes === d
@@ -197,12 +235,24 @@ export function BookPage() {
                     </div>
                   </dl>
 
-                  <Link
-                    to={`/accedi?next=${encodeURIComponent('/prenota')}`}
-                    className="mt-1 block rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-white"
+                  <button
+                    type="button"
+                    disabled={authLoading}
+                    onClick={() => {
+                      if (!field || startMin == null) return
+                      if (!session) {
+                        savePendingSelection({
+                          fieldId: field.id, dayIso: day.toISOString(), minutes, startMin,
+                        })
+                        navigate(`/accedi?next=${encodeURIComponent('/prenota')}`)
+                        return
+                      }
+                      setConfirmOpen(true)
+                    }}
+                    className="mt-1 rounded-lg bg-pitch px-4 py-2.5 text-center text-sm font-medium text-white disabled:opacity-50"
                   >
                     Conferma
-                  </Link>
+                  </button>
                   <p className="text-[11.5px] leading-[1.5] text-muted">
                     Si paga in struttura.
                     {cancelDeadline
@@ -228,6 +278,18 @@ export function BookPage() {
           </div>
         )}
       </main>
+
+      <ConfirmBookingDialog
+        open={confirmOpen && !!field && startMin != null}
+        onClose={() => setConfirmOpen(false)}
+        onBooked={() => setStartMin(null)}
+        field={field}
+        day={day}
+        startMin={startMin}
+        minutes={minutes}
+        price={price}
+        cancelDeadline={cancelDeadline}
+      />
     </div>
   )
 }
