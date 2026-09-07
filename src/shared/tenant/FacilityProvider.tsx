@@ -53,7 +53,23 @@ export function FacilityProvider({ children }: { children: ReactNode }) {
 
   if (isPending) return <div className="p-8 text-muted">Caricamento…</div>
   if (error || !data) {
-    return <div className="p-8">Struttura non trovata per questo indirizzo.</div>
+    return (
+      <div className="p-8">
+        <p>Struttura non trovata per questo indirizzo.</p>
+        {/* Solo in sviluppo, e non per gentilezza: aprendo l'app da un
+            indirizzo che non sta in `facility_domains` — l'indirizzo di rete
+            della macchina, quando si prova dal telefono — la frase qui sopra è
+            esatta ma sembra un guasto. Qui si dice invece come si esce, e in
+            produzione questo ramo non arriva nel pacchetto. */}
+        {import.meta.env.DEV && (
+          <p className="mt-2 text-[13px] text-muted">
+            Sei su <code>{window.location.hostname}</code>, che non è fra i
+            domini registrati. In sviluppo puoi imporre la struttura con{' '}
+            <code>VITE_TENANT_HOSTNAME=localhost</code>.
+          </p>
+        )}
+      </div>
+    )
   }
 
   return <Ctx.Provider value={data}>{children}</Ctx.Provider>
