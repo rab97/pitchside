@@ -31,6 +31,7 @@ export function BookPage() {
   const [minutes, setMinutes] = useState(facility.min_duration_minutes || 60)
   const [startMin, setStartMin] = useState<number | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const slotListRef = useRef<HTMLDivElement>(null)
 
   // Cambiando campo, giorno o durata lo slot scelto prima potrebbe non
   // esistere più tra quelli liberi: si riparte da capo invece di lasciare
@@ -42,6 +43,16 @@ export function BookPage() {
   function selectField(id: string) { setFieldId(id); setStartMin(null) }
   function selectDay(d: Date) { setDay(d); setStartMin(null) }
   function selectMinutes(m: number) { setMinutes(m); setStartMin(null) }
+
+  // Cambiando campo, giorno o durata l'elenco degli orari torna in cima:
+  // altrimenti chi ha scorso fino in fondo resterebbe a metà elenco su dati
+  // diversi, senza accorgersi che sono cambiati. Le dipendenze sono le scelte
+  // dell'utente (fieldId, day, minutes), non isPending/isRefreshing: un
+  // aggiornamento che serve dati della chiave precedente (placeholderData,
+  // vedi sopra) non deve far scattare il ritorno in cima.
+  useEffect(() => {
+    if (slotListRef.current) slotListRef.current.scrollTop = 0
+  }, [fieldId, day, minutes])
 
   // All'apertura si sceglie un campo per mostrare subito fasce e prezzi, a
   // meno che non si stia tornando da /accedi?next=/prenota con una scelta
@@ -196,7 +207,11 @@ export function BookPage() {
                   </span>
                 </div>
                 <div
-                  className={isRefreshing ? 'opacity-60' : ''}
+                  ref={slotListRef}
+                  className={
+                    'max-h-[55vh] overflow-y-auto overscroll-contain ' +
+                    (isRefreshing ? 'opacity-60' : '')
+                  }
                   aria-busy={isRefreshing}
                 >
                   {slotsError ? (
