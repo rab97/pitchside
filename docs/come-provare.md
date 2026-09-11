@@ -287,7 +287,7 @@ l'ha cancellata la chiusura, non tu.
 ## I test automatici
 
 ```bash
-npm run test        # 138 test: funzioni pure, messaggi d'errore, render
+npm run test        # 150 test: funzioni pure, messaggi d'errore, render
 npm run test:db     # 82 test pgTAP: regole di dominio, RLS, autorizzazione
 npm run build       # compilazione e pacchetti
 ```
