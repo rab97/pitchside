@@ -18,3 +18,16 @@ if (!Element.prototype.setPointerCapture) {
   Element.prototype.releasePointerCapture = function releasePointerCapture() {}
   Element.prototype.hasPointerCapture = function hasPointerCapture() { return false }
 }
+
+// jsdom does not implement `<dialog>`'s imperative API either: `showModal`
+// and `close` are missing, so mounting `Dialog.tsx` with `open` throws
+// instead of setting the `open` attribute the component's own effect expects
+// to find set afterwards.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
+    this.setAttribute('open', '')
+  }
+  HTMLDialogElement.prototype.close = function close(this: HTMLDialogElement) {
+    this.removeAttribute('open')
+  }
+}

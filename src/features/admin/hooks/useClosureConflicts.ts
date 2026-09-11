@@ -71,5 +71,10 @@ export function useClosureConflicts(
     },
   })
 
-  return { conflicts: data ?? [], isPending, error }
+  // `useQuery`'s own `isPending` means "no data yet", which is also true for
+  // a *disabled* query that was never asked to run — there is nothing
+  // pending about a check nobody requested. Only report pending once there
+  // is a period to check, so a caller cannot read "still verifying" before
+  // the manager has even chosen a period.
+  return { conflicts: data ?? [], isPending: !!period && isPending, error }
 }

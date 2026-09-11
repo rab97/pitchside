@@ -6,7 +6,7 @@ import { Dialog } from '@/shared/components/ui/Dialog'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { useAdminFields } from '../hooks/useAdminFields'
 import { useClosures, type Closure } from '../hooks/useClosures'
-import { messageForClosureWrite } from '../utils/closureMessages'
+import { messageForClosureDelete } from '../utils/closureMessages'
 import { NewClosureDialog } from './NewClosureDialog'
 import { SettingsPage } from './SettingsPage'
 
@@ -64,7 +64,7 @@ export function ClosuresPage() {
       toast.success('Chiusura eliminata.')
       setDeletingClosure(null)
     } catch (e) {
-      setDeleteError(messageForClosureWrite(e))
+      setDeleteError(messageForClosureDelete(e))
     } finally {
       setDeleting(false)
     }

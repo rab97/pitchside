@@ -7,7 +7,7 @@ import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
 import { localInputToDate } from '@/shared/lib/tz'
 import { useClosureConflicts } from '../hooks/useClosureConflicts'
-import { messageForClosureWrite } from '../utils/closureMessages'
+import { messageForClosureConflictsError, messageForClosureWrite } from '../utils/closureMessages'
 import type { NewClosure } from '../hooks/useClosures'
 import type { AdminField } from '../hooks/useAdminFields'
 
@@ -41,15 +41,27 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
     setError(null)
   }, [open])
 
-  const period = fromStr && toStr
+  const rawPeriod = fromStr && toStr
     ? { from: localInputToDate(fromStr), to: localInputToDate(toStr) }
     : null
 
-  const { conflicts, isPending: conflictsPending } = useClosureConflicts(fieldId, period)
+  // A period that ends before (or the same instant as) it starts cannot
+  // exist: catching that here, before it becomes a query, is a form error
+  // said in Italian, not a round trip to Postgres to find out.
+  const periodInvalid = !!rawPeriod && rawPeriod.from >= rawPeriod.to
+  const period = rawPeriod && !periodInvalid ? rawPeriod : null
+
+  const { conflicts, isPending: conflictsPending, error: conflictsError } =
+    useClosureConflicts(fieldId, period)
+
+  // An unknown conflict list is not an empty one: none of these three states
+  // — the period cannot exist, the preview is still running, the preview
+  // failed — may be confirmed away.
+  const canConfirm = !!period && !conflictsPending && !conflictsError
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!period) return
+    if (!period || !canConfirm) return
     setError(null)
     setSaving(true)
     try {
@@ -112,6 +124,10 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
           </label>
         </div>
 
+        {periodInvalid && (
+          <ErrorNote message="Il periodo non è valido: la fine deve venire dopo l'inizio." />
+        )}
+
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-[.06em] text-muted">Motivo (facoltativo)</span>
           <input
@@ -127,6 +143,10 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
           <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-2 p-3">
             {conflictsPending ? (
               <p className="text-[12.5px] text-muted">Carico…</p>
+            ) : conflictsError ? (
+              // The preview never ran to a conclusion: this is not the same
+              // thing as "zero conflicts", and must not be drawn as if it were.
+              <ErrorNote message={messageForClosureConflictsError(conflictsError)} />
             ) : conflicts.length === 0 ? (
               <p className="text-[12.5px] text-muted">Nessuna prenotazione in questo periodo.</p>
             ) : (
@@ -167,14 +187,16 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !canConfirm}
             className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
           >
             {saving
               ? 'Salvo…'
-              : conflicts.length === 0
-                ? 'Chiudi'
-                : `Chiudi e disdici ${conflicts.length} prenotazioni`}
+              : conflictsPending
+                ? 'Verifico…'
+                : period && !conflictsError && conflicts.length > 0
+                  ? `Chiudi e disdici ${conflicts.length} prenotazioni`
+                  : 'Chiudi'}
           </button>
         </div>
       </form>
