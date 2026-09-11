@@ -4,8 +4,10 @@ import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { Select } from '@/shared/components/ui/Select'
+import { SortableList } from '@/shared/components/ui/SortableList'
 import { fieldKind } from '@/shared/lib/fieldKind'
 import { messageForFieldWrite } from '../utils/fieldMessages'
+import { sortOrderPatches } from '../utils/reorder'
 import { useAdminFields, type AdminField } from '../hooks/useAdminFields'
 import { SettingsPage } from './SettingsPage'
 
@@ -29,7 +31,13 @@ type FormTarget = { mode: 'create' } | { mode: 'edit'; field: AdminField }
  * words a manager can act on when it happens anyway.
  */
 export function FieldsPage() {
-  const { fields, isPending, error, create, update, remove } = useAdminFields()
+  const { fields, isPending, error, create, update, remove, reorderFields } = useAdminFields()
+
+  // The order shown while a drag's write is in flight or has just failed —
+  // `null` means "trust the query", which is where it goes back to the
+  // moment a write turns out not to have happened after all.
+  const [order, setOrder] = useState<AdminField[] | null>(null)
+  const displayFields = order ?? fields
 
   const [formTarget, setFormTarget] = useState<FormTarget | null>(null)
   const [form, setForm] = useState<FieldFormValues>(EMPTY_FORM)
@@ -114,15 +122,20 @@ export function FieldsPage() {
     }
   }
 
-  async function moveField(index: number, direction: -1 | 1) {
-    const targetIndex = index + direction
-    if (targetIndex < 0 || targetIndex >= fields.length) return
-    const a = fields[index]
-    const b = fields[targetIndex]
+  async function handleReorder(next: AdminField[]) {
+    // Shown immediately — the drag itself already told the manager where the
+    // pitch landed, so the list must not spring back while the write is in
+    // flight — but only until we know whether it actually happened.
+    setOrder(next)
+    const patches = sortOrderPatches(next)
+    if (patches.length === 0) return
     try {
-      await update(a.id, { sort_order: b.sort_order })
-      await update(b.id, { sort_order: a.sort_order })
+      await reorderFields(patches)
     } catch (e) {
+      // A wrong order the manager can see and redo is recoverable; a wrong
+      // order the screen hides is not. Drop the optimistic view and let the
+      // now-invalidated query show what the database actually holds.
+      setOrder(null)
       toast.error(messageForFieldWrite(e))
     }
   }
@@ -158,103 +171,103 @@ export function FieldsPage() {
       <div className="rounded-card border border-line bg-surface shadow-card">
         {isPending ? (
           <p className="p-4 text-[13px] text-muted">Carico…</p>
-        ) : error ? null : fields.length === 0 ? (
+        ) : error ? null : displayFields.length === 0 ? (
           <p className="p-4 text-[13px] text-muted">
             Nessun campo. Aggiungine uno per cominciare a prendere prenotazioni.
           </p>
         ) : (
           <ul className="flex flex-col divide-y divide-line-soft">
-            {fields.map((field, index) => (
-              <li key={field.id} className="flex flex-col gap-2 p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex flex-col gap-0.5">
-                    <button
-                      type="button"
-                      aria-label={`Sposta ${field.name} su`}
-                      disabled={index === 0}
-                      onClick={() => moveField(index, -1)}
-                      className="grid h-5 w-5 place-items-center rounded-[5px] border border-line text-[10px] leading-none text-ink-2 hover:border-pitch hover:text-pitch"
+            <SortableList
+              items={displayFields}
+              onReorder={handleReorder}
+              renderItem={(field, handle) => (
+                <div className="flex flex-col gap-2 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <svg
+                      ref={handle.ref}
+                      {...handle.attributes}
+                      {...handle.listeners}
+                      aria-label="Riordina"
+                      stroke="currentColor"
+                      fill="none"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      viewBox="0 0 20 20"
+                      className="h-5 w-5 shrink-0 cursor-grab text-ink-2 active:cursor-grabbing"
                     >
-                      ▲
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Sposta ${field.name} giù`}
-                      disabled={index === fields.length - 1}
-                      onClick={() => moveField(index, 1)}
-                      className="grid h-5 w-5 place-items-center rounded-[5px] border border-line text-[10px] leading-none text-ink-2 hover:border-pitch hover:text-pitch"
-                    >
-                      ▼
-                    </button>
-                  </div>
+                      <line x1="4" y1="6" x2="16" y2="6" />
+                      <line x1="4" y1="10" x2="16" y2="10" />
+                      <line x1="4" y1="14" x2="16" y2="14" />
+                    </svg>
 
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13.5px] font-medium text-ink">{field.name}</span>
-                      {!field.active && (
-                        <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
-                          disattivato
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[12px] text-muted">
-                      {fieldKind(field.kind)} · {field.surface} · {field.covered ? 'coperto' : 'scoperto'}
-                    </span>
-                  </div>
-
-                  <label className="flex items-center gap-1.5 text-[12px] text-ink-2">
-                    <input
-                      type="checkbox"
-                      checked={field.active}
-                      onChange={() => toggleActive(field)}
-                      className="h-[15px] w-[15px] accent-pitch"
-                    />
-                    Attivo
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => openEdit(field)}
-                    className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
-                  >
-                    Modifica
-                  </button>
-
-                  {field.booking_count === 0 && (
-                    confirmingDeleteId === field.id ? (
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setConfirmingDeleteId(null)}
-                          className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
-                        >
-                          Annulla
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(field)}
-                          className="rounded-[7px] border border-terra px-2.5 py-1 text-[12px] text-terra transition-colors hover:bg-terra-tint"
-                        >
-                          Conferma
-                        </button>
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13.5px] font-medium text-ink">{field.name}</span>
+                        {!field.active && (
+                          <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
+                            disattivato
+                          </span>
+                        )}
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => { setDeleteError(null); setConfirmingDeleteId(field.id) }}
-                        className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-terra hover:text-terra"
-                      >
-                        Elimina
-                      </button>
-                    )
+                      <span className="text-[12px] text-muted">
+                        {fieldKind(field.kind)} · {field.surface} · {field.covered ? 'coperto' : 'scoperto'}
+                      </span>
+                    </div>
+
+                    <label className="flex items-center gap-1.5 text-[12px] text-ink-2">
+                      <input
+                        type="checkbox"
+                        checked={field.active}
+                        onChange={() => toggleActive(field)}
+                        className="h-[15px] w-[15px] accent-pitch"
+                      />
+                      Attivo
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => openEdit(field)}
+                      className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                    >
+                      Modifica
+                    </button>
+
+                    {field.booking_count === 0 && (
+                      confirmingDeleteId === field.id ? (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingDeleteId(null)}
+                            className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                          >
+                            Annulla
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(field)}
+                            className="rounded-[7px] border border-terra px-2.5 py-1 text-[12px] text-terra transition-colors hover:bg-terra-tint"
+                          >
+                            Conferma
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => { setDeleteError(null); setConfirmingDeleteId(field.id) }}
+                          className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-terra hover:text-terra"
+                        >
+                          Elimina
+                        </button>
+                      )
+                    )}
+                  </div>
+
+                  {confirmingDeleteId === field.id && (
+                    <ErrorNote message={deleteError} />
                   )}
                 </div>
-
-                {confirmingDeleteId === field.id && (
-                  <ErrorNote message={deleteError} />
-                )}
-              </li>
-            ))}
+              )}
+            />
           </ul>
         )}
       </div>

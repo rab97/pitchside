@@ -117,6 +117,32 @@ export function useAdminFields() {
     onSuccess: invalidate,
   })
 
+  const reorderMutation = useMutation({
+    mutationFn: async (patches: { id: string; sort_order: number }[]) => {
+      // One request per row, each held to the same standard as every other
+      // write here: a row an RLS policy excludes, or one that simply matches
+      // nothing, comes back with no error — asking for the row back is what
+      // catches that.
+      await Promise.all(
+        patches.map(async (patch) => {
+          const { data, error } = await supabase
+            .from('fields')
+            .update({ sort_order: patch.sort_order })
+            .eq('id', patch.id)
+            .select('id')
+            .single()
+          if (error || !data) throw error ?? new Error('Il riordino non ha modificato alcuna riga.')
+        }),
+      )
+    },
+    // Whether the drag persisted or not, the list on screen must end up
+    // showing what the database actually holds — never the order the finger
+    // left behind. A failed write still invalidates so a partial write
+    // (some rows renumbered, some not) surfaces instead of hiding.
+    onSuccess: invalidate,
+    onError: invalidate,
+  })
+
   return {
     fields: data ?? [],
     isPending,
@@ -124,5 +150,6 @@ export function useAdminFields() {
     create: createMutation.mutateAsync,
     update: (id: string, patch: Partial<AdminField>) => updateMutation.mutateAsync({ id, patch }),
     remove: removeMutation.mutateAsync,
+    reorderFields: reorderMutation.mutateAsync,
   }
 }
