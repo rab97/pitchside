@@ -20,7 +20,13 @@ const DAYS_PER_WEEK = 7
  * though it would report itself open.
  *
  * `min`/`max` grey days out rather than remove them from the grid — the same
- * discipline `TimeField` applies to its options, spec §3.1.
+ * discipline `TimeField` applies to its options, spec §3.1. Every day cell
+ * stays a real, native-`disabled` `<button>` when it's out of range — never
+ * focusable, per the platform's own contract for `disabled` — so the roving
+ * tabindex (`focusIndexFor`, `handleGridKeyDown`) is careful to never point
+ * at one: a disabled cell holding the only `tabIndex={0}` in the grid would
+ * leave the whole calendar unreachable by keyboard, with nothing announcing
+ * the failure.
  */
 export function DateField(props: {
   value: Date | null
@@ -37,8 +43,12 @@ export function DateField(props: {
 
   const [open, setOpen] = useState(false)
   const [month, setMonth] = useState(() => value ?? new Date())
+  // -1 means no day in the 42-cell grid is pickable — `min`/`max` block the
+  // whole visible month. See `focusRovingTarget`.
   const [focusIndex, setFocusIndex] = useState(0)
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const nextMonthButtonRef = useRef<HTMLButtonElement>(null)
+  const wasOpenRef = useRef(false)
 
   const grid = monthGrid(month)
   const weeks: Date[][] = []
@@ -52,14 +62,20 @@ export function DateField(props: {
     return false
   }
 
+  // Where the roving cell should land: the selected day if it is itself
+  // pickable, else the first pickable day of the shown month, else the first
+  // pickable day anywhere in the 42-day grid. Never a disabled day — a
+  // native `disabled` button refuses `.focus()` outright, and with every
+  // other cell at `tabIndex={-1}` that would leave nothing in the grid the
+  // keyboard can reach. Returns -1 when the whole grid is blocked.
   function focusIndexFor(base: Date, g: Date[]): number {
     if (value) {
-      const idx = g.findIndex((d) => isSameDay(d, value))
+      const idx = g.findIndex((d) => isSameDay(d, value) && !isDayDisabled(d))
       if (idx !== -1) return idx
     }
-    const todayIdx = g.findIndex((d) => isToday(d))
-    if (todayIdx !== -1) return todayIdx
-    return g.findIndex((d) => isSameMonth(d, base))
+    const inMonthIdx = g.findIndex((d) => isSameMonth(d, base) && !isDayDisabled(d))
+    if (inMonthIdx !== -1) return inMonthIdx
+    return g.findIndex((d) => !isDayDisabled(d))
   }
 
   function handleOpenChange(next: boolean) {
@@ -76,14 +92,30 @@ export function DateField(props: {
     setFocusIndex(focusIndexFor(next, monthGrid(next)))
   }
 
+  // Puts focus on the current roving target: a day cell, or — when
+  // `min`/`max` leave nothing in the visible month pickable (`focusIndex ===
+  // -1`) — the "next month" button, so the popover is never left with
+  // nothing the keyboard can reach.
+  function focusRovingTarget() {
+    if (focusIndex === -1) nextMonthButtonRef.current?.focus()
+    else cellRefs.current[focusIndex]?.focus()
+  }
+
   // Keeps keyboard focus following the roving cell after the visible month
-  // changes, whether by the ‹ › buttons or an arrow key crossing a boundary.
-  // `focusIndex` is deliberately not a dependency: it is the value being
-  // applied here, and including it would refocus on every roving-tabindex
-  // move, fighting the browser's own focus instead of following it.
+  // changes *while the popover is already open* — the ‹ › buttons, or an
+  // arrow key crossing a month boundary. The open transition itself is
+  // handled by `onOpenAutoFocus` on `Popover.Content` below, not here:
+  // relying on a passive effect for that too only worked by accident of
+  // React running children's passive effects before Radix's own FocusScope
+  // autofocus effect, an implementation detail of Radix, not a contract it
+  // published. `wasOpenRef` tells the two moments apart, so this effect does
+  // nothing on the render where `open` itself just flipped true.
   useEffect(() => {
-    if (open) cellRefs.current[focusIndex]?.focus()
-  }, [month, open])
+    const wasOpen = wasOpenRef.current
+    wasOpenRef.current = open
+    if (!open || !wasOpen) return
+    focusRovingTarget()
+  }, [month, focusIndex, open])
 
   function selectDay(day: Date) {
     if (isDayDisabled(day)) return
@@ -101,7 +133,14 @@ export function DateField(props: {
       default: return
     }
     e.preventDefault()
-    const next = focusIndex + delta
+    // Step past disabled days in the direction of travel — the same reason
+    // `focusIndexFor` never lands on one: arrowing onto a disabled cell
+    // would try to focus a button that refuses it, silently killing keyboard
+    // navigation one step earlier than the open/month-change cases above.
+    let next = focusIndex + delta
+    while (next >= 0 && next < WEEKS * DAYS_PER_WEEK && isDayDisabled(grid[next])) {
+      next += delta
+    }
     if (next < 0) {
       goToMonth(subMonths(month, 1))
       return
@@ -120,8 +159,18 @@ export function DateField(props: {
     const inMonth = isSameMonth(day, month)
     const disabled = isDayDisabled(day)
     const classes = [
-      // 2.75rem = 44px, the tab bar's own floor — nothing here depends on hover.
-      'grid h-11 w-11 place-items-center rounded-md text-[13.5px] outline-none transition-colors',
+      // 2.75rem = 44px, the tab bar's own floor — nothing here depends on
+      // hover. The focus ring is set with the `outline` shorthand as an
+      // arbitrary value, not Tailwind's `outline-*` utilities: those all
+      // read a single shared `--tw-outline-style` variable, and both
+      // `outline-none` and `outline-hidden` pin that variable to `none` for
+      // the *element*, not just the default state — so a later
+      // `focus-visible:outline-*` on the same element stays silently
+      // cancelled. Found by actually driving the grid from the keyboard:
+      // the roving cell moved correctly (confirmed programmatically) but a
+      // sighted keyboard user had no way to see where they were, on any
+      // cell that was neither "today" nor selected.
+      'grid h-11 w-11 place-items-center rounded-md text-[13.5px] outline-hidden transition-colors focus-visible:[outline:2px_solid_var(--pitch)] focus-visible:[outline-offset:2px]',
     ]
     if (selected) classes.push('bg-pitch text-on-pitch')
     else if (disabled) classes.push('cursor-not-allowed text-muted')
@@ -176,6 +225,13 @@ export function DateField(props: {
           align="start"
           sideOffset={4}
           className="z-50 w-max rounded-card border border-line bg-surface p-2 text-ink shadow-card"
+          onOpenAutoFocus={(e) => {
+            // Deterministic, not incidental: take over from Radix's own
+            // default (focus the first focusable descendant, which would be
+            // the ‹ button) and put focus on the roving target ourselves.
+            e.preventDefault()
+            focusRovingTarget()
+          }}
         >
           <div className="flex items-center justify-between px-1 pb-2">
             <button
@@ -191,6 +247,7 @@ export function DateField(props: {
             </span>
             <button
               type="button"
+              ref={nextMonthButtonRef}
               aria-label="Mese successivo"
               onClick={() => goToMonth(addMonths(month, 1))}
               className="grid h-11 w-11 place-items-center rounded-md text-ink-2 hover:bg-pitch-tint hover:text-pitch"
@@ -208,7 +265,6 @@ export function DateField(props: {
                 <div
                   key={i}
                   role="columnheader"
-                  aria-hidden="true"
                   className="grid h-8 place-items-center text-[12px] uppercase text-muted"
                 >
                   {label}
@@ -219,15 +275,27 @@ export function DateField(props: {
               <div role="row" className="grid grid-cols-7" key={wi}>
                 {week.map((day, di) => {
                   const i = wi * DAYS_PER_WEEK + di
+                  const selected = value ? isSameDay(day, value) : false
                   return (
-                    <div role="gridcell" key={day.toISOString()}>
+                    <div
+                      role="gridcell"
+                      key={day.toISOString()}
+                      aria-selected={selected}
+                      // The full date, not the bare day number the button
+                      // shows: a 42-cell grid holds a trailing "1" from next
+                      // month and a leading "1" from this one, and a bare
+                      // number can't tell a screen-reader user which is
+                      // which. The button underneath keeps its own name (the
+                      // day number) — that's what the component's tests
+                      // click by name.
+                      aria-label={format(day, 'd MMMM yyyy', { locale: it })}
+                    >
                       <button
                         type="button"
                         ref={(el) => { cellRefs.current[i] = el }}
                         tabIndex={i === focusIndex ? 0 : -1}
                         disabled={isDayDisabled(day)}
                         aria-current={isToday(day) ? 'date' : undefined}
-                        aria-pressed={value ? isSameDay(day, value) : false}
                         onClick={() => selectDay(day)}
                         onFocus={() => setFocusIndex(i)}
                         className={cellClassName(day)}
