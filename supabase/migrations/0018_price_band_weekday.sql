@@ -1,36 +1,36 @@
--- Una riga per giorno, invece di un array di giorni.
+-- One row per weekday, instead of an array of weekdays.
 --
--- Il motivo non e' estetico: `calc_booking_price` sceglie la fascia con
--- `select ... limit 1` senza `order by`, quindi due fasce sovrapposte fanno
--- dipendere il prezzo da quale riga capita per prima. La specifica di fase 1
--- vieta le sovrapposizioni ma niente le impediva. Un vincolo di esclusione
--- confronta i valori di due righe con degli operatori, e per `smallint[]` non
--- esiste una classe di operatori che dica "questi giorni si accavallano con
--- quelli": con un giorno per riga il vincolo si puo' finalmente scrivere.
+-- The reason isn't aesthetic: `calc_booking_price` picks the band with
+-- `select ... limit 1` and no `order by`, so two overlapping bands make the
+-- price depend on which row happens to come back first. The phase 1 spec
+-- forbids overlaps, but nothing enforced it. An exclusion constraint compares
+-- two rows' values with operators, and for `smallint[]` there is no operator
+-- class that says "these weekdays overlap with those": with one weekday per
+-- row the constraint can finally be written.
 --
--- La fascia resta un'idea sola nell'interfaccia — si spuntano i giorni e si
--- salva una volta — e diventa piu' righe qui sotto.
+-- The band stays a single idea in the interface — you tick the days and save
+-- once — and it becomes several rows below.
 
--- 1. La colonna nuova, ancora libera di essere nulla mentre si espande.
+-- 1. The new column, still nullable while it fills in.
 alter table public.price_bands add column weekday smallint;
 
--- 2. Il prezzo atteso per ogni (campo, giorno, minuto d'inizio della fascia),
---    letto dal modello vecchio: e' la fotografia su cui la guardia in fondo
---    verifichera' che non si sia perso niente.
+-- 2. The price expected for every (field, weekday, band start minute), read
+--    from the old model: this is the snapshot the guard at the bottom checks
+--    against so nothing gets lost.
 --
--- Nota: niente `on commit drop` qui. Le migrazioni Supabase passano per psql,
--- dove le istruzioni fuori da un blocco di transazione esplicito vanno in
--- autocommit — la tabella temporanea sparirebbe alla fine della propria
--- istruzione, e la guardia in fondo confronterebbe con una tabella vuota,
--- passando in silenzio senza provare niente. La si elimina esplicitamente
--- come ultima istruzione della migrazione, dopo che la guardia l'ha usata.
+-- Note: no `on commit drop` here. Supabase migrations run through psql,
+-- where statements outside an explicit transaction block autocommit — the
+-- temp table would disappear at the end of its own statement, and the guard
+-- at the bottom would then compare against an empty table, passing silently
+-- without proving anything. It is dropped explicitly as the last statement
+-- of the migration, after the guard has used it.
 create temp table price_band_probe as
 select pb.field_id, d as weekday, pb.starts_min as minute, pb.price_cents
   from public.price_bands pb
   cross join lateral unnest(pb.weekdays) as d;
 
--- 3. Una riga per ciascun giorno dell'array; le originali restano
---    riconoscibili perche' hanno `weekday` nullo.
+-- 3. One row per weekday in the array; the originals stay recognizable
+--    because they have a null `weekday`.
 insert into public.price_bands
   (facility_id, field_id, weekdays, weekday, starts_min, ends_min, price_cents)
 select pb.facility_id, pb.field_id, array[d]::smallint[], d,
@@ -40,15 +40,15 @@ select pb.facility_id, pb.field_id, array[d]::smallint[], d,
 
 delete from public.price_bands where weekday is null;
 
--- 4. Il modello nuovo.
+-- 4. The new model.
 alter table public.price_bands
   alter column weekday set not null,
   add constraint price_bands_weekday_valid check (weekday between 1 and 7),
   drop column weekdays;
 
--- Se questo fallisce con 23P01, i dati contenevano gia' fasce sovrapposte:
--- vanno sistemate prima, non e' un difetto della migrazione. Era esattamente
--- il caso che nessuno poteva vedere finche' il vincolo non esisteva.
+-- If this fails with 23P01, the data already contained overlapping bands:
+-- fix them first, it isn't a defect in the migration. It's exactly the case
+-- nobody could see until the constraint existed.
 alter table public.price_bands
   add constraint price_bands_no_overlap exclude using gist (
     field_id with =,
@@ -56,10 +56,10 @@ alter table public.price_bands
     int4range(starts_min::int, ends_min::int) with &&
   );
 
--- 5. La guardia: nessun prezzo si e' mosso, e nessuna riga si e' persa.
---    Vale piu' di un test che gira dopo, perche' una migrazione che perde una
---    fascia non da' errore: fa sparire l'orario, e PS005 rende il campo non
---    prenotabile invece che gratis.
+-- 5. The guard: no price moved, and no row was lost.
+--    This is worth more than a test that runs afterward, because a migration
+--    that loses a band doesn't raise an error: it makes the time slot
+--    disappear, and PS005 makes the field unbookable instead of free.
 do $$
 declare
   v_moved integer;
@@ -102,6 +102,10 @@ drop table price_band_probe;
 create index if not exists price_bands_field_day_idx
   on public.price_bands (field_id, weekday);
 
+-- Body carried verbatim from 0005_price_bands.sql, with one line changed:
+-- `and dow = any(pb.weekdays)` becomes `and dow = pb.weekday`. The Italian
+-- comments below are the original ones, kept as-is so the diff stays honest.
+--
 -- Prezzo di uno slot, sommando i minuti che cadono in ciascuna fascia.
 -- L'assenza di fascia significa "fuori orario di apertura": le fasce, per
 -- vincolo di prodotto, coprono tutto l'orario in cui si puo' prenotare.
@@ -169,6 +173,11 @@ begin
 end;
 $$;
 
+-- Body carried verbatim from 0014_slot_prices.sql, with one line changed:
+-- `and v_weekday = any(pb.weekdays)` becomes `and pb.weekday = v_weekday`.
+-- The Italian comments below are the original ones, kept as-is so the diff
+-- stays honest.
+--
 -- Il prezzo per tutte le partenze di una giornata, in una sola chiamata.
 --
 -- Il cliente sceglie fra campo, giorno e durata prima ancora di aver fatto
