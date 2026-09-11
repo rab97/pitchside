@@ -69,7 +69,7 @@ export function DayTimeline({ bands, weekday, onBandClick }: {
                   const band = bands.find((b) => b.id === seg.bandId)
                   if (band) onBandClick(band)
                 }}
-                className="flex items-center justify-center overflow-hidden border border-pitch bg-pitch-tint px-1 text-[11px] font-medium text-pitch transition-colors hover:bg-pitch/20"
+                className="flex items-center justify-center overflow-hidden border-l border-pitch/40 bg-pitch-tint px-1 text-[11px] font-medium text-pitch transition-colors first:border-l-0 hover:bg-pitch/20"
               >
                 <span className="truncate">{formatEuro(seg.priceCents)}</span>
               </button>
@@ -81,7 +81,7 @@ export function DayTimeline({ bands, weekday, onBandClick }: {
               key={`${seg.fromMin}-${seg.toMin}`}
               title={title}
               style={{ flexGrow: width, flexBasis: 0 }}
-              className="flex items-center justify-center bg-surface-2 text-[11px] text-muted"
+              className="flex items-center justify-center border-l border-line-soft bg-surface-2 text-[11px] text-muted first:border-l-0"
             >
               {width >= MIN_MINUTES_FOR_LABEL ? 'chiuso' : ''}
             </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { FieldPicker } from '@/shared/components/ui/FieldPicker'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { useAdminFields } from '../hooks/useAdminFields'
@@ -6,6 +7,7 @@ import { usePriceBands } from '../hooks/usePriceBands'
 import { DayTimeline, TimelineHourMarks } from './DayTimeline'
 import { BandDialog, type BandFormTarget } from './BandDialog'
 import type { Band } from '../utils/daySegments'
+import { preselectedField } from '../utils/preselectedField'
 import { SettingsPage } from './SettingsPage'
 
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7]
@@ -21,10 +23,13 @@ export function PriceBandsPage() {
   const { fields, isPending: fieldsPending, error: fieldsError } = useAdminFields()
   const [fieldId, setFieldId] = useState<string | null>(null)
   const [target, setTarget] = useState<BandFormTarget | null>(null)
+  const [params] = useSearchParams()
 
   useEffect(() => {
-    if (!fieldId && fields.length > 0) setFieldId(fields[0].id)
-  }, [fields, fieldId])
+    if (!fieldId && fields.length > 0) {
+      setFieldId((current) => current ?? preselectedField(params.get('campo'), fields) ?? fields[0]?.id ?? null)
+    }
+  }, [fields, fieldId, params])
 
   const { bands, isPending: bandsPending, error: bandsError, saveBand, deleteBand } = usePriceBands(fieldId)
 

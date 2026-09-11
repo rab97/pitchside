@@ -62,7 +62,10 @@ export function App() {
           </AuthProvider>
         </FacilityProvider>
       </BrowserRouter>
-      <Toaster richColors position="top-center" />
+      {/* Bottom, and closable. Top-center sat directly over the settings tab bar
+          and swallowed clicks while it showed; moving it alone would recreate that
+          over whatever sits at the bottom, so it also gains a close button. */}
+      <Toaster richColors position="bottom-center" closeButton />
     </QueryClientProvider>
   )
 }

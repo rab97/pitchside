@@ -307,6 +307,15 @@ export function FieldsPage() {
             Coperto
           </label>
 
+          {formTarget?.mode === 'edit' && (
+            <Link
+              to={`/admin/tariffe?campo=${formTarget.field.id}`}
+              className="text-[13px] font-medium text-pitch underline transition-colors hover:text-pitch-strong"
+            >
+              Aggiorna le tariffe di questo campo →
+            </Link>
+          )}
+
           <ErrorNote message={formError} />
 
           <div className="flex justify-end gap-2 pt-0.5">
