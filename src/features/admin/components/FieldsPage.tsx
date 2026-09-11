@@ -67,7 +67,12 @@ export function FieldsPage() {
         covered: form.covered,
       }
       if (formTarget.mode === 'create') {
-        await create({ ...patch, active: true, sort_order: fields.length })
+        // Not `fields.length`: the seed numbers its pitches from 1 and the
+        // column defaults to 0, so counting rows collides with whichever
+        // pitch already holds that number — and the two ties in whatever
+        // order Postgres returns them.
+        const nextSortOrder = fields.reduce((max, f) => Math.max(max, f.sort_order), 0) + 1
+        await create({ ...patch, active: true, sort_order: nextSortOrder })
         toast.success('Campo aggiunto.')
       } else {
         await update(formTarget.field.id, patch)
