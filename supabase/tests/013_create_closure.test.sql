@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(13);
 
 insert into public.facilities (id, slug, name, booking_horizon_days)
   values ('d0000000-0000-0000-0000-0000000000c1', 'test-clo', 'Test Chiusure', 3650);
@@ -28,7 +28,7 @@ insert into public.members (id, facility_id, name, honored_count, missed_count)
           'Cliente', 4, 1);
 
 -- tre prenotazioni: una dentro il periodo sul campo che si chiude, una dentro
--- ma su un altro campo, una gia' disdetta
+-- ma su un altro campo, una gia' disdetta, piu' una fuori dal periodo
 insert into public.bookings (id, facility_id, field_id, member_id, slot, status, price_cents, cancel_deadline)
 values
   ('d0000000-0000-0000-0000-0000000000b1','d0000000-0000-0000-0000-0000000000c1',
@@ -42,7 +42,11 @@ values
   ('d0000000-0000-0000-0000-0000000000b3','d0000000-0000-0000-0000-0000000000c1',
    'd0000000-0000-0000-0000-0000000000c2','d0000000-0000-0000-0000-0000000000c0',
    tstzrange(now() + interval '2 days 2 hours', now() + interval '2 days 3 hours'),
-   'cancelled', 2500, now() + interval '1 day');
+   'cancelled', 2500, now() + interval '1 day'),
+  ('d0000000-0000-0000-0000-0000000000b4','d0000000-0000-0000-0000-0000000000c1',
+   'd0000000-0000-0000-0000-0000000000c2','d0000000-0000-0000-0000-0000000000c0',
+   tstzrange(now() + interval '5 days', now() + interval '5 days 1 hour'),
+   'active', 2500, now() + interval '1 day');
 
 set local role authenticated;
 
@@ -83,6 +87,35 @@ select results_eq(
 select is((select count(*)::int from public.closures
             where facility_id = 'd0000000-0000-0000-0000-0000000000c1'),
   1, 'la chiusura e stata scritta');
+
+-- b4 is on the closed field but outside the period, so it should still be active
+select is((select status from public.bookings where id = 'd0000000-0000-0000-0000-0000000000b4'),
+  'active', 'prenotazione sul campo chiuso ma fuori dal periodo resta attiva');
+
+-- Test whole-facility closure (p_field_id = null)
+-- Period covers both b2 (Campo 2, now() + 2 days) and b4 (Campo 1, now() + 5 days)
+select is(
+  public.create_closure('d0000000-0000-0000-0000-0000000000c1',
+    null,
+    tstzrange(now() + interval '2 days', now() + interval '5 days 2 hours'), 'manutenzione generale'),
+  2,
+  'chiusura di tutto l''impianto cancella prenotazioni su campi diversi');
+
+select is((select status from public.bookings where id = 'd0000000-0000-0000-0000-0000000000b2'),
+  'cancelled', 'prenotazione su altro campo e disdetta dalla chiusura d''impianto');
+select is((select status from public.bookings where id = 'd0000000-0000-0000-0000-0000000000b4'),
+  'cancelled', 'prenotazione fuori dal periodo iniziale ma dentro il secondo e disdetta');
+
+-- Member counters should remain unchanged even after whole-facility closure
+select results_eq(
+  $$select honored_count, missed_count from public.members
+     where id = 'd0000000-0000-0000-0000-0000000000c0'$$,
+  $$values (4, 1)$$,
+  'i contatori non si toccano nemmeno dopo chiusura d''impianto');
+
+select is((select count(*)::int from public.closures
+            where facility_id = 'd0000000-0000-0000-0000-0000000000c1'),
+  2, 'due chiusure scritte');
 
 reset role;
 select * from finish();
