@@ -566,6 +566,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_closure: {
+        Args: {
+          p_facility_id: string
+          p_field_id: string
+          p_period: unknown
+          p_reason: string
+        }
+        Returns: number
+      }
       ensure_my_member: { Args: { p_facility: string }; Returns: string }
       generate_recurrence: {
         Args: { p_recurrence_id: string }
