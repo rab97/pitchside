@@ -404,8 +404,8 @@ export function DateField(props: {
 export function TimeField(props: {
   value: number            // minutes from midnight
   onChange: (min: number) => void
-  min?: number             // default 0
-  max?: number             // default 1440
+  min?: number             // default 0 — below it, options are DISABLED, not removed
+  max?: number             // default 1440 — above it, likewise
   step?: number            // default 15
   'aria-label': string
   id?: string
@@ -467,7 +467,16 @@ Expected: PASS, 4 tests.
 
 - [ ] **Step 5: Write TimeField and its test**
 
-`TimeField` is a `Select` whose options are generated from `min`, `max` and `step`, labelled with `minToLabel` from `@/shared/lib/tz` and valued with the minute count as a string. It converts at its own edge so its callers keep speaking minutes.
+`TimeField` is a `Select` whose options run the **whole day** at `step`
+intervals — `0` to `1440` inclusive — labelled with `minToLabel` from
+`@/shared/lib/tz` and valued with the minute count as a string. It converts at
+its own edge so its callers keep speaking minutes.
+
+`min` and `max` do **not** shorten that list: they mark everything outside them
+`disabled`. Spec §3.1 — a greyed option says "this exists and you cannot have it
+now", a missing one says nothing. `Select` already carries `disabled` per option
+and styles it `data-[disabled]:text-muted`, so this is a flag, not new
+machinery.
 
 Create `src/shared/components/ui/TimeField.test.tsx`:
 
@@ -497,11 +506,28 @@ describe('TimeField', () => {
     expect(onChange).toHaveBeenCalledWith(555)
   })
 
-  it('honours its bounds', () => {
+  it('greys what is out of bounds instead of hiding it', () => {
+    // Spec §3.1. The whole day is still listed; only what cannot be chosen
+    // right now is disabled. A test asserting a shorter list would be
+    // asserting the old behaviour.
     render(<TimeField value={0} onChange={() => {}} min={0} max={60} step={30} aria-label="Dalle" />)
     fireEvent.click(screen.getByRole('combobox', { name: 'Dalle' }))
-    expect(screen.getAllByRole('option').map((o) => o.textContent))
-      .toEqual(['00:00', '00:30', '01:00'])
+
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(49) // 00:00 … 24:00 every 30 minutes
+    expect(screen.getByRole('option', { name: '01:00' })).not.toHaveAttribute('data-disabled')
+    expect(screen.getByRole('option', { name: '01:30' })).toHaveAttribute('data-disabled')
+  })
+
+  it('cannot end at or before it starts', () => {
+    // The relational rule of spec §3.1: an end field whose `min` is the start
+    // plus one step greys the start itself, because a band of zero length is
+    // not a band.
+    render(<TimeField value={1440} onChange={() => {}} min={180} step={15} aria-label="Alle" />)
+    fireEvent.click(screen.getByRole('combobox', { name: 'Alle' }))
+
+    expect(screen.getByRole('option', { name: '02:45' })).toHaveAttribute('data-disabled')
+    expect(screen.getByRole('option', { name: '03:00' })).not.toHaveAttribute('data-disabled')
   })
 })
 ```
@@ -568,7 +594,7 @@ describe('DateField', () => {
 - [ ] **Step 7: Verify and commit**
 
 Run: `npx tsc -b && npm run test && npm run lint && npm run build`
-Expected: PASS, 170 tests (158 + 4 grid + 4 time + 4 date).
+Expected: PASS, 171 tests (158 + 4 grid + 5 time + 4 date).
 
 ```bash
 git add package.json package-lock.json src/shared/components/ui/DateField.tsx \
@@ -603,6 +629,14 @@ Spec §2.4. Three files hold every native date control: `DateJump` is one compon
 
 Each instant becomes a `DateField` and a `TimeField` beside it, in a `flex flex-wrap gap-2` so they stack rather than overflow on a narrow screen. The pair maps to one `Date`: take the day from the date field and the minutes from the time field, in `Europe/Rome`, using the helpers in `src/shared/lib/tz.ts` — `localInputToDate` is the existing path for reading a wall-clock value, and the conversion must keep going through it or its equivalent rather than a fresh `new Date(...)`.
 
+**The two instants must be coherent**, per spec §3.1:
+- the end `DateField` takes `min={startDate}` — an earlier day is greyed in the
+  calendar;
+- the end `TimeField` takes `min={startMin + 15}` **only when the two dates are
+  the same day**, and no relational `min` otherwise. On a later day any hour is
+  legitimate, and greying the morning would be wrong — this is the case that is
+  easy to get wrong by applying the rule unconditionally.
+
 This is what removes the horizontal scroll the author reported: the native control's intrinsic minimum width is what burst the 420px dialog.
 
 - [ ] **Step 3: Replace `RecurrenceForm`'s «Fino al»**
@@ -615,9 +649,22 @@ One `DateField`. Its `min` is the recurrence's start date — the form already k
 
 **This is the customer-facing change.** `src/features/booking/components/DayStrip.test.tsx` and `BookPage.test.tsx` are the guard. They must still pass; if a query in them needs updating because the control is no longer an `<input type="date">`, that is expected — but the *behaviour* they assert must not change, and if you find yourself weakening an assertion, stop and report it.
 
-- [ ] **Step 5: Replace `BandDialog`'s time selects**
+- [ ] **Step 5: Replace `BandDialog`'s time selects, and make the pair coherent**
 
-They already produce minutes via `labelToMin`; `TimeField` does that conversion itself, so the component gets simpler. Keep the bounds exactly: start `min={0} max={1425}`, end `min={15} max={1440}`.
+They already produce minutes via `labelToMin`; `TimeField` does that conversion
+itself, so the component gets simpler.
+
+Bounds, per spec §3.1 — these now **grey** rather than shorten:
+- start: `min={0} max={1425}`;
+- end: `min={startMin + 15} max={1440}` — the relational rule. Choosing 02:45 as
+  a start greys everything up to and including 02:45 in the end list, because a
+  band of zero length is not a band.
+
+The constraint runs one way only. Moving the start above an already-chosen end
+leaves the end invalid rather than rewriting it; the form already refuses to
+submit an end that is not after its start, and that message is what the manager
+should see. Do not silently adjust a value the manager chose because another
+field moved.
 
 - [ ] **Step 6: Verify and commit**
 

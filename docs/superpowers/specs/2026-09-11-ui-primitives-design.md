@@ -140,13 +140,35 @@ and the recurrence form needs only a date; one combined control would carry a
 mode flag, and a component with a mode is two components sharing a file.
 
 Both speak the project's units. `TimeField` takes and returns **minutes from
-midnight** and accepts `min`, `max` and `step` — the band dialog needs
-`0..1425` for a start and `15..1440` for an end, and `1440` is precisely the
-value no native time control could express. `step` defaults to 15, the finest
-`slot_minutes` the database allows, so every boundary a booking can land on
-stays reachable. `DateField` takes and returns a `Date` at **noon Rome**, the
-convention `DateJump` already uses to stop a day sliding across a timezone
-boundary.
+midnight**; `step` defaults to 15, the finest `slot_minutes` the database
+allows, so every boundary a booking can land on stays reachable, and `1440` is
+expressible — precisely the value no native time control could offer.
+`DateField` takes and returns a `Date` at **noon Rome**, the convention
+`DateJump` already uses to stop a day sliding across a timezone boundary.
+
+### 3.1 An impossible choice is disabled, never absent
+
+Both fields take `min` and `max`, and both **grey out** what falls outside them
+rather than omitting it. A greyed option says "this exists and you cannot have
+it now"; a missing one says nothing, and leaves the manager wondering whether
+they looked properly. It is also one mechanism instead of two — the same prop
+serves a structural limit and a relational one.
+
+The relational limits are the point of this section, and there are two:
+
+- **within a pair of times**, the end cannot be at or before the start. The end
+  field's `min` is the start plus one `step`, so choosing 02:45 as a start greys
+  everything up to and including 02:45 in the end list;
+- **within a pair of instants** — the closure dialog, which has a date and a
+  time on each side — the end date's `min` is the start date, and the end
+  **time** is constrained only when both fall on the same day. On a later day
+  any hour is legitimate, and greying the morning would be wrong.
+
+The constraint travels one way, from start to end. Moving a start above an
+already-chosen end is allowed, and leaves the end invalid rather than silently
+rewriting it: the form then refuses to submit and says why. Rewriting a value
+the manager chose, because a different field moved, is the behaviour that makes
+people distrust a form.
 
 ---
 
