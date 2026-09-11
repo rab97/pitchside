@@ -256,8 +256,13 @@ otp_expiry = 3600
 [auth.sms]
 # Il telefono e' l'identita' del prodotto: la registrazione via SMS e' aperta.
 enable_signup = true
-# In locale non si conferma nulla: il codice arriva dalla mappa test_otp.
-enable_confirmations = false
+# Da questo campo dipende la sicurezza del ricongiungimento: con le
+# conferme disattivate, updateUser({phone}) scriverebbe subito
+# phone_confirmed_at senza che nessuno abbia verificato niente, e
+# claim_members_by_verified_phone() si fida esattamente di quel campo.
+# A true, updateUser mette il numero in phone_change e serve comunque
+# verifyOtp col codice (dalla mappa test_otp in locale) per confermarlo.
+enable_confirmations = true
 template = "Il tuo codice per Prenota Campi e' {{ .Code }}"
 max_frequency = "5s"
 
@@ -339,6 +344,23 @@ url = ""
 skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
 email_optional = false
+
+# Porta principale per i clienti: gratuita, mentre ogni SMS si paga.
+# Le credenziali arrivano da un progetto Google Cloud e non stanno in questo
+# file: si leggono dall'ambiente.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+# Resta a true di proposito, ed e' innocuo: lo dice il commento di Supabase
+# stesso qui sopra, «Required for local sign in with Google auth», e questo
+# file configura SOLO l'ambiente locale. In produzione la configurazione di
+# Google sta nel dashboard del progetto, dove questa opzione deve essere
+# false: il nonce e' cio' che lega la risposta di Google alla richiesta che
+# l'ha chiesta, e senza il controllo un id_token ottenuto altrove sarebbe
+# accettato. Metterla a false qui non renderebbe la produzione piu' sicura,
+# renderebbe soltanto impossibile provare l'accesso Google in locale.
+skip_nonce_check = true
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
 # You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.

@@ -1,0 +1,18 @@
+-- find_members_by_phone(text) consegnava l'anagrafica a chiunque.
+--
+-- Era `security definer`, senza `revoke ... from public` e senza nessun
+-- controllo su `auth.uid()`: con la sola chiave anonima restituiva nome,
+-- telefono, email, `notes` — le note interne che la 0004 dichiara «mai
+-- esposte al cliente» — e i contatori di affidabilita', a chiunque
+-- indovinasse un numero. La lettura diretta della tabella, che passa dalla
+-- RLS, tornava correttamente vuota: era la funzione a scavalcarla.
+--
+-- Si cancella invece di autorizzarla, perche' e' codice morto: la
+-- rivendicazione la fa `claim_members_by_verified_phone()` (0012), che non
+-- accetta parametri e legge il numero verificato dal token. L'unico
+-- riferimento residuo era nei tipi generati, che si rigenerano.
+--
+-- Cancellare e' piu' sicuro che autorizzare una funzione che nessuno chiama:
+-- un controllo aggiunto oggi resterebbe da mantenere per sempre su un
+-- percorso che nessun chiamante esercita, quindi che nessuno riproverebbe.
+drop function if exists public.find_members_by_phone(text);

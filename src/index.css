@@ -20,6 +20,23 @@
   --terra:#A8431C; --terra-tint:#F3E3DA;
   --slate:#4F6285; --slate-tint:#DFE4EE;
   --ochre:#8A6510; --ochre-tint:#F0E7CF;
+
+  /* Colore del testo sopra un fondo pieno --pitch/--terra. Sul tema chiaro
+     quei fondi sono scuri, quindi ci vuole testo quasi bianco; sul tema
+     scuro --pitch e --terra sono tinte chiare (vedi sotto), e lo stesso
+     bianco scenderebbe sotto il minimo di contrasto — ci vuole testo
+     quasi nero. Stesso valore del mockup (docs/mockups/01-proposta-design.html). */
+  --on-pitch:#FFFFFF;
+  --on-terra:#FFFFFF;
+
+  /* Stato hover degli accenti: stessa ragione di --pitch-tint sopra, un
+     verde scelto per lo sfondo chiaro non è detto legga bene se scurito
+     tale e quale sul tema scuro. Si deriva quindi per ciascuno schema,
+     invece di scrivere un valore fisso. Sul chiaro si scurisce mescolando
+     un po' di nero (l'effetto "sto per premere"); sul scuro si schiarisce. */
+  --pitch-strong: color-mix(in oklab, var(--pitch) 86%, #000000);
+  --terra-strong: color-mix(in oklab, var(--terra) 86%, #000000);
+
   --shadow:0 1px 2px rgba(19,26,21,.06), 0 10px 28px -14px rgba(19,26,21,.22);
   --r:10px;
 }
@@ -30,10 +47,15 @@
     --line:#2B332C; --line-soft:#222A24;
     --pitch: color-mix(in oklab, var(--brand) 55%, #DCEFE3);
     --pitch-tint: color-mix(in oklab, var(--brand) 30%, #0E120F);
+    --pitch-strong: color-mix(in oklab, var(--pitch) 86%, #DCEFE3);
     --terra:#E08B62; --terra-tint:#33201A;
+    --terra-strong: color-mix(in oklab, var(--terra) 86%, #FFFFFF);
     --slate:#93A6C9; --slate-tint:#1C2432;
     --ochre:#D7B25C; --ochre-tint:#2E2716;
     --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+
+    --on-pitch:#0E120F;
+    --on-terra:#0E120F;
   }
 }
 :root[data-theme="dark"]{
@@ -42,10 +64,15 @@
   --line:#2B332C; --line-soft:#222A24;
   --pitch: color-mix(in oklab, var(--brand) 55%, #DCEFE3);
   --pitch-tint: color-mix(in oklab, var(--brand) 30%, #0E120F);
+  --pitch-strong: color-mix(in oklab, var(--pitch) 86%, #DCEFE3);
   --terra:#E08B62; --terra-tint:#33201A;
+  --terra-strong: color-mix(in oklab, var(--terra) 86%, #FFFFFF);
   --slate:#93A6C9; --slate-tint:#1C2432;
   --ochre:#D7B25C; --ochre-tint:#2E2716;
   --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+
+  --on-pitch:#0E120F;
+  --on-terra:#0E120F;
 }
 
 @theme inline{
@@ -59,8 +86,12 @@
   --color-line-soft: var(--line-soft);
   --color-pitch: var(--pitch);
   --color-pitch-tint: var(--pitch-tint);
+  --color-pitch-strong: var(--pitch-strong);
   --color-terra: var(--terra);
   --color-terra-tint: var(--terra-tint);
+  --color-terra-strong: var(--terra-strong);
+  --color-on-pitch: var(--on-pitch);
+  --color-on-terra: var(--on-terra);
   --color-slate: var(--slate);
   --color-slate-tint: var(--slate-tint);
   --color-ochre: var(--ochre);
@@ -73,6 +104,16 @@
      espone le cifre a larghezza fissa. */
   --font-sans: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI",
                "Helvetica Neue", Arial, sans-serif;
+
+  /* Le due barre fisse del guscio mobile (barra alta col titolo, barra dei
+     tab in basso). Sono un accordo fra quattro file — le barre stesse, la
+     spaziatura delle pagine e il foglio di conferma che si appoggia sopra i
+     tab — quindi stanno qui come token e non come numero ricopiato: si
+     scrivono `h-topbar`, `pt-topbar`, `h-tabbar`. Cambiando l'altezza di una
+     barra si aggiusta tutto insieme, invece di scoprire il disallineamento
+     guardando un telefono. */
+  --spacing-topbar: 3rem;
+  --spacing-tabbar: 3.5rem;
 
   --radius-card: var(--r);
   --shadow-card: var(--shadow);
@@ -98,6 +139,22 @@ summary {
 /* Un bottone spento non è cliccabile: dirlo col cursore evita il clic a vuoto. */
 button:disabled {
   cursor: not-allowed;
+}
+
+/* Un pulsante spento si legge come spento, non come "sto caricando": grigio
+   fisso invece della versione sbiadita del colore attivo (opacity). Tre
+   ragioni per farlo qui, una volta sola, invece che in ogni componente:
+   1. batte le utility di Tailwind senza bisogno di !important — `button:disabled`
+      ha specificità 0,1,1 contro 0,1,0 di una classe come `.bg-pitch`;
+   2. `button:disabled:hover` copre anche il passaggio del mouse — un
+      pulsante spento non deve reagire, altrimenti smentirebbe `not-allowed`;
+   3. vale anche per i pulsanti non ancora scritti: ogni `disabled` futuro
+      è già grigio, senza che nessuno se ne debba ricordare. */
+button:disabled,
+button:disabled:hover {
+  background-color: var(--surface-2);
+  border-color: var(--line-soft);
+  color: var(--muted);
 }
 
 body{
