@@ -22,7 +22,11 @@ describe('DateField', () => {
     render(<DateField value={sept15} onChange={onChange} aria-label="Dal" />)
 
     fireEvent.click(screen.getByRole('button', { name: /Dal/ }))
-    fireEvent.click(screen.getByRole('button', { name: '18' }))
+    // The full date, not the bare day number: a 42-cell grid holds a "18"
+    // from this month and could hold one from an adjacent month too, and the
+    // accessible name has to disambiguate them — see the comment on the
+    // button in DateField.tsx.
+    fireEvent.click(screen.getByRole('button', { name: '18 settembre 2026' }))
 
     const chosen = onChange.mock.calls[0][0] as Date
     expect(chosen.getDate()).toBe(18)
@@ -39,7 +43,7 @@ describe('DateField', () => {
       />,
     )
     fireEvent.click(screen.getByRole('button', { name: /Dal/ }))
-    expect(screen.getByRole('button', { name: '25' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '25 settembre 2026' })).toBeDisabled()
   })
 
   it('keeps the grid reachable by keyboard when the current value is out of range', () => {

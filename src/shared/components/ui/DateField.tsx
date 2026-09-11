@@ -63,16 +63,21 @@ export function DateField(props: {
   }
 
   // Where the roving cell should land: the selected day if it is itself
-  // pickable, else the first pickable day of the shown month, else the first
-  // pickable day anywhere in the 42-day grid. Never a disabled day — a
-  // native `disabled` button refuses `.focus()` outright, and with every
-  // other cell at `tabIndex={-1}` that would leave nothing in the grid the
-  // keyboard can reach. Returns -1 when the whole grid is blocked.
+  // pickable, else today if today is pickable and falls in the shown month
+  // (a picker opened with nothing chosen should land where the user is, not
+  // on the 1st for no reason), else the first pickable day of the shown
+  // month, else the first pickable day anywhere in the 42-day grid. Never a
+  // disabled day — a native `disabled` button refuses `.focus()` outright,
+  // and with every other cell at `tabIndex={-1}` that would leave nothing in
+  // the grid the keyboard can reach. Returns -1 when the whole grid is
+  // blocked.
   function focusIndexFor(base: Date, g: Date[]): number {
     if (value) {
       const idx = g.findIndex((d) => isSameDay(d, value) && !isDayDisabled(d))
       if (idx !== -1) return idx
     }
+    const todayIdx = g.findIndex((d) => isToday(d) && isSameMonth(d, base) && !isDayDisabled(d))
+    if (todayIdx !== -1) return todayIdx
     const inMonthIdx = g.findIndex((d) => isSameMonth(d, base) && !isDayDisabled(d))
     if (inMonthIdx !== -1) return inMonthIdx
     return g.findIndex((d) => !isDayDisabled(d))
@@ -281,14 +286,6 @@ export function DateField(props: {
                       role="gridcell"
                       key={day.toISOString()}
                       aria-selected={selected}
-                      // The full date, not the bare day number the button
-                      // shows: a 42-cell grid holds a trailing "1" from next
-                      // month and a leading "1" from this one, and a bare
-                      // number can't tell a screen-reader user which is
-                      // which. The button underneath keeps its own name (the
-                      // day number) — that's what the component's tests
-                      // click by name.
-                      aria-label={format(day, 'd MMMM yyyy', { locale: it })}
                     >
                       <button
                         type="button"
@@ -296,6 +293,16 @@ export function DateField(props: {
                         tabIndex={i === focusIndex ? 0 : -1}
                         disabled={isDayDisabled(day)}
                         aria-current={isToday(day) ? 'date' : undefined}
+                        // The full date, not the bare day number this button
+                        // shows: a 42-cell grid holds a trailing "1" from next
+                        // month and a leading "1" from this one, and a bare
+                        // number can't tell a screen-reader user which is
+                        // which. This has to sit on the button itself, not
+                        // the gridcell around it — DOM focus (and every
+                        // `.focus()` call in this file) lands on the button,
+                        // and an ancestor's aria-label never folds into a
+                        // descendant's own accessible name.
+                        aria-label={format(day, 'd MMMM yyyy', { locale: it })}
                         onClick={() => selectDay(day)}
                         onFocus={() => setFocusIndex(i)}
                         className={cellClassName(day)}
