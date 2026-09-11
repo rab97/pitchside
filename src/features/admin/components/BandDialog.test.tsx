@@ -14,6 +14,19 @@ function setPrice(euro: string) {
 }
 
 describe('BandDialog — creazione', () => {
+  // `pickTime` opens and closes a real Radix Select popover — focus scope,
+  // portal, positioning — and that cost lands almost entirely on whichever
+  // test first touches it in this worker (see the 865ms/1226ms/122ms split
+  // across this file's three tests in isolation: front-loaded, not evenly
+  // spread). Comfortably under the default 5s alone, but the full suite
+  // runs its ~45 files in parallel, and under that contention this file's
+  // first test has been measured at 4.9s — the same shape
+  // `NewClosureDialog.test.tsx` already documents and raises its timeout
+  // for. No `userEvent` anywhere in this codebase (`fireEvent` throughout),
+  // so there is no inter-event delay to strip; the time is genuine mounting
+  // work, not an artificial wait.
+  const TIMEOUT = 10_000
+
   // The guard this test pins: `handleSubmit` refuses to write a band while
   // either `TimeField` is still unset. Delete the `startMin == null ||
   // endMin == null` check in `BandDialog.tsx` and this is the test that
@@ -40,7 +53,7 @@ describe('BandDialog — creazione', () => {
 
     expect(saveBand).not.toHaveBeenCalled()
     expect(screen.getByText('Scegli l’ora di inizio e l’ora di fine.')).toBeInTheDocument()
-  })
+  }, TIMEOUT)
 
   // The companion to the test above: with both times chosen, the same form
   // does save — without this, a guard that refused *everything* (not just
@@ -67,7 +80,7 @@ describe('BandDialog — creazione', () => {
     expect(saveBand).toHaveBeenCalledWith(
       expect.objectContaining({ startsMin: 1080, endsMin: 1200 }),
     )
-  })
+  }, TIMEOUT)
 })
 
 describe('BandDialog — modifica', () => {
