@@ -193,27 +193,37 @@ export function FieldsPage() {
               renderItem={(field, handle) => (
                 <div className="flex flex-col gap-2 p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <svg
+                    <button
+                      type="button"
                       ref={handle.ref}
                       {...handle.attributes}
                       {...handle.listeners}
                       aria-label="Riordina"
-                      stroke="currentColor"
-                      fill="none"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      viewBox="0 0 20 20"
-                      // `touch-none`: without it, the browser takes a finger
-                      // dragging vertically for a page scroll instead of a
-                      // drag (`ConfirmSheet.tsx` hit the same thing on its
-                      // own handle), and the row stays put while the page
-                      // moves underneath it.
-                      className="h-5 w-5 shrink-0 touch-none cursor-grab text-ink-2 active:cursor-grabbing"
+                      // 44×44 — the same floor the calendar's day cells meet
+                      // (spec: "the tab bar's own floor"), missed here the
+                      // first time round because the listeners sat directly
+                      // on the visible 20×20 glyph with no hit-area padding
+                      // around it. `touch-none`: without it, the browser
+                      // takes a finger dragging vertically for a page
+                      // scroll instead of a drag (`ConfirmSheet.tsx` hit the
+                      // same thing on its own handle), and the row stays
+                      // put while the page moves underneath it.
+                      className="grid h-11 w-11 shrink-0 touch-none place-items-center rounded-md text-ink-2 cursor-grab active:cursor-grabbing"
                     >
-                      <line x1="4" y1="6" x2="16" y2="6" />
-                      <line x1="4" y1="10" x2="16" y2="10" />
-                      <line x1="4" y1="14" x2="16" y2="14" />
-                    </svg>
+                      <svg
+                        aria-hidden="true"
+                        stroke="currentColor"
+                        fill="none"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        viewBox="0 0 20 20"
+                        className="h-5 w-5"
+                      >
+                        <line x1="4" y1="6" x2="16" y2="6" />
+                        <line x1="4" y1="10" x2="16" y2="10" />
+                        <line x1="4" y1="14" x2="16" y2="14" />
+                      </svg>
+                    </button>
 
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <div className="flex items-center gap-2">
