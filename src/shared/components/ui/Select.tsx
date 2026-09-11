@@ -16,12 +16,17 @@ export function Select<T extends string>(props: {
   value: T
   onChange: (value: T) => void
   options: SelectOption<T>[]
+  // Shown in the trigger when `value` is Radix's own reserved "nothing
+  // selected" sentinel, the empty string — see the comment where
+  // `NewClosureDialog` picks a non-empty sentinel for the same reason.
+  // Optional: most callers here always have a real value to show.
+  placeholder?: string
   'aria-label'?: string
   id?: string
   disabled?: boolean
   className?: string
 }): JSX.Element {
-  const { value, onChange, options, id, disabled, className } = props
+  const { value, onChange, options, placeholder, id, disabled, className } = props
   // `null` outside any `Dialog` — Radix's own default (document.body) then
   // applies. See DialogPortalContext in Dialog.tsx for why this is needed
   // at all: a Dialog's native <dialog> lives in the browser's top layer, and
@@ -35,7 +40,7 @@ export function Select<T extends string>(props: {
         aria-label={props['aria-label']}
         className={`field justify-between${className ? ` ${className}` : ''}`}
       >
-        <RadixSelect.Value />
+        <RadixSelect.Value placeholder={placeholder} />
         <svg
           width="14"
           height="14"

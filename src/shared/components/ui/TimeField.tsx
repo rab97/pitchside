@@ -15,11 +15,17 @@ import { Select, type SelectOption } from './Select'
  * carries that per option and styles it `data-[disabled]:text-muted`, so
  * this is a flag on data we already had, not new machinery.
  *
+ * `value` is nullable: a time field starts with nothing chosen has no
+ * legitimate default — `0` would be `00:00`, a real, submittable instant,
+ * not a prompt to pick one — so callers that begin unset (a new closure, a
+ * new price band) pass `null` and show «--:--» until the manager actually
+ * chooses. Editing an existing record still prefills the real value.
+ *
  * `TimeField` converts at its own edge: callers hand it and get back a
  * minute count, never a label.
  */
 export function TimeField(props: {
-  value: number // minutes from midnight
+  value: number | null // minutes from midnight; null = nothing chosen yet
   onChange: (min: number) => void
   min?: number // default 0 — below it, options are DISABLED, not removed
   max?: number // default 1440 — above it, likewise
@@ -42,9 +48,10 @@ export function TimeField(props: {
 
   return (
     <Select
-      value={String(value)}
+      value={value == null ? '' : String(value)}
       onChange={(v) => onChange(Number(v))}
       options={options}
+      placeholder="--:--"
       aria-label={props['aria-label']}
       id={id}
     />

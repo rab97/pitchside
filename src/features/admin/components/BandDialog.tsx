@@ -83,8 +83,10 @@ function BandForm({ target, onClose, bands, saveBand, deleteBand }: {
         b.startsMin === band.startsMin && b.endsMin === band.endsMin && b.priceCents === band.priceCents)
       .map((b) => b.weekday)
   })
-  const [startMin, setStartMin] = useState(() => (target.mode === 'edit' ? target.band.startsMin : 0))
-  const [endMin, setEndMin] = useState(() => (target.mode === 'edit' ? target.band.endsMin : 0))
+  // `null`, not `0`, when nothing is chosen yet: `0` is `00:00`, a real,
+  // submittable time — see the comment on `TimeField`.
+  const [startMin, setStartMin] = useState<number | null>(() => (target.mode === 'edit' ? target.band.startsMin : null))
+  const [endMin, setEndMin] = useState<number | null>(() => (target.mode === 'edit' ? target.band.endsMin : null))
   const [priceEuro, setPriceEuro] = useState(() =>
     target.mode === 'edit' ? (target.band.priceCents / 100).toFixed(2) : '')
   const [error, setError] = useState<string | null>(null)
@@ -103,6 +105,14 @@ function BandForm({ target, onClose, bands, saveBand, deleteBand }: {
     // 23P01 — so this one precondition is checked here, before the write.
     if (weekdays.length === 0) {
       setError('Scegli almeno un giorno della settimana.')
+      return
+    }
+    // A `TimeField` left untouched is unset, not midnight — `startMin`/
+    // `endMin` only read `0` when the manager actually chose `00:00`, so
+    // this is the one check that keeps an untouched field from saving as
+    // if it had been.
+    if (startMin == null || endMin == null) {
+      setError('Scegli l’ora di inizio e l’ora di fine.')
       return
     }
     setError(null)
@@ -185,7 +195,7 @@ function BandForm({ target, onClose, bands, saveBand, deleteBand }: {
       </div>
 
       <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1.5">
+        <div className="flex flex-1 flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-[.06em] text-muted">Dalle</span>
           <TimeField
             value={startMin}
@@ -194,17 +204,17 @@ function BandForm({ target, onClose, bands, saveBand, deleteBand }: {
             max={1425}
             aria-label="Dalle"
           />
-        </label>
-        <label className="flex flex-1 flex-col gap-1.5">
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-[.06em] text-muted">Alle</span>
           <TimeField
             value={endMin}
             onChange={setEndMin}
-            min={startMin + 15}
+            min={startMin == null ? undefined : startMin + 15}
             max={1440}
             aria-label="Alle"
           />
-        </label>
+        </div>
       </div>
 
       <label className="flex flex-col gap-1.5">

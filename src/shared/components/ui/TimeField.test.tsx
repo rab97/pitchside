@@ -3,6 +3,24 @@ import { describe, expect, it, vi } from 'vitest'
 import { TimeField } from './TimeField'
 
 describe('TimeField', () => {
+  it('shows a placeholder when nothing is chosen, not a real time', () => {
+    // `0` would be `00:00` — a legitimate, submittable instant — so a
+    // field with nothing chosen has to hold `null`, not `0`, or a manager
+    // who never touched it would silently save midnight.
+    render(<TimeField value={null} onChange={() => {}} aria-label="Dalle" />)
+    expect(screen.getByRole('combobox', { name: 'Dalle' })).toHaveTextContent('--:--')
+  })
+
+  it('reports minutes when a value is chosen from an unset field', () => {
+    const onChange = vi.fn()
+    render(<TimeField value={null} onChange={onChange} aria-label="Dalle" />)
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Dalle' }))
+    fireEvent.click(screen.getByRole('option', { name: '09:15' }))
+
+    expect(onChange).toHaveBeenCalledWith(555)
+  })
+
   it('shows the current minute as a time', () => {
     render(<TimeField value={1140} onChange={() => {}} aria-label="Dalle" />)
     expect(screen.getByRole('combobox', { name: 'Dalle' })).toHaveTextContent('19:00')

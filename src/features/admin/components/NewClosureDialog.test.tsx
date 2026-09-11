@@ -46,6 +46,18 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
     vi.useRealTimers()
   })
 
+  // `setPeriod` now drives four separate popovers (two `DateField`s, two
+  // `TimeField`s) instead of two synthetic `change` events on native
+  // inputs — real work Radix's focus/portal machinery has to do on every
+  // open and close. That is comfortably inside the default 5s per test in
+  // isolation, but the whole suite runs its ~40 files in parallel, and
+  // under that contention this file's tests are the ones that occasionally
+  // cross the default timeout — not a hang, just more real time for more
+  // real interaction. A longer timeout says so plainly, rather than the
+  // suite intermittently failing for a reason no one re-reading it later
+  // could see.
+  const TIMEOUT = 10_000
+
   it('mentre il controllo è in corso, il pulsante è disattivato e non promette un numero', () => {
     vi.spyOn(conflictsHook, 'useClosureConflicts').mockReturnValue(
       { conflicts: [], isPending: true, error: null } as never)
@@ -56,7 +68,7 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
     const button = screen.getByRole('button', { name: /verifico|chiudi/i })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Verifico…')
-  })
+  }, TIMEOUT)
 
   it('se il controllo fallisce, lo dice invece di mostrare «nessuna prenotazione», e il pulsante resta disattivato', () => {
     vi.spyOn(conflictsHook, 'useClosureConflicts').mockReturnValue(
@@ -71,7 +83,7 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
 
     const button = screen.getByRole('button', { name: 'Chiudi' })
     expect(button).toBeDisabled()
-  })
+  }, TIMEOUT)
 
   it('un periodo scritto al contrario non interroga il database e blocca la conferma', () => {
     const spy = vi.spyOn(conflictsHook, 'useClosureConflicts').mockReturnValue(
@@ -89,7 +101,7 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
 
     const button = screen.getByRole('button', { name: 'Chiudi' })
     expect(button).toBeDisabled()
-  })
+  }, TIMEOUT)
 
   it('con un elenco vero, il pulsante mostra il conteggio ed è attivo', () => {
     vi.spyOn(conflictsHook, 'useClosureConflicts').mockReturnValue({
@@ -107,5 +119,5 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
 
     const button = screen.getByRole('button', { name: 'Chiudi e disdici 1 prenotazioni' })
     expect(button).not.toBeDisabled()
-  })
+  }, TIMEOUT)
 })

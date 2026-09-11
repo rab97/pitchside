@@ -30,9 +30,9 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
 }) {
   const [fieldId, setFieldId] = useState<string | null>(null)
   const [fromDate, setFromDate] = useState<Date | null>(null)
-  const [fromMin, setFromMin] = useState(0)
+  const [fromMin, setFromMin] = useState<number | null>(null)
   const [toDate, setToDate] = useState<Date | null>(null)
-  const [toMin, setToMin] = useState(0)
+  const [toMin, setToMin] = useState<number | null>(null)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -41,9 +41,9 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
     if (!open) return
     setFieldId(null)
     setFromDate(null)
-    setFromMin(0)
+    setFromMin(null)
     setToDate(null)
-    setToMin(0)
+    setToMin(null)
     setReason('')
     setError(null)
   }, [open])
@@ -60,7 +60,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
     return localInputToDate(`${format(rolledDate, 'yyyy-MM-dd')}T${minToLabel(rolledMin)}`)
   }
 
-  const rawPeriod = fromDate && toDate
+  const rawPeriod = fromDate && fromMin != null && toDate && toMin != null
     ? { from: combine(fromDate, fromMin), to: combine(toDate, toMin) }
     : null
 
@@ -136,6 +136,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
               <TimeField
                 value={fromMin}
                 onChange={setFromMin}
+                max={1425}
                 aria-label="Ora di inizio"
               />
             </div>
@@ -152,7 +153,11 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
               <TimeField
                 value={toMin}
                 onChange={setToMin}
-                min={fromDate && toDate && isSameDay(fromDate, toDate) ? fromMin + 15 : undefined}
+                min={
+                  fromDate && fromMin != null && toDate && isSameDay(fromDate, toDate)
+                    ? fromMin + 15
+                    : undefined
+                }
                 aria-label="Ora di fine"
               />
             </div>
