@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { Select } from '@/shared/components/ui/Select'
 import { fieldKind } from '@/shared/lib/fieldKind'
 import { messageForFieldWrite } from '../utils/fieldMessages'
 import { useAdminFields, type AdminField } from '../hooks/useAdminFields'
@@ -267,7 +268,7 @@ export function FieldsPage() {
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">Nome</span>
             <input
-              className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+              className="field"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               required
@@ -276,21 +277,17 @@ export function FieldsPage() {
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">Tipo</span>
-            <select
-              className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+            <Select
               value={form.kind}
-              onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value }))}
-            >
-              {KIND_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              onChange={(kind) => setForm((f) => ({ ...f, kind }))}
+              options={KIND_OPTIONS}
+            />
           </label>
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">Superficie</span>
             <input
-              className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+              className="field"
               value={form.surface}
               onChange={(e) => setForm((f) => ({ ...f, surface: e.target.value }))}
               required

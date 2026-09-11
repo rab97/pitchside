@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { Select } from '@/shared/components/ui/Select'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useUpdateFacility } from '../hooks/useUpdateFacility'
 import { SettingsPage } from './SettingsPage'
 
 // The check constraint on `facilities.slot_minutes` allows no other values.
 const SLOT_OPTIONS = [15, 30, 60]
+// `Select` takes strings; the numbers above are converted at this edge only.
+const SLOT_SELECT_OPTIONS = SLOT_OPTIONS.map((m) => ({ value: String(m), label: String(m) }))
 
 /**
  * The club's own identity, plus the rules the booking engine applies across
@@ -55,7 +58,7 @@ export function FacilityPage() {
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] uppercase tracking-[.06em] text-muted">Nome</span>
               <input
-                className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+                className="field"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -75,7 +78,7 @@ export function FacilityPage() {
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
               <input
-                className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none placeholder:text-muted focus:border-pitch"
+                className="field"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 inputMode="tel"
@@ -86,7 +89,7 @@ export function FacilityPage() {
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] uppercase tracking-[.06em] text-muted">Indirizzo</span>
               <input
-                className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none placeholder:text-muted focus:border-pitch"
+                className="field"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="facoltativo"
@@ -105,7 +108,7 @@ export function FacilityPage() {
               <input
                 type="number"
                 min={0}
-                className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+                className="field"
                 value={cancelHours}
                 onChange={(e) => setCancelHours(Number(e.target.value))}
                 required
@@ -119,7 +122,7 @@ export function FacilityPage() {
               <input
                 type="number"
                 min={1}
-                className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+                className="field"
                 value={horizonDays}
                 onChange={(e) => setHorizonDays(Number(e.target.value))}
                 required
@@ -130,15 +133,11 @@ export function FacilityPage() {
               <span className="text-[11px] uppercase tracking-[.06em] text-muted">
                 Durata della fascia (minuti)
               </span>
-              <select
-                className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
-                value={slotMinutes}
-                onChange={(e) => setSlotMinutes(Number(e.target.value))}
-              >
-                {SLOT_OPTIONS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+              <Select
+                value={String(slotMinutes)}
+                onChange={(v) => setSlotMinutes(Number(v))}
+                options={SLOT_SELECT_OPTIONS}
+              />
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -148,7 +147,7 @@ export function FacilityPage() {
               <input
                 type="number"
                 min={1}
-                className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+                className="field"
                 value={minDuration}
                 onChange={(e) => setMinDuration(Number(e.target.value))}
                 required

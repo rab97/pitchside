@@ -205,7 +205,7 @@ export function BandDialog({ target, onClose, bands, saveBand, deleteBand }: {
             min="0"
             step="0.01"
             inputMode="decimal"
-            className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+            className="field"
             value={priceEuro}
             onChange={(e) => setPriceEuro(e.target.value)}
             required

@@ -4,6 +4,7 @@ import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { Select } from '@/shared/components/ui/Select'
 import { formatEuro } from '@/shared/lib/money'
 import { localInputToDate, minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useClosureConflicts } from '../hooks/useClosureConflicts'
@@ -80,6 +81,15 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
     return fields.find((f) => f.id === id)?.name ?? '—'
   }
 
+  // Radix Select reserves the empty string internally to mean "nothing
+  // selected" — an Item using it never shows its label in the trigger — so
+  // "tutto l'impianto" needs a real, non-empty sentinel here.
+  const ALL_FIELDS = 'tutto'
+  const fieldOptions = [
+    { value: ALL_FIELDS, label: "Tutto l'impianto" },
+    ...fields.map((f) => ({ value: f.id, label: f.name })),
+  ]
+
   return (
     <Dialog open={open} onClose={onClose} labelledBy="closure-form-title">
       <form className="flex flex-col gap-3 p-4" onSubmit={handleSubmit}>
@@ -89,16 +99,11 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-[.06em] text-muted">Campo</span>
-          <select
-            className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
-            value={fieldId ?? ''}
-            onChange={(e) => setFieldId(e.target.value || null)}
-          >
-            <option value="">Tutto l'impianto</option>
-            {fields.map((f) => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
+          <Select
+            value={fieldId ?? ALL_FIELDS}
+            onChange={(v) => setFieldId(v === ALL_FIELDS ? null : v)}
+            options={fieldOptions}
+          />
         </label>
 
         <div className="flex gap-3">
@@ -106,7 +111,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">Da</span>
             <input
               type="datetime-local"
-              className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+              className="field"
               value={fromStr}
               onChange={(e) => setFromStr(e.target.value)}
               required
@@ -116,7 +121,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">A</span>
             <input
               type="datetime-local"
-              className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+              className="field"
               value={toStr}
               onChange={(e) => setToStr(e.target.value)}
               required
@@ -132,7 +137,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
           <span className="text-[11px] uppercase tracking-[.06em] text-muted">Motivo (facoltativo)</span>
           <input
             type="text"
-            className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
+            className="field"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Es. tubo rotto, festività…"
