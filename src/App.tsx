@@ -18,6 +18,8 @@ import { BookingPage } from '@/features/booking/components/BookingPage'
 // a parte, caricato solo entrando su /admin.
 const AdminPage = lazy(() =>
   import('@/features/admin/components/AdminPage').then((m) => ({ default: m.AdminPage })))
+const FacilityPage = lazy(() =>
+  import('@/features/admin/components/FacilityPage').then((m) => ({ default: m.FacilityPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -45,6 +47,7 @@ export function App() {
                   path="/admin"
                   element={<RequireAdmin><AdminPage /></RequireAdmin>}
                 />
+                <Route path="/admin/struttura" element={<RequireAdmin><FacilityPage /></RequireAdmin>} />
               </Routes>
             </Suspense>
           </AuthProvider>

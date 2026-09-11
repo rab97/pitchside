@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { addDays, format, isToday } from 'date-fns'
 import { it } from 'date-fns/locale'
+import { Link } from 'react-router-dom'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useFields } from '@/shared/hooks/useFields'
 import { DateJump } from '@/shared/components/ui/DateJump'
@@ -74,6 +75,12 @@ export function AdminPage() {
                   PS007). Dargli gli stessi limiti del cliente su `/prenota`
                   gli toglierebbe entrambe le cose. */}
               <DateJump onSelect={setDay} label="Vai a una data" />
+              <Link
+                to="/admin/struttura"
+                className="ml-1 inline-flex h-6 items-center rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+              >
+                Impostazioni
+              </Link>
             </div>
           </div>
 
