@@ -1,5 +1,6 @@
 import * as RadixSelect from '@radix-ui/react-select'
-import type { JSX } from 'react'
+import { useContext, type JSX } from 'react'
+import { DialogPortalContext } from './Dialog'
 
 export type SelectOption<T extends string> = { value: T; label: string; disabled?: boolean }
 
@@ -21,6 +22,11 @@ export function Select<T extends string>(props: {
   className?: string
 }): JSX.Element {
   const { value, onChange, options, id, disabled, className } = props
+  // `null` outside any `Dialog` — Radix's own default (document.body) then
+  // applies. See DialogPortalContext in Dialog.tsx for why this is needed
+  // at all: a Dialog's native <dialog> lives in the browser's top layer, and
+  // a plain body portal would land outside it, invisible and inert.
+  const dialogContainer = useContext(DialogPortalContext)
 
   return (
     <RadixSelect.Root value={value} onValueChange={(v) => onChange(v as T)} disabled={disabled}>
@@ -44,7 +50,7 @@ export function Select<T extends string>(props: {
           <path d="m6 9 6 6 6-6" />
         </svg>
       </RadixSelect.Trigger>
-      <RadixSelect.Portal>
+      <RadixSelect.Portal container={dialogContainer ?? undefined}>
         <RadixSelect.Content
           position="popper"
           sideOffset={-1}
