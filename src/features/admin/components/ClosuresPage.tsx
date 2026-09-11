@@ -4,15 +4,23 @@ import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useAdminFields } from '../hooks/useAdminFields'
 import { useClosures, type Closure } from '../hooks/useClosures'
 import { messageForClosureDelete } from '../utils/closureMessages'
 import { NewClosureDialog } from './NewClosureDialog'
 import { SettingsPage } from './SettingsPage'
 
+// `format` alone renders in the device's own zone; a manager reading this
+// list off their phone must see the same hour they typed in Rome. Splitting
+// the date from `minutesOfDay`/`minToLabel` is the convention the rest of
+// the app already follows — see `BookingCell`, `BookingPage`, `MyBookingsPage`.
+function instantLabel(d: Date): string {
+  return `${format(d, 'EEE d MMM', { locale: it })}, ${minToLabel(minutesOfDay(d))}`
+}
+
 function periodLabel(closure: Closure): string {
-  return `${format(closure.starts_at, "EEE d MMM, HH:mm", { locale: it })} – `
-    + `${format(closure.ends_at, "EEE d MMM, HH:mm", { locale: it })}`
+  return `${instantLabel(closure.starts_at)} – ${instantLabel(closure.ends_at)}`
 }
 
 function ClosureRow({ closure, onDelete }: { closure: Closure; onDelete?: () => void }) {

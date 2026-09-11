@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
-import { localInputToDate } from '@/shared/lib/tz'
+import { localInputToDate, minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useClosureConflicts } from '../hooks/useClosureConflicts'
 import { messageForClosureConflictsError, messageForClosureWrite } from '../utils/closureMessages'
 import type { NewClosure } from '../hooks/useClosures'
@@ -158,7 +158,8 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
                   {conflicts.map((c) => (
                     <li key={c.id} className="flex flex-col gap-0.5 py-2 text-[12.5px]">
                       <span className="text-ink">
-                        {format(c.slot_start, "EEE d MMM, HH:mm", { locale: it })} · {fieldName(c.field_id)}
+                        {format(c.slot_start, 'EEE d MMM', { locale: it })}, {minToLabel(minutesOfDay(c.slot_start))}
+                        {' · '}{fieldName(c.field_id)}
                       </span>
                       <span className="text-ink-2">
                         {c.member_name}
