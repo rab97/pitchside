@@ -48,6 +48,7 @@ export function BandDialog({ target, onClose, bands, saveBand, deleteBand }: {
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   // Deliberately keyed on `target` alone, not on `bands`: a failed save
   // invalidates and refetches (see usePriceBands), which changes `bands`
@@ -56,6 +57,7 @@ export function BandDialog({ target, onClose, bands, saveBand, deleteBand }: {
   useEffect(() => {
     if (!target) return
     setError(null)
+    setConfirmingDelete(false)
     if (target.mode === 'edit') {
       const { band } = target
       const group = bands.filter((b) =>
@@ -102,6 +104,11 @@ export function BandDialog({ target, onClose, bands, saveBand, deleteBand }: {
     } finally {
       setSaving(false)
     }
+  }
+
+  function requestDelete() {
+    setError(null)
+    setConfirmingDelete(true)
   }
 
   async function handleDelete() {
@@ -207,34 +214,61 @@ export function BandDialog({ target, onClose, bands, saveBand, deleteBand }: {
 
         <ErrorNote message={error} />
 
-        <div className="flex items-center justify-between gap-2 pt-0.5">
-          {target?.mode === 'edit' ? (
-            <button
-              type="button"
-              disabled={deleting || saving}
-              onClick={handleDelete}
-              className="rounded-[7px] border border-terra px-3 py-1.5 text-[12.5px] text-terra transition-colors hover:bg-terra-tint"
-            >
-              {deleting ? 'Elimino…' : 'Elimina'}
-            </button>
-          ) : <span />}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-[7px] border border-line px-3 py-1.5 text-[12.5px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
-            >
-              Annulla
-            </button>
-            <button
-              type="submit"
-              disabled={saving || deleting}
-              className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
-            >
-              {saving ? 'Salvo…' : 'Salva'}
-            </button>
+        {confirmingDelete ? (
+          // Removing a group takes down every day it made bookable — up to
+          // seven rows in one click — and is the only destructive action on
+          // this screen with no guard before this. `ClosuresPage`'s delete
+          // confirmation is the register this borrows.
+          <div className="rounded-lg border border-terra bg-terra-tint p-3 text-[12.5px] text-terra">
+            Eliminando questa fascia il campo chiude in quei giorni, finché non ne aggiungi un’altra.
+            <div className="mt-3 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-[7px] border border-line px-3 py-1.5 text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+              >
+                Annulla
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDelete}
+                className="rounded-[7px] bg-terra px-3 py-1.5 font-medium text-on-terra transition-colors hover:bg-terra-strong"
+              >
+                {deleting ? 'Elimino…' : 'Conferma l’eliminazione'}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2 pt-0.5">
+            {target?.mode === 'edit' ? (
+              <button
+                type="button"
+                disabled={deleting || saving}
+                onClick={requestDelete}
+                className="rounded-[7px] border border-terra px-3 py-1.5 text-[12.5px] text-terra transition-colors hover:bg-terra-tint"
+              >
+                Elimina
+              </button>
+            ) : <span />}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-[7px] border border-line px-3 py-1.5 text-[12.5px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+              >
+                Annulla
+              </button>
+              <button
+                type="submit"
+                disabled={saving || deleting}
+                className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
+              >
+                {saving ? 'Salvo…' : 'Salva'}
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </Dialog>
   )
