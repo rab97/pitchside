@@ -24,6 +24,8 @@ const FieldsPage = lazy(() =>
   import('@/features/admin/components/FieldsPage').then((m) => ({ default: m.FieldsPage })))
 const PriceBandsPage = lazy(() =>
   import('@/features/admin/components/PriceBandsPage').then((m) => ({ default: m.PriceBandsPage })))
+const ClosuresPage = lazy(() =>
+  import('@/features/admin/components/ClosuresPage').then((m) => ({ default: m.ClosuresPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -54,6 +56,7 @@ export function App() {
                 <Route path="/admin/struttura" element={<RequireAdmin><FacilityPage /></RequireAdmin>} />
                 <Route path="/admin/campi" element={<RequireAdmin><FieldsPage /></RequireAdmin>} />
                 <Route path="/admin/tariffe" element={<RequireAdmin><PriceBandsPage /></RequireAdmin>} />
+                <Route path="/admin/chiusure" element={<RequireAdmin><ClosuresPage /></RequireAdmin>} />
               </Routes>
             </Suspense>
           </AuthProvider>

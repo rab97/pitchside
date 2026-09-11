@@ -240,6 +240,50 @@ Poi crea una prenotazione e verifica che compaia **senza svuotare la cache**.
 
 ---
 
+## 11 · Configurare l'impianto
+
+Questo scenario chiude la fase 1B: un campo nuovo, il suo prezzo, e una
+chiusura che lo toglie di mezzo con dentro una prenotazione vera — non da
+`psql`, dal pannello.
+
+Entra come gestore (`347 220 15 63`, codice `472839`) su `/admin/campi`.
+
+**Aggiungi un quarto campo.** «Aggiungi campo» → nome `Campo 4`, un tipo e una
+superficie a piacere. Deve comparire in fondo alla lista, attivo.
+
+Vai su **Tariffe**, seleziona **Campo 4**. Devi leggere: «Questo campo non ha
+tariffe: è chiuso tutti i giorni. Aggiungi una fascia per aprirlo.» — è vero,
+finché non gli dai un prezzo.
+
+**Prezzalo per l'intera settimana.** «Aggiungi fascia» → tutti e sette i
+giorni selezionati, dalle `00:00` alle `24:00`, un prezzo a piacere. Salva: la
+settimana di Campo 4 deve colorarsi tutta, senza nessun tratto «chiuso».
+
+Apri `/prenota` in una **seconda scheda**, senza account. **Campo 4** deve
+comparire fra i campi selezionabili, con gli orari liberi e il prezzo appena
+scritto — non una stima.
+
+**Prenota su Campo 4.** Scegli un giorno e un'ora su quel campo, conferma;
+entra con `339 412 88 07` e codice `472839` (Giulio Dante), poi conferma di
+nuovo. Devi tornare con la prenotazione fatta.
+
+Torna alla scheda del gestore, su **Chiusure**. «Aggiungi chiusura» → campo
+**Campo 4**, un periodo che copre l'orario appena prenotato, un motivo a
+piacere. Deve comparire l'anteprima con la prenotazione di Giulio Dante — nome
+e telefono — sopra la frase «Chiudendo, queste 1 prenotazioni verranno
+disdette.» e, subito sotto, questa, che non deve mai mancare:
+
+> I clienti non ricevono ancora un avviso: chiamali tu.
+
+Il pulsante deve leggere «Chiudi e disdici 1 prenotazioni». Confermalo: il
+messaggio deve dire «Chiusura salvata. Disdette 1 prenotazioni.»
+
+Torna sulla scheda del cliente e apri `/prenotazioni`: la prenotazione che
+avevi appena fatto deve comparire fra le passate, etichettata **Disdetta** —
+l'ha cancellata la chiusura, non tu.
+
+---
+
 ## I test automatici
 
 ```bash
