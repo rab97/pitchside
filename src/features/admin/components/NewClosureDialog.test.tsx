@@ -120,4 +120,16 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
     const button = screen.getByRole('button', { name: 'Chiudi e disdici 1 prenotazioni' })
     expect(button).not.toBeDisabled()
   }, TIMEOUT)
+
+  it('con il solo inizio scelto, il pulsante resta disattivato', () => {
+    vi.spyOn(conflictsHook, 'useClosureConflicts').mockReturnValue(
+      { conflicts: [], isPending: false, error: null } as never)
+
+    renderDialog()
+    // Only the start instant — no `setPeriod`, which would fill both.
+    pickInstant('Data di inizio', 'Ora di inizio', '19:00')
+
+    const button = screen.getByRole('button', { name: 'Chiudi' })
+    expect(button).toBeDisabled()
+  }, TIMEOUT)
 })
