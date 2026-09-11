@@ -31,3 +31,22 @@ if (!HTMLDialogElement.prototype.showModal) {
     this.removeAttribute('open')
   }
 }
+
+// Radix's Select needs two more jsdom APIs that do not exist there: it scrolls
+// the highlighted item into view as the pointer or keyboard moves, and it
+// measures the trigger and viewport with DOMRect to position and size the
+// popper. Gaps in the test environment, not in the product — filled here once.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {}
+}
+if (!globalThis.DOMRect) {
+  globalThis.DOMRect = class {
+    x: number; y: number; width: number; height: number
+    top = 0; right = 0; bottom = 0; left = 0
+    constructor(x = 0, y = 0, width = 0, height = 0) {
+      this.x = x; this.y = y; this.width = width; this.height = height
+    }
+    static fromRect() { return new globalThis.DOMRect() }
+    toJSON() { return {} }
+  } as unknown as typeof DOMRect
+}

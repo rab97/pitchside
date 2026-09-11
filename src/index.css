@@ -157,6 +157,36 @@ button:disabled:hover {
   color: var(--muted);
 }
 
+/* The metrics of every form control, in one place.
+   Two padding scales had grown side by side in the panel — `px-2.5 py-2` in
+   nineteen places and `px-3 py-1.5` in sixteen — so an input stacked above a
+   select started its text at a different x. Fixing each site is how they
+   diverged; a shared class makes them agree by construction, and a control
+   written later is aligned before anyone checks.
+   Padding is symmetric: a native select paints the system arrow over its own
+   text, which is why the right side used to need special treatment. Ours
+   draws its own chevron inside this padding. */
+@layer components {
+  .field {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 2.25rem;
+    padding-inline: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: 13.5px;
+    outline: none;
+  }
+  .field:focus,
+  .field:focus-visible,
+  .field[data-state="open"] {
+    border-color: var(--pitch);
+  }
+}
+
 body{
   background: var(--ground);
   color: var(--ink);
