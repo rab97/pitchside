@@ -155,8 +155,9 @@ Four routes behind the existing `RequireAdmin`, joined by one tab bar labelled
 /admin/struttura   club details and booking rules
 ```
 
-They join the lazy chunk `AdminPage` already sits in, so a customer opening the
-home page still never downloads the panel.
+Each page is lazy-loaded on its own, the way `AdminPage` already is, so a
+customer opening the home page never downloads any of the panel — and a manager
+who only ever changes a price never downloads the closures screen either.
 
 Code follows the structure `CLAUDE.md` lays down:
 
