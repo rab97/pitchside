@@ -284,10 +284,64 @@ l'ha cancellata la chiusura, non tu.
 
 ---
 
+## 12 · Le stesse tre cose, ma col pollice
+
+I campi di data e ora del pannello, e il riordino dei campi, hanno preso il
+posto dei controlli nativi del telefono — la ruota di `<input type="date">`,
+in particolare, che era grande, familiare e gratis. Questo scenario esiste
+solo per verificare che non abbiamo peggiorato quello che abbiamo sostituito:
+va provato su un **telefono vero**, non in una finestra del browser ridotta.
+Una finestra stretta con l'emulazione touch mostra se qualcosa si rompe nel
+layout, ma non dice come un controllo si sente sotto un pollice vero, né
+arbitra un vero scorrimento col dito contro un trascinamento.
+
+Avvia il server rivolto alla rete locale:
+
+```bash
+npm run dev:phone   # porta 5175, ascolta su tutte le interfacce di rete
+```
+
+Trova l'indirizzo di questa macchina sulla Wi-Fi (`ip addr` o le impostazioni
+di rete: qualcosa come `192.168.1.x`) e apri `http://<quell'indirizzo>:5175/admin`
+dal telefono, sulla stessa rete. Entra come gestore (`347 220 15 63`, codice
+`472839`).
+
+**1 · Una data, col pollice.** Su **Chiusure** → «Aggiungi chiusura», tocca il
+campo «Da». Deve aprirsi la griglia del mese, non la ruota nativa del
+telefono. Ogni giorno deve essere comodo da centrare al primo tocco, senza
+mirare con cura né allontanare lo schermo per vederci meglio. Confrontalo
+onestamente con la ruota che sostituisce: se quella era più comoda, è un
+difetto da scrivere, non da archiviare — lo dice la specifica di questo
+lavoro, non solo questa guida.
+
+**2 · Un'ora, da una lista di 97.** Nello stesso dialogo, tocca un campo
+orario. Deve aprirsi un elenco che scorre con un dito come scorrerebbe
+qualunque lista lunga — senza salti, senza una riga che sfugge al tocco e ne
+seleziona un'altra. Raggiungere un orario lontano da mezzanotte non deve
+servire più di uno o due scorrimenti.
+
+**3 · Un campo, trascinato con un dito.** Su **Campi**, appoggia il dito sulla
+maniglia a sinistra del nome di un campo (le tre righe orizzontali) e
+trascinala sopra un altro campo della lista. La riga deve seguire il dito da
+subito; se invece si muove la pagina intera e il campo resta fermo, la
+maniglia ha fallito il suo unico compito. Rilascia: l'ordine deve restare
+quello a cui l'hai portato, e ricaricando la pagina non deve tornare quello
+precedente.
+
+> Nota per chi legge prima di avere un telefono in mano: misurata in un
+> browser desktop, la cella di un giorno nel calendario è 44×44px — la soglia
+> che questa guida chiede — ma la maniglia di trascinamento è un `<svg>` di
+> soli 20×20px, senza margine di tolleranza attorno. Se al punto 3 la maniglia
+> risulta difficile da agganciare con un dito, non è un'impressione: è quella
+> misura, ed è la cosa più probabile da segnalare come difetto in questo
+> scenario.
+
+---
+
 ## I test automatici
 
 ```bash
-npm run test        # 150 test: funzioni pure, messaggi d'errore, render
+npm run test        # 193 test: funzioni pure, messaggi d'errore, render
 npm run test:db     # 82 test pgTAP: regole di dominio, RLS, autorizzazione
 npm run build       # compilazione e pacchetti
 ```
