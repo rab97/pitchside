@@ -59,7 +59,13 @@ export function PriceBandsPage() {
 
           {bandsPending ? (
             <p className="text-[13px] text-muted">Carico…</p>
-          ) : (
+          ) : bandsError ? null : (
+            // `bands.length === 0` only means something once loading and
+            // error are ruled out: a failed load also leaves `bands` at its
+            // `[]` fallback, and rendering "chiuso tutti i giorni" off that
+            // would assert the pitch is closed when the truth is we don't
+            // know — the same defect Task 4 fixed for the pitch list, here
+            // kept as three distinguishable renders rather than two.
             <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card">
               {bands.length === 0 && (
                 <p className="text-[13px] text-muted">

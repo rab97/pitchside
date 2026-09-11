@@ -11,6 +11,18 @@ import type { SaveBandInput } from '../hooks/usePriceBands'
 
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7]
 
+// Every quarter-hour of a day, both ends included — 00:00 and 24:00 both
+// appear here, because 24:00 is a value `endsMin` legitimately holds (the
+// seed's own weekend band closes at midnight) and `<input type="time">`
+// cannot represent it: the WHATWG valid-time-string grammar caps the hour
+// at 23, so setting "24:00" leaves the control empty and, being required,
+// blocks the whole form. A `<select>` has no such ceiling, and 15 minutes is
+// the finest `slot_minutes` the database allows, so every boundary a
+// booking can actually land on stays an option here.
+const QUARTER_HOURS = Array.from({ length: 97 }, (_, i) => i * 15) // 0, 15, …, 1440
+const START_TIME_OPTIONS = QUARTER_HOURS.slice(0, -1).map(minToLabel) // 00:00 … 23:45
+const END_TIME_OPTIONS = QUARTER_HOURS.slice(1).map(minToLabel) // 00:15 … 24:00
+
 export type BandFormTarget = { mode: 'create' } | { mode: 'edit'; band: Band }
 
 /**
@@ -151,23 +163,31 @@ export function BandDialog({ target, onClose, bands, saveBand, deleteBand }: {
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">Dalle</span>
-            <input
-              type="time"
+            <select
               className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
               required
-            />
+            >
+              <option value="" disabled>--:--</option>
+              {START_TIME_OPTIONS.map((label) => (
+                <option key={label} value={label}>{label}</option>
+              ))}
+            </select>
           </label>
           <label className="flex flex-1 flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">Alle</span>
-            <input
-              type="time"
+            <select
               className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
               required
-            />
+            >
+              <option value="" disabled>--:--</option>
+              {END_TIME_OPTIONS.map((label) => (
+                <option key={label} value={label}>{label}</option>
+              ))}
+            </select>
           </label>
         </div>
 
