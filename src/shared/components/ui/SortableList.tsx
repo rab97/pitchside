@@ -7,9 +7,12 @@ import {
   closestCenter,
   useSensor,
   useSensors,
+  type Announcements,
   type DragEndEvent,
   type DraggableAttributes,
   type DraggableSyntheticListeners,
+  type ScreenReaderInstructions,
+  type UniqueIdentifier,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -25,6 +28,40 @@ export type SortHandleProps = {
   ref: (node: Element | null) => void
   attributes: DraggableAttributes
   listeners: DraggableSyntheticListeners
+}
+
+// dnd-kit narrates the gesture to screen readers on its own — its defaults
+// are English ("Picked up sortable item…", "was moved…"), and a translated
+// `aria-label` on the handle does not reach any of that. Every string a
+// screen reader user hears has to be Italian too, the same as every string
+// a sighted user reads.
+const screenReaderInstructions: ScreenReaderInstructions = {
+  draggable:
+    'Per sollevare un elemento trascinabile, premi la barra spaziatrice. ' +
+    'Durante il trascinamento, usa le frecce per spostarlo. ' +
+    'Premi di nuovo la barra spaziatrice per rilasciarlo nella nuova posizione, oppure premi Esc per annullare.',
+}
+
+function buildAnnouncements(items: { id: string }[]): Announcements {
+  const total = items.length
+  const positionOf = (id: UniqueIdentifier) => items.findIndex((item) => item.id === id) + 1
+
+  return {
+    onDragStart({ active }) {
+      return `Elemento sollevato dalla posizione ${positionOf(active.id)} di ${total}.`
+    },
+    onDragOver({ over }) {
+      if (!over) return undefined
+      return `Elemento spostato in posizione ${positionOf(over.id)} di ${total}.`
+    },
+    onDragEnd({ over }) {
+      if (!over) return 'Elemento rilasciato.'
+      return `Elemento rilasciato in posizione ${positionOf(over.id)} di ${total}.`
+    },
+    onDragCancel() {
+      return 'Riordino annullato: l’elemento è tornato al suo posto.'
+    },
+  }
 }
 
 /**
@@ -67,7 +104,12 @@ export function SortableList<T extends { id: string }>({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      accessibility={{ screenReaderInstructions, announcements: buildAnnouncements(items) }}
+    >
       <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
           <SortableRow key={item.id} item={item} renderItem={renderItem} />

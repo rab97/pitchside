@@ -33,9 +33,12 @@ type FormTarget = { mode: 'create' } | { mode: 'edit'; field: AdminField }
 export function FieldsPage() {
   const { fields, isPending, error, create, update, remove, reorderFields } = useAdminFields()
 
-  // The order shown while a drag's write is in flight or has just failed —
-  // `null` means "trust the query", which is where it goes back to the
-  // moment a write turns out not to have happened after all.
+  // The order shown while a drag's write is in flight — `null` means "trust
+  // the query". It is cleared the moment the write settles, success or
+  // failure alike: kept past that point it would freeze the list at that
+  // instant, hiding every later change to `fields` (a rename, a toggle, a
+  // new pitch) behind a stale snapshot no reload but a full page refresh
+  // would clear.
   const [order, setOrder] = useState<AdminField[] | null>(null)
   const displayFields = order ?? fields
 
@@ -133,10 +136,17 @@ export function FieldsPage() {
       await reorderFields(patches)
     } catch (e) {
       // A wrong order the manager can see and redo is recoverable; a wrong
-      // order the screen hides is not. Drop the optimistic view and let the
-      // now-invalidated query show what the database actually holds.
-      setOrder(null)
+      // order the screen hides is not — say so.
       toast.error(messageForFieldWrite(e))
+    } finally {
+      // Whichever way the write settled, the optimistic snapshot has done
+      // its job: drop it so the screen goes back to trusting the query.
+      // Holding onto it after a *successful* write is just as wrong as
+      // holding onto it after a failed one — a rename, a toggle, a new
+      // pitch added by then would all update `fields` and never reach the
+      // screen, because `displayFields` would keep resolving to this frozen
+      // array forever.
+      setOrder(null)
     }
   }
 
@@ -193,7 +203,12 @@ export function FieldsPage() {
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       viewBox="0 0 20 20"
-                      className="h-5 w-5 shrink-0 cursor-grab text-ink-2 active:cursor-grabbing"
+                      // `touch-none`: without it, the browser takes a finger
+                      // dragging vertically for a page scroll instead of a
+                      // drag (`ConfirmSheet.tsx` hit the same thing on its
+                      // own handle), and the row stays put while the page
+                      // moves underneath it.
+                      className="h-5 w-5 shrink-0 touch-none cursor-grab text-ink-2 active:cursor-grabbing"
                     >
                       <line x1="4" y1="6" x2="16" y2="6" />
                       <line x1="4" y1="10" x2="16" y2="10" />
