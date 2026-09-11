@@ -8,14 +8,15 @@ insert into public.fields (id, facility_id, name, kind)
           '11111111-1111-1111-1111-111111111111', 'Campo 1', 'calcio5');
 
 -- feriale: 15:00–19:00 a 20 €/h, 19:00–24:00 a 25 €/h
-insert into public.price_bands (facility_id, field_id, weekdays, starts_min, ends_min, price_cents)
-values
-  ('11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
-   '{1,2,3,4,5}', 900, 1140, 2000),
-  ('11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
-   '{1,2,3,4,5}', 1140, 1440, 2500),
-  ('11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
-   '{6,7}', 540, 1440, 2800);
+insert into public.price_bands (facility_id, field_id, weekday, starts_min, ends_min, price_cents)
+select '11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
+       d, 900, 1140, 2000 from unnest(array[1,2,3,4,5]) as d;
+insert into public.price_bands (facility_id, field_id, weekday, starts_min, ends_min, price_cents)
+select '11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
+       d, 1140, 1440, 2500 from unnest(array[1,2,3,4,5]) as d;
+insert into public.price_bands (facility_id, field_id, weekday, starts_min, ends_min, price_cents)
+select '11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
+       d, 540, 1440, 2800 from unnest(array[6,7]) as d;
 
 -- martedì 14 ottobre 2025, 20:00–21:30 → tutta in fascia serale: 1,5 × 25 = 37,50
 select is(

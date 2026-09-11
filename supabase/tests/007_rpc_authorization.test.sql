@@ -6,9 +6,9 @@ insert into public.facilities (id, slug, name, booking_horizon_days)
 insert into public.fields (id, facility_id, name, kind)
   values ('d0000000-0000-0000-0000-0000000000f1',
           'd0000000-0000-0000-0000-000000000001', 'Campo 1', 'calcio5');
-insert into public.price_bands (facility_id, field_id, weekdays, starts_min, ends_min, price_cents)
-  values ('d0000000-0000-0000-0000-000000000001','d0000000-0000-0000-0000-0000000000f1',
-          '{1,2,3,4,5,6,7}', 0, 1440, 2500);
+insert into public.price_bands (facility_id, field_id, weekday, starts_min, ends_min, price_cents)
+select 'd0000000-0000-0000-0000-000000000001','d0000000-0000-0000-0000-0000000000f1',
+       d, 0, 1440, 2500 from generate_series(1, 7) as d;
 
 -- una seconda struttura, per il caso del member che non le appartiene
 insert into public.facilities (id, slug, name, booking_horizon_days)
@@ -16,9 +16,9 @@ insert into public.facilities (id, slug, name, booking_horizon_days)
 insert into public.fields (id, facility_id, name, kind)
   values ('d0000000-0000-0000-0000-0000000000f2',
           'd0000000-0000-0000-0000-000000000002', 'Campo 1', 'calcio5');
-insert into public.price_bands (facility_id, field_id, weekdays, starts_min, ends_min, price_cents)
-  values ('d0000000-0000-0000-0000-000000000002','d0000000-0000-0000-0000-0000000000f2',
-          '{1,2,3,4,5,6,7}', 0, 1440, 2500);
+insert into public.price_bands (facility_id, field_id, weekday, starts_min, ends_min, price_cents)
+select 'd0000000-0000-0000-0000-000000000002','d0000000-0000-0000-0000-0000000000f2',
+       d, 0, 1440, 2500 from generate_series(1, 7) as d;
 
 -- quattro identità: un gestore di A, il proprietario della prenotazione,
 -- un estraneo (cliente di A), un gestore di B

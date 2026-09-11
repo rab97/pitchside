@@ -349,7 +349,7 @@ export type Database = {
           id: string
           price_cents: number
           starts_min: number
-          weekdays: number[]
+          weekday: number
         }
         Insert: {
           ends_min: number
@@ -358,7 +358,7 @@ export type Database = {
           id?: string
           price_cents: number
           starts_min: number
-          weekdays: number[]
+          weekday: number
         }
         Update: {
           ends_min?: number
@@ -367,7 +367,7 @@ export type Database = {
           id?: string
           price_cents?: number
           starts_min?: number
-          weekdays?: number[]
+          weekday?: number
         }
         Relationships: [
           {
