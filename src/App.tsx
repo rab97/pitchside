@@ -20,6 +20,8 @@ const AdminPage = lazy(() =>
   import('@/features/admin/components/AdminPage').then((m) => ({ default: m.AdminPage })))
 const FacilityPage = lazy(() =>
   import('@/features/admin/components/FacilityPage').then((m) => ({ default: m.FacilityPage })))
+const FieldsPage = lazy(() =>
+  import('@/features/admin/components/FieldsPage').then((m) => ({ default: m.FieldsPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -48,6 +50,7 @@ export function App() {
                   element={<RequireAdmin><AdminPage /></RequireAdmin>}
                 />
                 <Route path="/admin/struttura" element={<RequireAdmin><FacilityPage /></RequireAdmin>} />
+                <Route path="/admin/campi" element={<RequireAdmin><FieldsPage /></RequireAdmin>} />
               </Routes>
             </Suspense>
           </AuthProvider>
