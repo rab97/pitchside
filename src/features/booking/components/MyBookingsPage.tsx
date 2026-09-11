@@ -8,7 +8,7 @@ import { minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useAuth } from '@/features/auth/hooks/AuthProvider'
 import { LoginPage } from '@/features/auth/components/LoginPage'
-import { fieldKind } from '../utils/fieldKind'
+import { fieldKind } from '@/shared/lib/fieldKind'
 import { useMyBookings, type MyBooking } from '../hooks/useMyBookings'
 import { MY_BOOKINGS_ERROR } from '../utils/messages'
 
