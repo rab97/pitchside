@@ -29,10 +29,11 @@ export const DialogPortalContext = createContext<HTMLElement | null>(null)
  * perché il suo tema porta con sé un set di token proprio, che entrerebbe in
  * conflitto con quelli dei mockup — che sono la fonte di verità del progetto.
  */
-export function Dialog({ open, onClose, labelledBy, children }: {
+export function Dialog({ open, onClose, labelledBy, size = 'default', children }: {
   open: boolean
   onClose: () => void
   labelledBy?: string
+  size?: 'default' | 'wide'
   children: ReactNode
 }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -62,7 +63,10 @@ export function Dialog({ open, onClose, labelledBy, children }: {
       // Un clic sullo sfondo chiude: il ::backdrop è il dialog stesso, quindi
       // basta controllare che il bersaglio non sia dentro il riquadro.
       onClick={(e) => { if (e.target === ref.current) onClose() }}
-      className="m-auto w-[min(420px,calc(100vw-2rem))] rounded-card border border-line bg-surface p-0 text-ink shadow-card backdrop:bg-black/45"
+      className={
+        'm-auto rounded-card border border-line bg-surface p-0 text-ink shadow-card backdrop:bg-black/45 '
+        + (size === 'wide' ? 'w-[min(640px,calc(100vw-2rem))]' : 'w-[min(420px,calc(100vw-2rem))]')
+      }
     >
       <DialogPortalContext.Provider value={container}>
         {children}

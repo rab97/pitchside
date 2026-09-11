@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { format } from 'date-fns'
+import { addDays, format, isSameDay } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { DateField } from '@/shared/components/ui/DateField'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { Select } from '@/shared/components/ui/Select'
+import { TimeField } from '@/shared/components/ui/TimeField'
 import { formatEuro } from '@/shared/lib/money'
 import { localInputToDate, minToLabel, minutesOfDay } from '@/shared/lib/tz'
 import { useClosureConflicts } from '../hooks/useClosureConflicts'
@@ -27,8 +29,10 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
   create: (input: NewClosure) => Promise<number>
 }) {
   const [fieldId, setFieldId] = useState<string | null>(null)
-  const [fromStr, setFromStr] = useState('')
-  const [toStr, setToStr] = useState('')
+  const [fromDate, setFromDate] = useState<Date | null>(null)
+  const [fromMin, setFromMin] = useState(0)
+  const [toDate, setToDate] = useState<Date | null>(null)
+  const [toMin, setToMin] = useState(0)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -36,14 +40,28 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
   useEffect(() => {
     if (!open) return
     setFieldId(null)
-    setFromStr('')
-    setToStr('')
+    setFromDate(null)
+    setFromMin(0)
+    setToDate(null)
+    setToMin(0)
     setReason('')
     setError(null)
   }, [open])
 
-  const rawPeriod = fromStr && toStr
-    ? { from: localInputToDate(fromStr), to: localInputToDate(toStr) }
+  // Recombines a `DateField`'s day and a `TimeField`'s minutes-from-midnight
+  // into one instant, in Europe/Rome — through `localInputToDate`, the same
+  // path the old `datetime-local` input used, rather than a fresh
+  // `new Date(...)`. `1440` (24:00), a value a `TimeField` can legitimately
+  // hold, has no valid 'HH:mm' spelling, so it reads as the next day's
+  // midnight instead.
+  function combine(date: Date, min: number): Date {
+    const rolledDate = min === 1440 ? addDays(date, 1) : date
+    const rolledMin = min === 1440 ? 0 : min
+    return localInputToDate(`${format(rolledDate, 'yyyy-MM-dd')}T${minToLabel(rolledMin)}`)
+  }
+
+  const rawPeriod = fromDate && toDate
+    ? { from: combine(fromDate, fromMin), to: combine(toDate, toMin) }
     : null
 
   // A period that ends before (or the same instant as) it starts cannot
@@ -91,7 +109,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
   ]
 
   return (
-    <Dialog open={open} onClose={onClose} labelledBy="closure-form-title">
+    <Dialog open={open} onClose={onClose} labelledBy="closure-form-title" size="wide">
       <form className="flex flex-col gap-3 p-4" onSubmit={handleSubmit}>
         <h3 id="closure-form-title" className="text-base font-semibold tracking-[-.01em]">
           Nuova chiusura
@@ -106,27 +124,39 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
           />
         </label>
 
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1.5">
+        <div className="flex flex-wrap gap-3">
+          <div className="flex flex-1 flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">Da</span>
-            <input
-              type="datetime-local"
-              className="field"
-              value={fromStr}
-              onChange={(e) => setFromStr(e.target.value)}
-              required
-            />
-          </label>
-          <label className="flex flex-1 flex-col gap-1.5">
+            <div className="flex flex-wrap gap-2">
+              <DateField
+                value={fromDate}
+                onChange={setFromDate}
+                aria-label="Data di inizio"
+              />
+              <TimeField
+                value={fromMin}
+                onChange={setFromMin}
+                aria-label="Ora di inizio"
+              />
+            </div>
+          </div>
+          <div className="flex flex-1 flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-[.06em] text-muted">A</span>
-            <input
-              type="datetime-local"
-              className="field"
-              value={toStr}
-              onChange={(e) => setToStr(e.target.value)}
-              required
-            />
-          </label>
+            <div className="flex flex-wrap gap-2">
+              <DateField
+                value={toDate}
+                onChange={setToDate}
+                min={fromDate ?? undefined}
+                aria-label="Data di fine"
+              />
+              <TimeField
+                value={toMin}
+                onChange={setToMin}
+                min={fromDate && toDate && isSameDay(fromDate, toDate) ? fromMin + 15 : undefined}
+                aria-label="Ora di fine"
+              />
+            </div>
+          </div>
         </div>
 
         {periodInvalid && (

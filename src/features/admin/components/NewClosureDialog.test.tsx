@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NewClosureDialog } from './NewClosureDialog'
 import * as conflictsHook from '../hooks/useClosureConflicts'
 import type { AdminField } from '../hooks/useAdminFields'
@@ -11,9 +11,26 @@ const fields: AdminField[] = [
   },
 ]
 
+// Opens a `DateField` (it lands on the current month, thanks to the fixed
+// system time below), picks the 14th, then opens the `TimeField` beside it
+// and picks the given time.
+function pickInstant(dateLabel: string, timeLabel: string, time: string) {
+  fireEvent.click(screen.getByRole('button', { name: dateLabel }))
+  fireEvent.click(screen.getByRole('button', { name: '14 settembre 2026' }))
+  fireEvent.click(screen.getByRole('combobox', { name: timeLabel }))
+  fireEvent.click(screen.getByRole('option', { name: time }))
+}
+
+// Picks the end instant before the start. With nothing chosen yet, neither
+// field carries a bound from the other — the coherence rule runs one way,
+// start → end (see NewClosureDialog.tsx) — so this order never lands on a
+// disabled option, including for a period that ends up reversed: picking
+// forward would grey the very option a "reversed period" test needs to
+// reach, since the end TimeField's own min tracks the start once both share
+// a day.
 function setPeriod(from: string, to: string) {
-  fireEvent.change(screen.getByLabelText('Da'), { target: { value: from } })
-  fireEvent.change(screen.getByLabelText('A'), { target: { value: to } })
+  pickInstant('Data di fine', 'Ora di fine', to)
+  pickInstant('Data di inizio', 'Ora di inizio', from)
 }
 
 function renderDialog(create = vi.fn()) {
@@ -22,12 +39,19 @@ function renderDialog(create = vi.fn()) {
 }
 
 describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-09-01T08:00:00+02:00'))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('mentre il controllo è in corso, il pulsante è disattivato e non promette un numero', () => {
     vi.spyOn(conflictsHook, 'useClosureConflicts').mockReturnValue(
       { conflicts: [], isPending: true, error: null } as never)
 
     renderDialog()
-    setPeriod('2026-09-14T19:00', '2026-09-14T22:00')
+    setPeriod('19:00', '22:00')
 
     const button = screen.getByRole('button', { name: /verifico|chiudi/i })
     expect(button).toBeDisabled()
@@ -39,7 +63,7 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
       { conflicts: [], isPending: false, error: new Error('boom') } as never)
 
     renderDialog()
-    setPeriod('2026-09-14T19:00', '2026-09-14T22:00')
+    setPeriod('19:00', '22:00')
 
     expect(screen.getByText('Non siamo riusciti a controllare le prenotazioni in questo periodo.'))
       .toBeInTheDocument()
@@ -54,7 +78,7 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
       { conflicts: [], isPending: false, error: null } as never)
 
     renderDialog()
-    setPeriod('2026-09-14T22:00', '2026-09-14T19:00')
+    setPeriod('22:00', '19:00')
 
     expect(screen.getByText("Il periodo non è valido: la fine deve venire dopo l'inizio."))
       .toBeInTheDocument()
@@ -79,7 +103,7 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
     } as never)
 
     renderDialog()
-    setPeriod('2026-09-14T19:00', '2026-09-14T22:00')
+    setPeriod('19:00', '22:00')
 
     const button = screen.getByRole('button', { name: 'Chiudi e disdici 1 prenotazioni' })
     expect(button).not.toBeDisabled()
