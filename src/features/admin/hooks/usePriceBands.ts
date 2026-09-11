@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/shared/lib/supabase'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
+import { findOverlappingBand } from '../utils/bandOverlap'
+import { BandOverlapError, messageForBandOverlap } from '../utils/bandMessages'
 import type { Band } from '../utils/daySegments'
 
 type BandRow = {
@@ -42,6 +44,15 @@ export type SaveBandInput = {
  * invalidates the query, so the screen always ends up showing what is
  * actually stored, and lets the caller turn a thrown error into
  * `messageForBandWrite(error)`.
+ *
+ * Deleting the group before inserting is right against the exclusion
+ * constraint, but wrong against a manager: if the insert then collides with
+ * a *different* band, the original group is already gone and those weekdays
+ * are unbookable until someone notices. `findOverlappingBand` runs first,
+ * against the bands already loaded here, so a real collision is refused
+ * before anything is deleted — the database constraint stays as the
+ * backstop for whatever slips past this (a concurrent edit, mainly), not a
+ * replacement for it.
  */
 export function usePriceBands(fieldId: string | null) {
   const facility = useFacility()
@@ -89,6 +100,9 @@ export function usePriceBands(fieldId: string | null) {
               .map((b) => b.id)
           : [input.id]
       }
+
+      const conflict = findOverlappingBand(bands, input.weekdays, input.startsMin, input.endsMin, groupIds)
+      if (conflict) throw new BandOverlapError(messageForBandOverlap(conflict))
 
       if (groupIds.length > 0) {
         const { data, error } = await supabase
