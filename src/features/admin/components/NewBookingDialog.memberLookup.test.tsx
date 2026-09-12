@@ -217,6 +217,35 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     expect(createBooking.mock.calls[0][0]).toMatchObject({ memberId: 'm1' })
   }, TIMEOUT)
 
+  // The same collision, written the way an Italian writes a number and the way
+  // caller ID displays one. The unique index compares `phone_key` — the last
+  // ten digits — so `+39 333 111 2233` collides with a row stored as
+  // `3331112233`; a lookup by the full digit string then compares twelve
+  // digits with ten, finds nobody, and the manager reads a message promising a
+  // card that never appears. That is the dead end the whole item exists to
+  // remove, so the lookup has to use the key the index used.
+  it('offre la scheda anche quando il numero è scritto con il prefisso', async () => {
+    stubCreateMember(vi.fn().mockRejectedValue({ code: '23505', message: 'duplicate key' }))
+    vi.spyOn(searchHook, 'useMemberSearch').mockImplementation((q: string) => ({
+      results: q.trim() === '3331112233' ? [hit] : [],
+      isPending: false,
+      failed: false,
+    }))
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '+39 333 111 2233' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Usa la scheda di Rossi Luca/ })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /Usa la scheda di Rossi Luca/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+    await waitFor(() => expect(createBooking).toHaveBeenCalled())
+    expect(createBooking.mock.calls[0][0]).toMatchObject({ memberId: 'm1' })
+  }, TIMEOUT)
+
   it('se il numero è già di un altro ma la scheda non si trova, dice comunque cosa fare', async () => {
     stubCreateMember(vi.fn().mockRejectedValue({ code: '23505', message: 'duplicate key' }))
     vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({

@@ -8,7 +8,7 @@ import { formatEuro } from '@/shared/lib/money'
 import { dayKey, minToLabel } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import type { FieldRow } from '@/shared/hooks/useFields'
-import { digitsOf } from '../utils/memberKeys'
+import { digitsOf, phoneKey } from '../utils/memberKeys'
 import { isPhoneTaken, memberMessage } from '../utils/memberMessages'
 import { defaultSeasonEnd } from '../utils/recurrence'
 import { MemberCard } from './MemberCard'
@@ -37,12 +37,17 @@ export function NewBookingDialog({ target, onClose }: {
   const { card, failed: cardFailed } = useMemberCard(choice.kind === 'existing' ? choice.member.id : null)
   const { saveNotes, saveError } = useUpdateMemberNotes()
   const [phone, setPhone] = useState('')
-  // The digits the unique index has just refused, and the customer already
-  // holding them. Looked up through the same search the field uses — the
-  // digits are exactly what `search_members` matches against `phone_key` —
-  // so the failed creation can be turned into the right existing customer
-  // with one click, instead of a sentence telling the manager to search again
-  // by a name that has already failed them.
+  // The key the unique index has just refused, and the customer already
+  // holding it. Looked up through the same search the field uses, and in
+  // `phoneKey` form rather than raw digits, because that is the form the index
+  // compared: a number typed «+39 333 111 2233» collides with a row stored as
+  // «3331112233», and asking the search for twelve digits would find nobody
+  // and leave the manager reading about a card that never appears — the exact
+  // dead end this offer exists to remove.
+  //
+  // So the failed creation turns into the right existing customer with one
+  // click, instead of a sentence telling the manager to search again by a name
+  // that has already failed them.
   const [takenPhone, setTakenPhone] = useState<string | null>(null)
   const { results: takenBy } = useMemberSearch(takenPhone ?? '')
   const [minutes, setMinutes] = useState(facility.min_duration_minutes || 60)
@@ -158,7 +163,7 @@ export function NewBookingDialog({ target, onClose }: {
       // The collision names a customer who exists, so it is answered with that
       // customer and not only with a sentence: the search below the message
       // asks for the digits the index refused.
-      if (isPhoneTaken(e)) setTakenPhone(digitsOf(phone))
+      if (isPhoneTaken(e)) setTakenPhone(phoneKey(phone))
       setError(isPhoneTaken(e) ? memberMessage(e, 'create')
         : e instanceof Error ? e.message
         : 'La prenotazione non è riuscita. Riprova.')
