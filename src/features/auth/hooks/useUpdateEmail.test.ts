@@ -21,16 +21,18 @@ describe('useUpdateEmail', () => {
     const { result } = renderHook(() => useUpdateEmail())
     await act(() => result.current.setEmail('  Rossi@Example.com '))
     expect(updateUserMock).toHaveBeenCalledWith({ email: 'rossi@example.com' })
-    expect(result.current.sent).toBe(true)
+    expect(result.current.sentTo).toBe('rossi@example.com')
   })
 
-  it('«sent» dice che la mail è partita, non che l’indirizzo è attivo', async () => {
+  it('«sentTo» dice dov’è andata la mail, non che l’indirizzo è attivo', async () => {
     updateUserMock.mockResolvedValue({ data: {}, error: null })
     const { result } = renderHook(() => useUpdateEmail())
     await act(() => result.current.setEmail('rossi@example.com'))
     // Nessuna asserzione sulla sessione: l'indirizzo diventa attivo solo dopo
-    // il clic sul collegamento, e questo gancio non lo sa e non lo finge.
-    expect(result.current.sent).toBe(true)
+    // il clic sul collegamento, e questo gancio non lo sa e non lo finge. Qui
+    // torna l'indirizzo a cui il messaggio è andato, che è ciò che serve alla
+    // schermata per accorgersi da sola di quando quel clic è arrivato.
+    expect(result.current.sentTo).toBe('rossi@example.com')
     expect(result.current.error).toBeNull()
   })
 
@@ -40,7 +42,7 @@ describe('useUpdateEmail', () => {
     await act(() => result.current.setEmail('rossi@example.com'))
     expect(result.current.error)
       .toBe('Questo indirizzo è già collegato a un altro account. Entra con quello, oppure usane uno diverso.')
-    expect(result.current.sent).toBe(false)
+    expect(result.current.sentTo).toBeNull()
   })
 
   // `updateUser` gira dentro `_acquireLock`, e il suo
@@ -66,6 +68,19 @@ describe('useUpdateEmail', () => {
     updateUserMock.mockResolvedValue({ data: {}, error: null })
     await act(() => result.current.setEmail('altro@example.com'))
     expect(result.current.error).toBeNull()
-    expect(result.current.sent).toBe(true)
+    expect(result.current.sentTo).toBe('altro@example.com')
+  })
+
+  // Ciò che è rimasto del tentativo precedente non parla dell'indirizzo che si
+  // sta scrivendo adesso: la schermata chiama questo mentre il cliente digita.
+  it('reset dimentica l’esito del tentativo precedente', async () => {
+    updateUserMock.mockResolvedValue({ data: null, error: { code: 'email_exists' } })
+    const { result } = renderHook(() => useUpdateEmail())
+    await act(() => result.current.setEmail('rossi@example.com'))
+    expect(result.current.error).not.toBeNull()
+
+    act(() => result.current.reset())
+    expect(result.current.error).toBeNull()
+    expect(result.current.sentTo).toBeNull()
   })
 })

@@ -226,8 +226,16 @@ function EmailSection({ active, pending }: {
   active?: string | null
   pending?: string | null
 }) {
-  const { setEmail, saving, error, sent } = useUpdateEmail()
+  const { setEmail, reset, saving, error, sentTo } = useUpdateEmail()
   const [value, setValue] = useState('')
+
+  // The message went to `sentTo`, and this notice belongs to the stretch
+  // between sending it and the link being opened. The link can be opened
+  // somewhere else — saved on the phone, confirmed on a desktop — and this is
+  // how the phone finds out: `active` catching up with `sentTo` is the
+  // confirmation arriving. Without the comparison the notice never turned
+  // off, and it sat over an address that had started working.
+  const awaiting = sentTo && sentTo !== active?.toLowerCase() ? sentTo : null
 
   return (
     <section className={cardClass}>
@@ -254,7 +262,7 @@ function EmailSection({ active, pending }: {
           mandato lì: fino ad allora l’indirizzo non è il tuo e non ci arriva
           niente.
         </p>
-      ) : sent ? (
+      ) : awaiting ? (
         <p role="status" className={noticeClass}>
           Ti abbiamo mandato un messaggio. L’indirizzo diventa il tuo quando
           apri il collegamento che contiene, non prima.
@@ -289,7 +297,12 @@ function EmailSection({ active, pending }: {
             inputMode="email"
             placeholder="nome@esempio.it"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            // Typing is the customer moving on: the note under the field, red
+            // or ochre, was about the address they have just stopped writing.
+            onChange={(e) => {
+              setValue(e.target.value)
+              if (error || sentTo) reset()
+            }}
           />
         </label>
         <ErrorNote message={error} />

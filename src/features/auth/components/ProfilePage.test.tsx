@@ -24,7 +24,7 @@ function stubHooks() {
     signOut: vi.fn(), leaving: false, error: null,
   })
   vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
-    setEmail: vi.fn(), saving: false, error: null, sent: false,
+    setEmail: vi.fn(), reset: vi.fn(), saving: false, error: null, sentTo: null,
   })
   vi.spyOn(googleHook, 'useLinkGoogle').mockReturnValue({
     linkGoogle: vi.fn(), linking: false, error: null,
@@ -169,7 +169,7 @@ describe('ProfilePage', () => {
 
   it('dice se il salvataggio dell’indirizzo non è riuscito', () => {
     vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
-      setEmail: vi.fn(), saving: false, sent: false,
+      setEmail: vi.fn(), reset: vi.fn(), saving: false, sentTo: null,
       error: 'Questo indirizzo è già collegato a un altro account. Entra con quello, oppure usane uno diverso.',
     })
     stubSession({ phone: '393331112233', email: null, identities: [] })
@@ -185,7 +185,8 @@ describe('ProfilePage', () => {
   // «in attesa» in «salvato».
   it('a messaggio partito l’indirizzo non entra fra i dati dell’account', () => {
     vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
-      setEmail: vi.fn(), saving: false, error: null, sent: true,
+      setEmail: vi.fn(), reset: vi.fn(), saving: false, error: null,
+      sentTo: 'rossi@example.com',
     })
     stubSession({
       phone: '393331112233', email: null,
@@ -208,7 +209,8 @@ describe('ProfilePage', () => {
   // nessuno apre il collegamento quella frase è falsa.
   it('a messaggio partito si dice che è partito, non che è salvato', () => {
     vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
-      setEmail: vi.fn(), saving: false, error: null, sent: true,
+      setEmail: vi.fn(), reset: vi.fn(), saving: false, error: null,
+      sentTo: 'rossi@example.com',
     })
     stubSession({ phone: '393331112233', email: null, identities: [] })
     renderPage()
@@ -226,12 +228,52 @@ describe('ProfilePage', () => {
     expect(within(account).queryByText(/@/)).not.toBeInTheDocument()
   })
 
+  // `sent` era un booleano locale al componente e non si spegneva mai: finché
+  // restava acceso, il ramo dell'indirizzo attivo era irraggiungibile. Chi
+  // salvava dal telefono e poi confermava dal computer tornava sul telefono e
+  // leggeva «L'indirizzo diventa il tuo quando apri il collegamento» sopra un
+  // indirizzo che intanto funzionava: la bugia di §3.2 nel verso opposto.
+  // L'avviso vale solo finché l'indirizzo attivo è diverso da quello a cui il
+  // messaggio è andato.
+  it('quando l’indirizzo mandato è diventato attivo l’avviso sparisce', () => {
+    vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
+      setEmail: vi.fn(), reset: vi.fn(), saving: false, error: null,
+      sentTo: 'rossi@example.com',
+    })
+    stubSession({
+      phone: '393331112233', email: 'rossi@example.com', identities: [],
+    })
+    renderPage()
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByText(/è qui che ti scriveremo/i)).toBeInTheDocument()
+  })
+
+  // L'esito del tentativo precedente non parla dell'indirizzo che si sta
+  // scrivendo adesso: dopo un «già collegato a un altro account» la nota rossa
+  // restava sotto il campo mentre il cliente ne digitava un altro.
+  it('scrivere nel campo dimentica l’esito del tentativo precedente', () => {
+    const reset = vi.fn()
+    vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
+      setEmail: vi.fn(), reset, saving: false, sentTo: null,
+      error: 'Questo indirizzo è già collegato a un altro account. Entra con quello, oppure usane uno diverso.',
+    })
+    stubSession({ phone: '393331112233', email: null, identities: [] })
+    renderPage()
+
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/indirizzo email/i), {
+      target: { value: 'altro@example.com' },
+    })
+    expect(reset).toHaveBeenCalled()
+  })
+
   // Il gesto che attraversa il ponte di §2.2: senza questo, il campo e il
   // pulsante potrebbero sparire del tutto e gli altri test passerebbero.
   it('l’indirizzo scritto nel campo arriva a setEmail', () => {
     const setEmail = vi.fn()
     vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
-      setEmail, saving: false, error: null, sent: false,
+      setEmail, reset: vi.fn(), saving: false, error: null, sentTo: null,
     })
     stubSession({ phone: '393331112233', email: null, identities: [] })
     renderPage()
