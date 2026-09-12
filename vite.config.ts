@@ -114,5 +114,20 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // One worker per core is a loss here, not a gain. Every worker builds its
+    // own jsdom — vitest says so after each run, "jsdom was created 50 times,
+    // 33% of tracked time" — so past a point the workers compete for the cores
+    // they are waiting on. Measured on a 16-core machine, whole suite, idle:
+    //
+    //   4 workers   211 passed   34.6s
+    //   8 workers   211 passed   29.3s
+    //   16 (default) 1 failed    32.7s
+    //
+    // The failure at 16 was deterministic, 5 runs out of 5: the first test in
+    // `NewClosureDialog.test.tsx` drives four real Radix popovers and pays that
+    // file's cold import, and under full contention it crossed its 10s timeout.
+    // Raising that timeout a second time would have bought a slower suite and
+    // hidden the reason. Capping the pool is both faster and green.
+    maxWorkers: 8,
   },
 })
