@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { tapTarget } from '@/test/tailwindBox'
 import { Select } from './Select'
@@ -32,6 +32,29 @@ describe('Select', () => {
   it('cannot be opened when disabled', () => {
     render(<Select value="calcio5" onChange={() => {}} options={options} aria-label="Tipo" disabled />)
     expect(screen.getByRole('combobox', { name: 'Tipo' })).toBeDisabled()
+  })
+
+  // The keyboard focus ring `.field` carries (`src/index.css`) is argued
+  // there against the one state that could make it wrong: a trigger still
+  // focused while its listbox is open would ring underneath a panel sitting
+  // flush against it. The argument is that this state does not occur —
+  // Radix's `focusFirst` moves focus to the selected item as soon as the
+  // popper reports itself positioned. That is a claim about a library, so it
+  // is asserted rather than trusted; if a later version stops doing it, the
+  // comment in the stylesheet is the thing that goes stale, and this is what
+  // notices. Positioning happens a tick after the click, so the check is
+  // asynchronous — synchronously, right after `fireEvent.click`, focus is
+  // still on the trigger and always was.
+  it('hands focus to the open list, so the trigger is never ringed under it', async () => {
+    render(<Select value="calcio5" onChange={() => {}} options={options} aria-label="Tipo" />)
+
+    const trigger = screen.getByRole('combobox', { name: 'Tipo' })
+    fireEvent.click(trigger)
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Calcio a 5' })).toHaveFocus()
+    })
+    expect(trigger).not.toHaveFocus()
   })
 
   // `TimeField` is a `Select` of 97 rows, and the row is where a time gets

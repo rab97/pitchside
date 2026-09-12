@@ -207,7 +207,8 @@ button:disabled:hover {
      not, because both openers hand focus to the panel they open —
      `MonthGridPopover` in its own `onOpenAutoFocus` (pinned by
      `DateField.test.tsx`), Radix Select in `focusFirst`, which focuses the
-     selected item as soon as the popper is positioned. Even if it were,
+     selected item as soon as the popper is positioned (pinned by
+     `Select.test.tsx`). Even if it were,
      the listbox sits flush against the trigger (`sideOffset={-1}`) and
      would simply cover the ring's bottom edge, joining the two. */
   .field:focus-visible {
