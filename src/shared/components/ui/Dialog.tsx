@@ -29,11 +29,25 @@ export const DialogPortalContext = createContext<HTMLElement | null>(null)
  * perché il suo tema porta con sé un set di token proprio, che entrerebbe in
  * conflitto con quelli dei mockup — che sono la fonte di verità del progetto.
  */
-export function Dialog({ open, onClose, labelledBy, size = 'default', children }: {
+export function Dialog({ open, onClose, labelledBy, size = 'default', align = 'center', children }: {
   open: boolean
   onClose: () => void
   labelledBy?: string
   size?: 'default' | 'wide'
+  /**
+   * `center` — the default, and what every dialog in the panel had before —
+   * centres the box in both axes. That is the right answer for a dialog whose
+   * height is settled the moment it opens, and the wrong one for a dialog
+   * that grows and shrinks while the manager types: centred, a height change
+   * moves the box by half the delta, so the search's result list appearing
+   * under the name field drags the whole modal upward, once per character.
+   *
+   * `top` pins the block-start instead, so growth goes downward and the field
+   * being typed into stays where it is. Opt-in, because this component is
+   * shared by every dialog in the panel and the other consumers are better
+   * centred — passing nothing leaves them byte-for-byte as they were.
+   */
+  align?: 'center' | 'top'
   children: ReactNode
 }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -64,7 +78,13 @@ export function Dialog({ open, onClose, labelledBy, size = 'default', children }
       // basta controllare che il bersaglio non sia dentro il riquadro.
       onClick={(e) => { if (e.target === ref.current) onClose() }}
       className={
-        'm-auto rounded-card border border-line bg-surface p-0 text-ink shadow-card backdrop:bg-black/45 '
+        'rounded-card border border-line bg-surface p-0 text-ink shadow-card backdrop:bg-black/45 '
+        // `max-h` only on the pinned variant: the UA's own max-height for a
+        // modal dialog is measured from the viewport and does not know about
+        // the 6vh above, so without it a tall pinned dialog would run past the
+        // bottom edge. The UA already gives `dialog:modal` `overflow: auto`,
+        // so what does not fit scrolls rather than being cut off.
+        + (align === 'top' ? 'mx-auto my-[6vh] max-h-[88vh] ' : 'm-auto ')
         + (size === 'wide' ? 'w-[min(640px,calc(100vw-2rem))]' : 'w-[min(420px,calc(100vw-2rem))]')
       }
     >

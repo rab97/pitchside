@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMemberSearch, type MemberHit } from '../hooks/useMemberSearch'
+import { MIN_QUERY, useMemberSearch, type MemberHit } from '../hooks/useMemberSearch'
 import { nameKey } from '../utils/memberKeys'
 
 export type MemberChoice =
@@ -120,7 +120,10 @@ export function MemberSearchField({ choice, onChoose, inputRef }: {
         </ul>
       )}
 
-      {typed.length > 0 && (
+      {/* The search's own threshold, not a second one. At one character the
+          button appeared while the results were still two characters away, so
+          a single keystroke moved the layout twice. */}
+      {typed.length >= MIN_QUERY && (
         <button
           type="button"
           onClick={wantNew}

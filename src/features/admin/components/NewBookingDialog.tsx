@@ -151,8 +151,12 @@ export function NewBookingDialog({ target, onClose }: {
     }
   }
 
+  // `align="top"`: this is the one dialog in the panel whose height moves
+  // while it is being used — the results list, the card, the phone field and
+  // the name question all appear and disappear under the manager's hands. A
+  // centred box would move by half of every one of those changes.
   return (
-    <Dialog open={!!target} onClose={onClose} labelledBy="nb-title">
+    <Dialog open={!!target} onClose={onClose} labelledBy="nb-title" align="top">
       <form
         className="flex flex-col gap-3 p-4"
         onSubmit={(e) => { e.preventDefault(); submit() }}
