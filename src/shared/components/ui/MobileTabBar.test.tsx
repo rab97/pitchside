@@ -19,6 +19,11 @@ describe('matchesTab', () => {
     expect(matchesTab('/', '/')).toBe(true)
     expect(matchesTab('/', '/prenota')).toBe(false)
   })
+
+  it('accende «Profilo» solo sulla sua rotta, non su un\'altra che vi somiglia', () => {
+    expect(matchesTab('/profilo', '/profilo')).toBe(true)
+    expect(matchesTab('/prenota', '/profilo')).toBe(false)
+  })
 })
 
 describe('MobileTabBar', () => {
@@ -45,11 +50,19 @@ describe('MobileTabBar', () => {
     expect(screen.getByRole('link', { name: /Prenota$/ })).not.toHaveAttribute('aria-current')
   })
 
-  it('offre solo i tre tab che portano da qualche parte', () => {
+  it('offre solo i quattro tab che portano da qualche parte', () => {
     renderAt('/')
 
-    // Il mockup ne disegna cinque: tornei, «trova» e profilo non esistono
-    // ancora, e un tab che non porta da nessuna parte insegna a non fidarsi.
-    expect(screen.getAllByRole('link')).toHaveLength(3)
+    // Il mockup ne disegna cinque: tornei e «trova» non esistono ancora, e
+    // un tab che non porta da nessuna parte insegna a non fidarsi.
+    expect(screen.getAllByRole('link')).toHaveLength(4)
+  })
+
+  it('offre un tab «Profilo» che porta a /profilo', () => {
+    renderAt('/profilo')
+
+    const link = screen.getByRole('link', { name: /Profilo/ })
+    expect(link).toHaveAttribute('href', '/profilo')
+    expect(link).toHaveAttribute('aria-current', 'page')
   })
 })
