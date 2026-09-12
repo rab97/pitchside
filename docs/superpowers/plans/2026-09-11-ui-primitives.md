@@ -411,7 +411,7 @@ export function TimeField(props: {
   id?: string
 }): JSX.Element
 
-export function monthGrid(month: Date): Date[]   // 42 days, Monday-first, noon Rome
+export function monthGrid(month: Date): Date[]   // 42 days, Monday-first, noon local
 ```
 
 - [ ] **Step 1: Write the failing test for the grid**

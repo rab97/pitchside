@@ -9,13 +9,6 @@ export function minToLabel(min: number): string {
   return `${pad(Math.floor(min / 60))}:${pad(min % 60)}`
 }
 
-// The inverse of minToLabel, for reading back an <input type="time">, which
-// always reports its value as 'HH:MM' regardless of locale.
-export function labelToMin(label: string): number {
-  const [h, m] = label.split(':').map(Number)
-  return h * 60 + m
-}
-
 /** Un istante → minuti da mezzanotte nel fuso della struttura. */
 export function minutesOfDay(d: Date): number {
   const local = toZonedTime(d, TZ)

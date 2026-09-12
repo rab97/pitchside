@@ -3,7 +3,6 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
-  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
@@ -100,10 +99,22 @@ export function SortableList<T extends { id: string }>({
   className?: string
 }) {
   const sensors = useSensors(
+    // `PointerSensor` covers mouse, pen and finger alike, and a
+    // `TouchSensor` registered beside it would never run: its activator is
+    // `onTouchStart` against this one's `onPointerDown`, `pointerdown`
+    // fires first on every browser that has Pointer Events, and dnd-kit
+    // refuses a second activation once a sensor has claimed the gesture
+    // (`activeRef.current !== null` in `@dnd-kit/core`). One used to be
+    // registered here with a 150ms activation delay, described as what kept
+    // a scrolling finger from being taken for a grab. It never separated
+    // anything.
+    //
+    // What does separate them is `touch-none` on the handle itself (see
+    // `FieldsPage`): it stops the browser treating a drag that starts there
+    // as a page scroll, at the source rather than by waiting to see. The
+    // grab is then immediate, which is also what the manual guide asks a
+    // tester to find.
     useSensor(PointerSensor),
-    // A short delay and tolerance keep a finger that is scrolling the page
-    // from being mistaken for a finger that grabbed the handle.
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 

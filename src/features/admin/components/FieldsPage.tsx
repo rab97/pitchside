@@ -130,8 +130,11 @@ export function FieldsPage() {
     // pitch landed, so the list must not spring back while the write is in
     // flight — but only until we know whether it actually happened.
     setOrder(next)
+    // No early return on an empty patch list: `Promise.all([])` resolves,
+    // the `finally` below runs, and the optimistic order is cleared like any
+    // other outcome. Returning here first would skip that `finally` and
+    // freeze the list — the exact bug the `finally` was added to fix.
     const patches = sortOrderPatches(next)
-    if (patches.length === 0) return
     try {
       await reorderFields(patches)
     } catch (e) {
@@ -378,8 +381,10 @@ export function FieldsPage() {
           </h3>
           {deactivating && (
             <p className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[12.5px] text-ink-2">
-              Questo campo ha {deactivating.booking_count} prenotazioni: resteranno valide.
-              Per chiudere davvero il campo usa le{' '}
+              {deactivating.booking_count === 1
+                ? 'Questo campo ha 1 prenotazione: resterà valida.'
+                : `Questo campo ha ${deactivating.booking_count} prenotazioni: resteranno valide.`}
+              {' '}Per chiudere davvero il campo usa le{' '}
               <Link to="/admin/chiusure" className="text-pitch underline">Chiusure</Link>.
             </p>
           )}

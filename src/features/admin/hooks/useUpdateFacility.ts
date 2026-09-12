@@ -6,7 +6,11 @@ export type FacilityPatch = Partial<Pick<Facility,
   'name' | 'color' | 'phone' | 'address' |
   'cancel_hours' | 'booking_horizon_days' | 'slot_minutes' | 'min_duration_minutes'>>
 
-const SAVE_FAILED_MESSAGE = 'Non siamo riusciti a salvare le impostazioni. Riprova.'
+/**
+ * The one sentence this failure is said in. Exported because `FacilityPage`
+ * shows it too, and two copies of a message drift.
+ */
+export const SAVE_FAILED_MESSAGE = 'Non siamo riusciti a salvare le impostazioni. Riprova.'
 
 /**
  * Writes straight to `facilities`: the `facilities_write_admin` policy is the
@@ -35,5 +39,10 @@ export function useUpdateFacility() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['facility'] }),
   })
 
-  return { save: m.mutateAsync, isPending: m.isPending, error: m.error }
+  // `saving`/`saveError`, not `isPending`/`error`: every sibling hook here
+  // returns those two names for a *query* — "the load is running", "the load
+  // failed" — and this one has no query at all. A reader arriving from
+  // `PriceBandsPage` would otherwise read "we could not load this" where the
+  // code means "we could not save it".
+  return { save: m.mutateAsync, saving: m.isPending, saveError: m.error }
 }

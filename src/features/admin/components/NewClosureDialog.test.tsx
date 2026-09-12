@@ -92,7 +92,7 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
     renderDialog()
     setPeriod('22:00', '19:00')
 
-    expect(screen.getByText("Il periodo non è valido: la fine deve venire dopo l'inizio."))
+    expect(screen.getByText('Il periodo non è valido: la fine deve venire dopo l’inizio.'))
       .toBeInTheDocument()
     // The hook is still called (React Hooks rules), but with no period to check —
     // `enabled: !!period` inside it keeps this from ever becoming a request.
@@ -117,7 +117,9 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
     renderDialog()
     setPeriod('19:00', '22:00')
 
-    const button = screen.getByRole('button', { name: 'Chiudi e disdici 1 prenotazioni' })
+    // Singular: one booking in the way is the commonest closure there is,
+    // and «disdici 1 prenotazioni» is what it used to read.
+    const button = screen.getByRole('button', { name: 'Chiudi e disdici 1 prenotazione' })
     expect(button).not.toBeDisabled()
   }, TIMEOUT)
 

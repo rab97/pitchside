@@ -28,7 +28,7 @@ function ClosureRow({ closure, onDelete }: { closure: Closure; onDelete?: () => 
     <li className="flex flex-wrap items-center justify-between gap-2 p-3">
       <div className="flex flex-col gap-0.5">
         <span className="text-[13.5px] font-medium text-ink">
-          {closure.field_name ?? "Tutto l'impianto"}
+          {closure.field_name ?? 'Tutto l’impianto'}
         </span>
         <span className="text-[12px] text-muted">{periodLabel(closure)}</span>
         {closure.reason && <span className="text-[12px] text-ink-2">{closure.reason}</span>}
@@ -98,7 +98,7 @@ export function ClosuresPage() {
         <p className="text-[13px] text-muted">Carico…</p>
       ) : isEmpty ? (
         <p className="text-[13px] text-muted">
-          Nessuna chiusura. L'impianto è aperto negli orari delle tariffe.
+          Nessuna chiusura. L’impianto è aperto negli orari delle tariffe.
         </p>
       ) : (
         <>

@@ -85,8 +85,15 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
     setSaving(true)
     try {
       const cancelled = await create({ fieldId, from: period.from, to: period.to, reason })
+      // One booking in the way of a repair is the commonest closure of all,
+      // not an edge case — so the singular is written out rather than left
+      // to read «Disdette 1 prenotazioni». Same pattern as `RecurrenceForm`.
       toast.success(
-        cancelled === 0 ? 'Chiusura salvata.' : `Chiusura salvata. Disdette ${cancelled} prenotazioni.`)
+        cancelled === 0
+          ? 'Chiusura salvata.'
+          : cancelled === 1
+            ? 'Chiusura salvata. Disdetta 1 prenotazione.'
+            : `Chiusura salvata. Disdette ${cancelled} prenotazioni.`)
       onClose()
     } catch (err) {
       setError(messageForClosureWrite(err))
@@ -101,10 +108,10 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
 
   // Radix Select reserves the empty string internally to mean "nothing
   // selected" — an Item using it never shows its label in the trigger — so
-  // "tutto l'impianto" needs a real, non-empty sentinel here.
+  // «tutto l’impianto» needs a real, non-empty sentinel here.
   const ALL_FIELDS = 'tutto'
   const fieldOptions = [
-    { value: ALL_FIELDS, label: "Tutto l'impianto" },
+    { value: ALL_FIELDS, label: 'Tutto l’impianto' },
     ...fields.map((f) => ({ value: f.id, label: f.name })),
   ]
 
@@ -165,7 +172,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
         </div>
 
         {periodInvalid && (
-          <ErrorNote message="Il periodo non è valido: la fine deve venire dopo l'inizio." />
+          <ErrorNote message="Il periodo non è valido: la fine deve venire dopo l’inizio." />
         )}
 
         <label className="flex flex-col gap-1.5">
@@ -192,7 +199,9 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
             ) : (
               <>
                 <p className="text-[12.5px] font-medium text-ink">
-                  Chiudendo, queste {conflicts.length} prenotazioni verranno disdette.
+                  {conflicts.length === 1
+                    ? 'Chiudendo, questa prenotazione verrà disdetta.'
+                    : `Chiudendo, queste ${conflicts.length} prenotazioni verranno disdette.`}
                 </p>
                 <ul className="flex flex-col divide-y divide-line-soft">
                   {conflicts.map((c) => (
@@ -236,7 +245,7 @@ export function NewClosureDialog({ open, onClose, fields, create }: {
               : conflictsPending
                 ? 'Verifico…'
                 : period && !conflictsError && conflicts.length > 0
-                  ? `Chiudi e disdici ${conflicts.length} prenotazioni`
+                  ? `Chiudi e disdici ${conflicts.length} ${conflicts.length === 1 ? 'prenotazione' : 'prenotazioni'}`
                   : 'Chiudi'}
           </button>
         </div>

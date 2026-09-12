@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { Select } from '@/shared/components/ui/Select'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
-import { useUpdateFacility } from '../hooks/useUpdateFacility'
+import { SAVE_FAILED_MESSAGE, useUpdateFacility } from '../hooks/useUpdateFacility'
 import { SettingsPage } from './SettingsPage'
 
 // The check constraint on `facilities.slot_minutes` allows no other values.
@@ -19,7 +19,7 @@ const SLOT_SELECT_OPTIONS = SLOT_OPTIONS.map((m) => ({ value: String(m), label: 
  */
 export function FacilityPage() {
   const facility = useFacility()
-  const { save, isPending, error } = useUpdateFacility()
+  const { save, saving, saveError } = useUpdateFacility()
 
   const [name, setName] = useState(facility.name)
   const [color, setColor] = useState(facility.color)
@@ -156,15 +156,15 @@ export function FacilityPage() {
           </div>
         </div>
 
-        <ErrorNote message={error ? 'Non siamo riusciti a salvare le impostazioni. Riprova.' : null} />
+        <ErrorNote message={saveError ? SAVE_FAILED_MESSAGE : null} />
 
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={isPending}
+            disabled={saving}
             className="rounded-[7px] bg-pitch px-4 py-2 text-[13px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
           >
-            {isPending ? 'Salvo…' : 'Salva'}
+            {saving ? 'Salvo…' : 'Salva'}
           </button>
         </div>
       </form>
