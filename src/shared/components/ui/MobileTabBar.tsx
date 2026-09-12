@@ -21,11 +21,11 @@ export function matchesTab(to: string, pathname: string): boolean {
 
 /**
  * Icone prese dal mockup (`docs/mockups/02-catalogo-schermate.html`, riga
- * 1885 e seguenti): casa, calendario, e per le prenotazioni fatte il
- * calendario col segno di spunta, che là serviva all'obiettivo «Sempre
- * presente». Sono tracciati, non riempimenti: `stroke="currentColor"` fa
- * prendere all'icona il colore del tab, quindi l'acceso arriva da
- * `--pitch` per costruzione.
+ * 1885 e seguenti): casa, calendario, il calendario col segno di spunta per
+ * le prenotazioni fatte, e la testa e le spalle per il profilo (riga 1889).
+ * Sono tracciati, non riempimenti: `stroke="currentColor"` fa prendere
+ * all'icona il colore del tab, quindi l'acceso arriva da `--pitch` per
+ * costruzione.
  */
 const TABS: { to: string; label: string; icon: ReactNode }[] = [
   {
@@ -53,15 +53,25 @@ const TABS: { to: string; label: string; icon: ReactNode }[] = [
       </>
     ),
   },
+  {
+    to: '/profilo',
+    label: 'Profilo',
+    icon: (
+      <>
+        <circle cx="12" cy="8" r="3.6" />
+        <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+      </>
+    ),
+  },
 ]
 
 /**
  * La barra dei tab in basso su telefono: `.ptabs` del mockup (riga 281).
  *
  * Il mockup ne disegna cinque — Home, Prenota, Trova, Tornei, Profilo — ma
- * tre di quelle schermate non esistono ancora: i tornei sono la fase 2,
- * «Trova» e «Profilo» vengono dopo. Qui stanno i tre veri: un tab che non
- * porta da nessuna parte insegna a non fidarsi della barra.
+ * due di quelle schermate non esistono ancora: i tornei sono la fase 2,
+ * «Trova» viene dopo. Qui stanno i quattro veri: un tab che non porta da
+ * nessuna parte insegna a non fidarsi della barra.
  *
  * Le etichette sono in Montserrat e non nel mono del mockup: «Montserrat
  * ovunque» è una decisione successiva a quel file (vedi `--font-sans` in

@@ -12,6 +12,7 @@ import { HomePage } from '@/features/booking/components/HomePage'
 import { BookPage } from '@/features/booking/components/BookPage'
 import { MyBookingsPage } from '@/features/booking/components/MyBookingsPage'
 import { BookingPage } from '@/features/booking/components/BookingPage'
+import { ProfilePage } from '@/features/auth/components/ProfilePage'
 
 // Il pannello del gestore è pesante — griglia, dialoghi, ricorrenze — e chi
 // apre la home come cliente non deve scaricarlo. lazy() lo mette in un file
@@ -49,6 +50,12 @@ export function App() {
                 <Route path="/prenota" element={<BookPage />} />
                 <Route path="/prenotazioni" element={<MyBookingsPage />} />
                 <Route path="/prenotazioni/:id" element={<BookingPage />} />
+                {/* Not wrapped in `RequireAdmin` or any auth guard, on purpose: the
+                    screen handles the signed-out case itself (spec §3.1). A visitor
+                    who has not signed in is invited in, not refused — a tab that
+                    threw them out on tap would be the only one in this app that
+                    does. */}
+                <Route path="/profilo" element={<ProfilePage />} />
                 <Route
                   path="/admin"
                   element={<RequireAdmin><AdminPage /></RequireAdmin>}

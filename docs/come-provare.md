@@ -347,13 +347,90 @@ precedente.
 > un'informazione nuova e va segnalata com'è — la soglia rispettata non è la
 > prova che sotto un pollice vero funzioni.
 
+## 13 · L'indirizzo email, dalla richiesta alla conferma
+
+Questo scenario prova la parte che nessun test automatico può provare: la
+mail parte davvero, e l'indirizzo diventa attivo solo quando si apre il
+collegamento che contiene — non prima.
+
+Entra come cliente con uno dei tre numeri di test e vai su **`/profilo`**
+(il quarto tab, in basso, oppure `http://localhost:5174/profilo`). Nella
+sezione «Dove ti scriviamo», scrivi un indirizzo e premi «Salva».
+
+Devi leggere: «Ti abbiamo mandato un messaggio. L'indirizzo diventa il tuo
+quando apri il collegamento che contiene, non prima.»
+
+Apri **`http://127.0.0.1:54324`**: è Inbucket, la casella di posta finta di
+Supabase in locale. Nessuna email lascia mai questa macchina — ogni
+messaggio che l'app manda finisce lì, intercettato. Trova il messaggio
+appena arrivato e apri il collegamento di conferma al suo interno.
+
+> **Il collegamento porta alla 3000, non alla 5174, e la pagina non si apre.**
+> Supabase costruisce l'indirizzo di conferma su `site_url`, che in
+> `supabase/config.toml` è `http://127.0.0.1:3000`, mentre il server di
+> sviluppo gira sulla 5174. Cliccando finisci quindi su «connessione
+> rifiutata» — e **la conferma a quel punto è già avvenuta**: il token è stato
+> consumato da Supabase prima che il browser provasse a caricare qualcosa.
+> Non è un difetto, e segnalarlo come tale è il malinteso più facile di questo
+> scenario. Torna a mano su `http://localhost:5174/profilo` e leggi lì il
+> risultato.
+
+Torna su `/profilo`: l'indirizzo deve comparire come attivo — la frase «È
+qui che ti scriveremo delle tue prenotazioni. Oggi non mandiamo ancora
+niente…», non più l'avviso d'attesa. Quel «non mandiamo ancora niente» è
+voluto e fa parte di ciò che devi vedere: di codice che manda posta qui non
+ce n'è ancora, e la schermata non deve far credere il contrario. Se lo
+trovi ancora «in attesa di conferma» **e l'account non aveva nessun
+indirizzo**, il collegamento non ha fatto il suo lavoro: è il difetto che
+questo scenario esiste per scoprire.
+
+> **Se l'account un indirizzo ce l'aveva già, i collegamenti da aprire sono
+> due.** `double_confirm_changes = true` in `supabase/config.toml`: un
+> *cambio* di indirizzo manda un messaggio al nuovo e uno al vecchio, e vale
+> solo quando sono stati aperti tutti e due. Su Inbucket cercali entrambi.
+> Finché ne manca uno, «in attesa di conferma» è la risposta giusta e non un
+> difetto — e la schermata, in quel caso, lo dice: l'avviso nomina tutti e due
+> gli indirizzi. Se invece parla di un collegamento solo, quello sì è un
+> difetto.
+
+> **Prima che parta posta vera servono due cose che qui non ci sono, e non
+> sono rifiniture.** In `supabase/config.toml` non esiste nessun blocco
+> `[auth.email.smtp]`: in locale la posta la intercetta Inbucket e va bene
+> così, ma un progetto senza provider SMTP non manda niente su cui si possa
+> contare. E `email_sent = 2`, sotto `[auth.rate_limit]`, è il numero di
+> messaggi all'ora: insieme alla doppia conferma qui sopra, **un solo cambio
+> di indirizzo li consuma tutti e due**. Il cliente successivo riceve un 429,
+> che la schermata traduce in «Non siamo riusciti a salvare l'indirizzo.
+> Riprova» — un invito a riprovare che per il resto dell'ora non può
+> riuscire. Un provider vero e un limite realistico sono **condizioni** del
+> sotto-progetto dei promemoria: vanno decisi e configurati prima che il primo
+> promemoria esista, non dopo.
+
+**Un indirizzo già preso.** Prova a salvare un indirizzo già associato a un
+altro account di prova. Deve arrivare un errore leggibile nel form, non
+un'eccezione muta né una mail di conferma inviata comunque.
+
+> **Nota su Google e il manual linking.** Il bottone «Collega Google» nella
+> stessa pagina usa il *manual linking* di Supabase — una funzione beta,
+> spenta di default, che serve solo quando l'account non ha già
+> un'identità Google collegabile in automatico (il caso comune qui: un
+> account nato con l'SMS). In locale la voce è `enable_manual_linking` in
+> `supabase/config.toml`, sotto `[auth]` (oggi `false`): senza portarla a
+> `true`, il bottone fallisce sempre, e non per un difetto del codice. Sul
+> progetto Supabase ospitato la stessa voce si trova nella Dashboard, in
+> **Authentication → Sign In / Providers → Advanced settings** (il nome
+> preciso della sezione cambia con le versioni della Dashboard: cerca
+> «manual linking»). Anche con quella voce accesa, provare per intero il
+> collegamento a Google richiede comunque credenziali di un vero progetto
+> Google Cloud — vedi «Cosa non si può provare in locale» più sotto.
+
 ---
 
 ## I test automatici
 
 ```bash
-npm run test        # 211 test: funzioni pure, messaggi d'errore, render
-npm run test:db     # 84 test pgTAP: regole di dominio, RLS, autorizzazione
+npm run test        # 320 test: funzioni pure, messaggi d'errore, render
+npm run test:db     # 114 test pgTAP: regole di dominio, RLS, autorizzazione
 npm run build       # compilazione e pacchetti
 ```
 
@@ -365,8 +442,10 @@ prenotazioni» filtra per conto proprio invece di fidarsi della sola RLS.
 
 ## Cosa non si può provare in locale
 
-- **L'accesso con Google.** Servono credenziali di un progetto Google Cloud. In
-  locale funziona solo l'SMS coi tre numeri di prova.
+- **L'accesso con Google, e il collegarlo a un account che ha già un numero.**
+  Servono credenziali di un progetto Google Cloud. In locale funziona solo
+  l'SMS coi tre numeri di prova. Il collegamento manuale (scenario 13) ha
+  anche una voce da accendere a parte — vedi la nota lì.
 - **Gli SMS veri.** Nessun messaggio parte: il codice `472839` arriva da una
   mappa in `supabase/config.toml`.
 - **Le notifiche di promemoria e la bacheca.** Non sono in questa fase.
