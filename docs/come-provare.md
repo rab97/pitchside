@@ -275,13 +275,15 @@ subito sotto, questa, che non deve mai mancare:
 
 > I clienti non ricevono ancora un avviso: chiamali tu.
 
-Qui la prenotazione in conflitto è **una sola**: il conteggio deve dire uno, e
-ogni parola che lo accompagna deve essere al singolare — nell'avviso, sul
-pulsante che conferma e nel messaggio che arriva dopo. Un «queste 1
-prenotazioni» è un difetto da segnalare: questa è la schermata in cui il
-gestore decide di disdire la partita a qualcuno, e si legge come un conto
-fatto male. Confermando, il messaggio deve dire che la chiusura è salvata e
-che la prenotazione è stata disdetta — di nuovo al singolare.
+Qui la prenotazione in conflitto è **una sola**, e ogni parola che la
+accompagna deve essere al singolare. L'avviso sopra l'elenco non porta nessun
+numero — dice «Chiudendo, questa prenotazione verrà disdetta.» — e non
+cercarcelo: il conteggio compare solo in due punti, sul pulsante che conferma,
+«Chiudi e disdici 1 prenotazione», e poi nel messaggio che arriva dopo,
+«Chiusura salvata. Disdetta 1 prenotazione.». Un «queste 1 prenotazioni», o un
+«Disdette 1 prenotazioni», è un difetto da segnalare: questa è la schermata in
+cui il gestore decide di disdire la partita a qualcuno, e si legge come un
+conto fatto male.
 
 Torna sulla scheda del cliente e apri `/prenotazioni`: la prenotazione che
 avevi appena fatto deve comparire fra le passate, etichettata **Disdetta** —
@@ -350,7 +352,7 @@ precedente.
 ## I test automatici
 
 ```bash
-npm run test        # 193 test: funzioni pure, messaggi d'errore, render
+npm run test        # 211 test: funzioni pure, messaggi d'errore, render
 npm run test:db     # 84 test pgTAP: regole di dominio, RLS, autorizzazione
 npm run build       # compilazione e pacchetti
 ```
