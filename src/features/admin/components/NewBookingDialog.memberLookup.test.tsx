@@ -172,4 +172,45 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     expect(createMember).toHaveBeenCalledTimes(1)
     expect(createBooking.mock.calls[1][0]).toMatchObject({ memberId: 'm9' })
   }, TIMEOUT)
+
+  // The phone is written once, by `createMember`'s insert, and never again:
+  // this dialog has no update path and is not getting one — adding a number to
+  // an existing customer belongs to the registry, not here. So once the choice
+  // is a real row the field must go, or it invites typing a number that is
+  // then silently dropped. `MemberCard` shows the number the record actually
+  // holds.
+  it('su un cliente che esiste già il telefono non è più scrivibile', async () => {
+    stubCreateMember(vi.fn().mockResolvedValue('m9'))
+    vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({
+      results: [], isPending: false, failed: false,
+    })
+    createBooking.mockRejectedValueOnce(new Error('Questo slot è appena stato prenotato da qualcun altro. Scegline un altro.'))
+
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    expect(screen.getByRole('textbox', { name: 'Telefono' })).toBeInTheDocument()
+
+    // The booking fails, the customer exists anyway, and the choice becomes a
+    // chosen one — which is exactly when the field must stop being offered.
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(screen.queryByRole('textbox', { name: 'Telefono' })).not.toBeInTheDocument()
+  }, TIMEOUT)
+
+  it('creando un cliente senza numero, dice cosa costa', async () => {
+    stubCreateMember(vi.fn().mockResolvedValue('m9'))
+    vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({
+      results: [], isPending: false, failed: false,
+    })
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    expect(screen.getByText('Senza numero questo cliente non sarà riconoscibile la prossima volta.'))
+      .toBeInTheDocument()
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '3331112233' } })
+    expect(screen.queryByText('Senza numero questo cliente non sarà riconoscibile la prossima volta.'))
+      .not.toBeInTheDocument()
+  }, TIMEOUT)
 })

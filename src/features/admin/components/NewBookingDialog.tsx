@@ -161,22 +161,35 @@ export function NewBookingDialog({ target, onClose }: {
           />
         )}
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
-          <input
-            className="field placeholder:text-muted"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="facoltativo"
-            inputMode="tel"
-            autoComplete="off"
-          />
-        </label>
+        {/* Only while a customer is being created. `createMember`'s insert is
+            the one and only write of a phone in this dialog, and it is not
+            getting a second: adding a number to someone who already exists
+            belongs to the registry, not to a screen answered with the phone in
+            hand. Left rendered for a chosen customer the field would be typeable
+            and unwritable at once — worst right after a retry, where the manager
+            has just been told this person will be unrecognisable without a
+            number, would type it, and would watch it be dropped. `MemberCard`
+            shows the number the record actually holds. */}
+        {choice.kind === 'new' && (
+          <>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
+              <input
+                className="field placeholder:text-muted"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="facoltativo"
+                inputMode="tel"
+                autoComplete="off"
+              />
+            </label>
 
-        {choice.kind === 'new' && phone.trim() === '' && (
-          <p className="text-[11.5px] text-muted">
-            Senza numero questo cliente non sarà riconoscibile la prossima volta.
-          </p>
+            {phone.trim() === '' && (
+              <p className="text-[11.5px] text-muted">
+                Senza numero questo cliente non sarà riconoscibile la prossima volta.
+              </p>
+            )}
+          </>
         )}
 
         <div className="flex flex-col gap-1.5">
