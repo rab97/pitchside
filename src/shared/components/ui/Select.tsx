@@ -68,7 +68,25 @@ export function Select<T extends string>(props: {
                 key={option.value}
                 value={option.value}
                 disabled={option.disabled}
-                className="cursor-pointer select-none px-3 py-2 text-[13.5px] text-ink outline-none data-[highlighted]:bg-pitch-tint data-[highlighted]:text-pitch data-[disabled]:text-muted"
+                // `px-3 py-2` around a 13.5px line box is about 37px tall,
+                // and `TimeField` turns this list into 97 of them: on a
+                // phone, 37px is the row the finger misses and the one
+                // below gets chosen instead — exactly what the manual guide
+                // asks a tester to check when picking a time. `min-h-11`
+                // raises it to the 44px floor (spec §2.4), gated on
+                // `pointer-coarse:` for the reason set out over the admin
+                // toolbar in `AdminPage.tsx`, and here with a second reason
+                // of its own: at 44px a 97-row list is 4268px of scrolling,
+                // and a mouse pointing at a 37px row was never the problem.
+                // `min-h`, not `h`: a long option label must still be free
+                // to wrap rather than be cut off. `flex items-center` is
+                // what centres the text once the row is taller than it is.
+                //
+                // The trigger stays as it is, at the 36px `.field` gives
+                // every control in a form: it is a full-width target, not a
+                // 37px sliver, and shrinking or growing it away from the
+                // inputs beside it would cost more than it buys.
+                className="flex cursor-pointer select-none items-center px-3 py-2 text-[13.5px] text-ink outline-none data-[highlighted]:bg-pitch-tint data-[highlighted]:text-pitch data-[disabled]:text-muted pointer-coarse:min-h-11"
               >
                 <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
               </RadixSelect.Item>
