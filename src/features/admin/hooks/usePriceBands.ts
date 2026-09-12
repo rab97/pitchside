@@ -3,6 +3,7 @@ import { supabase } from '@/shared/lib/supabase'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { findOverlappingBand } from '../utils/bandOverlap'
 import { BandOverlapError, messageForBandOverlap } from '../utils/bandMessages'
+import { sameBandGroup } from '../utils/sameBandGroup'
 import type { Band } from '../utils/daySegments'
 
 type BandRow = {
@@ -109,12 +110,7 @@ export function usePriceBands(fieldId: string | null) {
       if (input.id) {
         const target = bands.find((b) => b.id === input.id)
         groupIds = target
-          ? bands
-              .filter((b) =>
-                b.startsMin === target.startsMin &&
-                b.endsMin === target.endsMin &&
-                b.priceCents === target.priceCents)
-              .map((b) => b.id)
+          ? bands.filter((b) => sameBandGroup(b, target)).map((b) => b.id)
           : [input.id]
       }
 

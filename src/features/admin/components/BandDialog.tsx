@@ -6,6 +6,7 @@ import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { TimeField } from '@/shared/components/ui/TimeField'
 import { parseEuroToCents } from '@/shared/lib/money'
 import { messageForBandWrite } from '../utils/bandMessages'
+import { sameBandGroup } from '../utils/sameBandGroup'
 import type { Band } from '../utils/daySegments'
 import type { SaveBandInput } from '../hooks/usePriceBands'
 
@@ -78,10 +79,7 @@ function BandForm({ target, onClose, bands, saveBand, deleteBand }: {
   const [weekdays, setWeekdays] = useState<number[]>(() => {
     if (target.mode !== 'edit') return []
     const { band } = target
-    return bands
-      .filter((b) =>
-        b.startsMin === band.startsMin && b.endsMin === band.endsMin && b.priceCents === band.priceCents)
-      .map((b) => b.weekday)
+    return bands.filter((b) => sameBandGroup(b, band)).map((b) => b.weekday)
   })
   // `null`, not `0`, when nothing is chosen yet: `0` is `00:00`, a real,
   // submittable time — see the comment on `TimeField`.
@@ -145,10 +143,7 @@ function BandForm({ target, onClose, bands, saveBand, deleteBand }: {
     setDeleting(true)
     try {
       const { band } = target
-      const groupIds = bands
-        .filter((b) =>
-          b.startsMin === band.startsMin && b.endsMin === band.endsMin && b.priceCents === band.priceCents)
-        .map((b) => b.id)
+      const groupIds = bands.filter((b) => sameBandGroup(b, band)).map((b) => b.id)
       await deleteBand(groupIds)
       toast.success('Fascia eliminata.')
       onClose()
