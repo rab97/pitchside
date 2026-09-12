@@ -74,6 +74,11 @@ export function useClosures() {
       if (error) throw error
       if (!data || data.length === 0) throw new Error('L’eliminazione non ha rimosso alcuna riga.')
     },
+    // Only this list. Deleting a closure reopens the period and restores
+    // nothing: the bookings `create_closure` cancelled stay cancelled — it
+    // is what `ClosuresPage` promises the manager before they confirm — so
+    // `bookings`, `busy_slots` and the conflict preview all still hold what
+    // they held. Invalidating them here would be noise, not correctness.
     onSuccess: () => qc.invalidateQueries({ queryKey }),
   })
 
@@ -99,8 +104,22 @@ export function useClosures() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey })
-      // The day grid must stop showing what this closure just cancelled.
+      // This write cancels bookings, so every query that reads a booking is
+      // now answering with rows that no longer exist as it describes them.
+      // There are three, and they belong to three different screens:
+      // the day grid must stop showing what was just cancelled…
       qc.invalidateQueries({ queryKey: ['bookings', facility.id] })
+      // …the customer's availability on `/prenota` must free those slots —
+      // `busy_slots` is a view over `bookings where status = 'active'`
+      // (`supabase/migrations/0007_busy_slots.sql`), read under
+      // ['busy', facilityId, fieldId, day] in
+      // `src/features/booking/hooks/useAvailability.ts`, and the panel and
+      // `/prenota` share one QueryClient…
+      qc.invalidateQueries({ queryKey: ['busy', facility.id] })
+      // …and the conflict preview, keyed by period, would otherwise offer
+      // its cached answer again if the manager reopened this dialog over
+      // the same period, listing bookings this very call cancelled.
+      qc.invalidateQueries({ queryKey: ['closure-conflicts', facility.id] })
     },
   })
 

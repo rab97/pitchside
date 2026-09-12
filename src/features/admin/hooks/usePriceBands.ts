@@ -83,7 +83,24 @@ export function usePriceBands(fieldId: string | null) {
   const bands = data ?? []
 
   function invalidate() {
-    return qc.invalidateQueries({ queryKey })
+    return Promise.all([
+      qc.invalidateQueries({ queryKey }),
+      // The customer's price comes from `slot_prices`, and `slot_prices` is
+      // computed from these very rows — their union is also the field's
+      // opening hours for the day (see
+      // `supabase/migrations/0014_slot_prices.sql`). So a band written here
+      // changes the answer to a query owned by another feature, cached
+      // under ['slot-prices', fieldId, day, duration] in
+      // `src/features/booking/hooks/useSlotPrices.ts`; the prefix below
+      // reaches every day and duration of this pitch.
+      //
+      // The panel and `/prenota` share one QueryClient in one SPA, and
+      // `FieldsPage` links straight from a pitch to this screen, so a
+      // manager who changes a price and then opens `/prenota` to check it
+      // is the intended path. Without this they are shown the old price and
+      // no longer know which one is true.
+      qc.invalidateQueries({ queryKey: ['slot-prices', fieldId] }),
+    ])
   }
 
   const saveMutation = useMutation({
