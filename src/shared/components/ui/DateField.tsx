@@ -12,7 +12,17 @@ import { MonthGridPopover } from './MonthGridPopover'
  * `min`/`max` as `Date`s.
  *
  * `min`/`max` grey days out rather than remove them from the grid — the same
- * discipline `TimeField` applies to its options, spec §3.1.
+ * discipline `TimeField` applies to its options, spec §3.1. They are read as
+ * days, not instants: `isDayDisabled` compares `startOfDay` on both sides,
+ * so whatever time of day a caller hands in is irrelevant.
+ *
+ * `onChange` reports the chosen day at **noon in the device's own zone**,
+ * which is how `monthGrid` builds every cell. Not noon Rome: the value
+ * stands for a day and never for an instant, and noon is only the widest
+ * margin on either side of it — a bare day held at midnight can fall into
+ * the day before as soon as a conversion touches it. The callers that do
+ * need an instant (`NewClosureDialog` pairing this with a `TimeField`) build
+ * it themselves in `Europe/Rome`; see `src/shared/lib/tz.ts`.
  */
 export function DateField(props: {
   value: Date | null

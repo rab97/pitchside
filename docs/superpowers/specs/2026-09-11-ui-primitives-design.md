@@ -143,8 +143,12 @@ Both speak the project's units. `TimeField` takes and returns **minutes from
 midnight**; `step` defaults to 15, the finest `slot_minutes` the database
 allows, so every boundary a booking can land on stays reachable, and `1440` is
 expressible — precisely the value no native time control could offer.
-`DateField` takes and returns a `Date` at **noon Rome**, the convention
-`DateJump` already uses to stop a day sliding across a timezone boundary.
+`DateField` takes and returns a `Date` at **noon in the device's own zone**,
+the convention `DateJump` already uses to stop a day sliding across a
+timezone boundary. Local, not Rome: the value never names an instant, only a
+day, and noon is simply the widest margin on either side of it — a bare day
+held at midnight can fall into the day before the moment a conversion touches
+it. `monthGrid` builds the grid that way (`setHours(12, 0, 0, 0)`).
 
 ### 3.1 An impossible choice is disabled, never absent
 
@@ -219,7 +223,7 @@ people distrust a form.
 
 - **Vitest** for what is pure or contractual: the `Select` renders its options
   and reports a choice; `TimeField` maps a label to minutes and back, `1440`
-  included; `DateField` returns noon Rome; `SortableList` produces the right
+  included; `DateField` returns noon local; `SortableList` produces the right
   order from a move. Keyboard behaviour that belongs to the libraries is theirs
   to test, not ours — we test that we wired them.
 - **The existing suites are the regression guard** for §2.4's reach into the
