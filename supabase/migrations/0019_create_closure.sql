@@ -48,10 +48,13 @@ begin
   -- We write `cancelled` directly instead of calling `cancel_booking`:
   -- that function increments `missed_count` beyond the deadline, which is
   -- correct when the player pulls out and wrong when the manager closes.
-  -- Here we touch no counters.
+  -- The exemption covers the reliability counters and nothing else:
+  -- `cancelled_at` is the record of the event, the same one every other
+  -- cancellation path writes, and it cannot be reconstructed afterwards.
   with hit as (
     update public.bookings b
-       set status = 'cancelled'
+       set status = 'cancelled',
+           cancelled_at = now()
      where b.facility_id = p_facility_id
        and b.status = 'active'
        and b.slot && p_period

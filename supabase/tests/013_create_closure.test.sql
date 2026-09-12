@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(15);
 
 insert into public.facilities (id, slug, name, booking_horizon_days)
   values ('d0000000-0000-0000-0000-0000000000c1', 'test-clo', 'Test Chiusure', 3650);
@@ -74,6 +74,11 @@ select is(
 
 select is((select status from public.bookings where id = 'd0000000-0000-0000-0000-0000000000b1'),
   'cancelled', 'quella dentro il periodo e disdetta');
+-- lo stato dice che e' disdetta, il timestamp dice quando: senza, il momento
+-- della disdetta non e' piu' ricostruibile (e l'avviso al cliente lo chiede)
+select ok((select cancelled_at is not null from public.bookings
+            where id = 'd0000000-0000-0000-0000-0000000000b1'),
+  'la disdetta dalla chiusura ha la data di disdetta');
 select is((select status from public.bookings where id = 'd0000000-0000-0000-0000-0000000000b2'),
   'active', 'quella di un altro campo resta attiva');
 
@@ -105,6 +110,12 @@ select is((select status from public.bookings where id = 'd0000000-0000-0000-000
   'cancelled', 'prenotazione su altro campo e disdetta dalla chiusura d''impianto');
 select is((select status from public.bookings where id = 'd0000000-0000-0000-0000-0000000000b4'),
   'cancelled', 'prenotazione fuori dal periodo iniziale ma dentro il secondo e disdetta');
+
+select ok((select count(*) = 0 from public.bookings
+            where facility_id = 'd0000000-0000-0000-0000-0000000000c1'
+              and id <> 'd0000000-0000-0000-0000-0000000000b3'
+              and status = 'cancelled' and cancelled_at is null),
+  'nessuna disdetta dalla chiusura resta senza data di disdetta');
 
 -- Member counters should remain unchanged even after whole-facility closure
 select results_eq(
