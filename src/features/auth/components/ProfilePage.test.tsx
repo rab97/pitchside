@@ -7,6 +7,7 @@ import * as authProvider from '../hooks/AuthProvider'
 import * as signOutHook from '../hooks/useSignOut'
 import * as emailHook from '../hooks/useUpdateEmail'
 import * as googleHook from '../hooks/useLinkGoogle'
+import * as myMemberHook from '../hooks/useMyMember'
 import * as tenant from '@/shared/tenant/FacilityProvider'
 
 const facility = {
@@ -27,6 +28,11 @@ function stubHooks() {
   })
   vi.spyOn(googleHook, 'useLinkGoogle').mockReturnValue({
     linkGoogle: vi.fn(), linking: false, error: null,
+  })
+  // Sostituito e non lasciato correre: il gancio vero apre una query di
+  // React Query, che senza un `QueryClientProvider` nell'albero solleva.
+  vi.spyOn(myMemberHook, 'useMyMember').mockReturnValue({
+    memberId: 'm1', isPending: false, error: null,
   })
 }
 
@@ -236,6 +242,26 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
 
     expect(setEmail).toHaveBeenCalledWith('rossi@example.com')
+  })
+
+  // `ensure_my_member` è l'unica cosa che copia l'indirizzo dell'account sulla
+  // scheda, e il collegamento di conferma rimanda a `site_url` — la home — non
+  // al profilo. Senza questa chiamata: il cliente aggiunge un indirizzo da
+  // `/profilo`, apre il collegamento, atterra su `/` (che non chiama niente),
+  // chiude l'app, e `members.email` resta NULL mentre `auth.users.email` è
+  // giusto. Il sotto-progetto dei promemoria legge la scheda e lo conta fra
+  // gli irraggiungibili. Questa è anche la schermata su cui torna il redirect
+  // di `linkIdentity`.
+  it('chiede la scheda, così l’indirizzo confermato la raggiunge', () => {
+    const useMyMember = vi.spyOn(myMemberHook, 'useMyMember').mockReturnValue({
+      memberId: 'm1', isPending: false, error: null,
+    })
+    stubSession({
+      phone: '393331112233', email: 'rossi@example.com', identities: [],
+    })
+    renderPage()
+
+    expect(useMyMember).toHaveBeenCalled()
   })
 
   it('il pulsante di Google chiama linkGoogle', () => {

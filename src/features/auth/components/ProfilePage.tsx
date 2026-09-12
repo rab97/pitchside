@@ -7,6 +7,7 @@ import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import { useAuth } from '../hooks/AuthProvider'
 import { useLinkGoogle } from '../hooks/useLinkGoogle'
+import { useMyMember } from '../hooks/useMyMember'
 import { useSignOut } from '../hooks/useSignOut'
 import { useUpdateEmail } from '../hooks/useUpdateEmail'
 import { displayPhone } from '../utils/phoneDisplay'
@@ -45,6 +46,19 @@ const quietButtonClass =
 export function ProfilePage(): JSX.Element {
   const facility = useFacility()
   const { session, loading } = useAuth()
+
+  // Called for what it does, not for what it returns. `ensure_my_member` is
+  // the only thing that copies the account's confirmed address onto the
+  // customer's card (`0023_member_email_refresh.sql`), and the confirmation
+  // link Supabase sends redirects to `site_url` — the home — which calls
+  // nothing. Without this, someone who adds an address here, opens the link
+  // and closes the app leaves `auth.users.email` right and `members.email`
+  // NULL, and the reminders sub-project reads the card and files a reachable
+  // customer as unreachable (spec §5). This screen is also where
+  // `linkIdentity` brings them back. It is `enabled: !!session` and creates
+  // nothing `/prenotazioni` does not already create for every visitor who has
+  // signed in.
+  useMyMember()
 
   return (
     <MobileFrame title="Profilo">
