@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMemberSearch, type MemberHit } from '../hooks/useMemberSearch'
+import { nameKey } from '../utils/memberKeys'
 
 export type MemberChoice =
   | { kind: 'none' }
@@ -20,8 +21,34 @@ export function MemberSearchField({ choice, onChoose, inputRef }: {
   inputRef?: React.RefObject<HTMLInputElement | null>
 }) {
   const [term, setTerm] = useState('')
+  // The name this question has already been answered for, and the one it is
+  // being asked about right now. Both hold a `nameKey`, not what was typed:
+  // «Nicolò» and «nicolo» are one name here for the same reason they are one
+  // name in `search_members`.
+  const [settledName, setSettledName] = useState<string | null>(null)
+  const [askedName, setAskedName] = useState<string | null>(null)
   const { results, failed } = useMemberSearch(term)
   const typed = term.trim()
+  const typedKey = nameKey(typed)
+
+  // §2.7b. The rows are the ones `search_members` already returned, so the
+  // question costs no extra query: whoever carries this name is by
+  // construction among the hits for it.
+  const sameName = typed === '' ? [] : results.filter((m) => nameKey(m.name) === typedKey)
+  const asking = askedName === typedKey && sameName.length > 0
+
+  function wantNew() {
+    // A warning, not a block. With §2.6's required number two customers
+    // sharing a name necessarily hold different numbers, so they are genuinely
+    // two people — and the identical pair is refused by the unique index
+    // before this question can be asked. The manager must be able to say
+    // "different person" and go on; the point is that they say it.
+    if (sameName.length > 0 && settledName !== typedKey) {
+      setAskedName(typedKey)
+      return
+    }
+    onChoose({ kind: 'new', name: typed })
+  }
 
   if (choice.kind === 'existing') {
     return (
@@ -29,7 +56,10 @@ export function MemberSearchField({ choice, onChoose, inputRef }: {
         <span className="text-[13.5px] font-medium">{choice.member.name}</span>
         <button
           type="button"
-          onClick={() => { setTerm(''); onChoose({ kind: 'none' }) }}
+          onClick={() => {
+            setTerm(''); setAskedName(null); setSettledName(null)
+            onChoose({ kind: 'none' })
+          }}
           className="rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:min-h-11 pointer-coarse:px-3"
         >
           Cambia cliente
@@ -93,11 +123,46 @@ export function MemberSearchField({ choice, onChoose, inputRef }: {
       {typed.length > 0 && (
         <button
           type="button"
-          onClick={() => onChoose({ kind: 'new', name: typed })}
+          onClick={wantNew}
           className="self-start rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:min-h-11 pointer-coarse:px-3"
         >
           Nuovo cliente: {typed}
         </button>
+      )}
+
+      {/* Deliberately the same shape as the answer for a number already
+          assigned: name the conflict, offer the choices, do not throw an
+          error. Two near-identical situations must not teach the manager two
+          different habits. */}
+      {asking && (
+        <div className="flex flex-col gap-1.5 rounded-[7px] border border-line bg-surface-2 p-2.5">
+          <p className="text-[12.5px] text-ink-2">
+            {sameName.length === 1
+              ? `C’è già un cliente che si chiama «${sameName[0].name}». È la stessa persona?`
+              : `Ci sono già ${sameName.length} clienti che si chiamano «${sameName[0].name}». È una di loro?`}
+          </p>
+          {sameName.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => { setAskedName(null); onChoose({ kind: 'existing', member: m }) }}
+              className="flex w-full items-baseline gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 text-left text-[12.5px] transition-colors hover:border-pitch hover:text-pitch pointer-coarse:min-h-11"
+            >
+              Usa la scheda di {m.name}
+              <span className="tabular-nums text-[11px] text-muted">{m.phone ?? ''}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              setAskedName(null); setSettledName(typedKey)
+              onChoose({ kind: 'new', name: typed })
+            }}
+            className="self-start rounded-md border border-line px-2 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:min-h-11 pointer-coarse:px-3"
+          >
+            No, è una persona diversa
+          </button>
+        </div>
       )}
     </div>
   )
