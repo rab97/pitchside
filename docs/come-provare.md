@@ -270,13 +270,18 @@ nuovo. Devi tornare con la prenotazione fatta.
 Torna alla scheda del gestore, su **Chiusure**. «Aggiungi chiusura» → campo
 **Campo 4**, un periodo che copre l'orario appena prenotato, un motivo a
 piacere. Deve comparire l'anteprima con la prenotazione di Giulio Dante — nome
-e telefono — sopra la frase «Chiudendo, queste 1 prenotazioni verranno
-disdette.» e, subito sotto, questa, che non deve mai mancare:
+e telefono — sopra la frase che avverte che chiudendo verrà disdetta, e,
+subito sotto, questa, che non deve mai mancare:
 
 > I clienti non ricevono ancora un avviso: chiamali tu.
 
-Il pulsante deve leggere «Chiudi e disdici 1 prenotazioni». Confermalo: il
-messaggio deve dire «Chiusura salvata. Disdette 1 prenotazioni.»
+Qui la prenotazione in conflitto è **una sola**: il conteggio deve dire uno, e
+ogni parola che lo accompagna deve essere al singolare — nell'avviso, sul
+pulsante che conferma e nel messaggio che arriva dopo. Un «queste 1
+prenotazioni» è un difetto da segnalare: questa è la schermata in cui il
+gestore decide di disdire la partita a qualcuno, e si legge come un conto
+fatto male. Confermando, il messaggio deve dire che la chiusura è salvata e
+che la prenotazione è stata disdetta — di nuovo al singolare.
 
 Torna sulla scheda del cliente e apri `/prenotazioni`: la prenotazione che
 avevi appena fatto deve comparire fra le passate, etichettata **Disdetta** —
