@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(9);
 
 insert into public.facilities (id, slug, name, booking_horizon_days) values
   ('e2000000-0000-0000-0000-0000000000f1', 'test-card', 'Struttura Card', 3650),
@@ -15,16 +15,23 @@ values
   ('00000000-0000-0000-0000-000000000000','e2000000-0000-0000-0000-0000000000aa',
    'authenticated','authenticated','390000000301', now(), '','','','', now(), now()),
   ('00000000-0000-0000-0000-000000000000','e2000000-0000-0000-0000-0000000000bb',
-   'authenticated','authenticated','390000000302', now(), '','','','', now(), now());
+   'authenticated','authenticated','390000000302', now(), '','','','', now(), now()),
+  ('00000000-0000-0000-0000-000000000000','e2000000-0000-0000-0000-0000000000cc',
+   'authenticated','authenticated','390000000303', now(), '','','','', now(), now());
 insert into public.facility_admins (facility_id, user_id) values
   ('e2000000-0000-0000-0000-0000000000f1','e2000000-0000-0000-0000-0000000000aa'),
   ('e2000000-0000-0000-0000-0000000000f2','e2000000-0000-0000-0000-0000000000bb');
 
-insert into public.members (id, facility_id, name, phone, price_list, notes, honored_count, missed_count) values
-  ('e2000000-0000-0000-0000-0000000000c1','e2000000-0000-0000-0000-0000000000f1',
+-- Il socio ha rivendicato la sua scheda (user_id valorizzato): può leggerla
+-- lui stesso via members_read_own, ma non deve leggere le note del gestore
+-- attraverso member_card.
+insert into public.members (id, facility_id, user_id, name, phone, price_list, notes, honored_count, missed_count) values
+  ('e2000000-0000-0000-0000-0000000000c1','e2000000-0000-0000-0000-0000000000f1', null,
    'Abbonato Storico','3331110000','ridotto','Paga sempre in contanti', 0, 1),
-  ('e2000000-0000-0000-0000-0000000000c2','e2000000-0000-0000-0000-0000000000f1',
-   'Cliente Nuovo', '3331110001','standard', null, 0, 0);
+  ('e2000000-0000-0000-0000-0000000000c2','e2000000-0000-0000-0000-0000000000f1', null,
+   'Cliente Nuovo', '3331110001','standard', null, 0, 0),
+  ('e2000000-0000-0000-0000-0000000000c3','e2000000-0000-0000-0000-0000000000f1','e2000000-0000-0000-0000-0000000000cc',
+   'Socio Rivendicato', '3331110002','standard','Nota interna riservata', 0, 0);
 
 -- Due partite passate sul Campo 1, una sul Campo 2, una futura e una disdetta:
 -- le presenze sono 3, il campo abituale è il Campo 1.
@@ -77,6 +84,12 @@ set local request.jwt.claims to '{"sub":"e2000000-0000-0000-0000-0000000000bb","
 select is_empty(
   $$select * from public.member_card('e2000000-0000-0000-0000-0000000000c1')$$,
   'un gestore non vede la scheda di un cliente di una struttura che non amministra, note comprese');
+
+set local request.jwt.claims to '{"sub":"e2000000-0000-0000-0000-0000000000cc","role":"authenticated"}';
+
+select is_empty(
+  $$select * from public.member_card('e2000000-0000-0000-0000-0000000000c3')$$,
+  'un socio che ha rivendicato la propria scheda non legge la propria nota interna attraverso member_card');
 
 select * from finish();
 rollback;

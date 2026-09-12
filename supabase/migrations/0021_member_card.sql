@@ -13,9 +13,18 @@
 -- backfill.
 --
 -- Not SECURITY DEFINER, deliberately, same reasoning as `search_members`: RLS
--- on `members` already admits exactly the facility admin, so a caller who does
--- not administer this member's facility joins against zero rows and gets zero
--- rows back, notes included.
+-- stays in force under the caller's own role.
+--
+-- But unlike `search_members`, that RLS is not enough on its own. `members`
+-- carries two SELECT policies, OR'd together — `members_read_admin` (the
+-- facility's admins) and `members_read_own` (the member's own claimed
+-- `user_id`, see `claim_members_by_verified_phone` in 0012_member_identity.sql).
+-- This function returns manager-only columns — `notes` above all — so a
+-- customer reading their own claimed row through `members_read_own` must not
+-- reach this function's result: the grant to `authenticated` alone would hand
+-- them their own internal note. The `where` clause below filters on
+-- `is_facility_admin` explicitly, rather than trusting the table's policies to
+-- do it, because here they do not.
 
 create or replace function public.member_card(p_member_id uuid)
 returns table (
@@ -65,7 +74,8 @@ as $$
       order by count(*) desc, f.name
       limit 1) as usual_field_name
   from public.members m
- where m.id = p_member_id;
+ where m.id = p_member_id
+   and public.is_facility_admin(m.facility_id);
 $$;
 
 revoke all on function public.member_card(uuid) from public;
