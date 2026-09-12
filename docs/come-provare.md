@@ -240,11 +240,120 @@ Poi crea una prenotazione e verifica che compaia **senza svuotare la cache**.
 
 ---
 
+## 11 · Configurare l'impianto
+
+Questo scenario chiude la fase 1B: un campo nuovo, il suo prezzo, e una
+chiusura che lo toglie di mezzo con dentro una prenotazione vera — non da
+`psql`, dal pannello.
+
+Entra come gestore (`347 220 15 63`, codice `472839`) su `/admin/campi`.
+
+**Aggiungi un quarto campo.** «Aggiungi campo» → nome `Campo 4`, un tipo e una
+superficie a piacere. Deve comparire in fondo alla lista, attivo.
+
+Vai su **Tariffe**, seleziona **Campo 4**. Devi leggere: «Questo campo non ha
+tariffe: è chiuso tutti i giorni. Aggiungi una fascia per aprirlo.» — è vero,
+finché non gli dai un prezzo.
+
+**Prezzalo per l'intera settimana.** «Aggiungi fascia» → tutti e sette i
+giorni selezionati, dalle `00:00` alle `24:00`, un prezzo a piacere. Salva: la
+settimana di Campo 4 deve colorarsi tutta, senza nessun tratto «chiuso».
+
+Apri `/prenota` in una **seconda scheda**, senza account. **Campo 4** deve
+comparire fra i campi selezionabili, con gli orari liberi e il prezzo appena
+scritto — non una stima.
+
+**Prenota su Campo 4.** Scegli un giorno e un'ora su quel campo, conferma;
+entra con `339 412 88 07` e codice `472839` (Giulio Dante), poi conferma di
+nuovo. Devi tornare con la prenotazione fatta.
+
+Torna alla scheda del gestore, su **Chiusure**. «Aggiungi chiusura» → campo
+**Campo 4**, un periodo che copre l'orario appena prenotato, un motivo a
+piacere. Deve comparire l'anteprima con la prenotazione di Giulio Dante — nome
+e telefono — sopra la frase che avverte che chiudendo verrà disdetta, e,
+subito sotto, questa, che non deve mai mancare:
+
+> I clienti non ricevono ancora un avviso: chiamali tu.
+
+Qui la prenotazione in conflitto è **una sola**, e ogni parola che la
+accompagna deve essere al singolare. L'avviso sopra l'elenco non porta nessun
+numero — dice «Chiudendo, questa prenotazione verrà disdetta.» — e non andarlo
+a cercare: il conteggio compare solo in due punti, sul pulsante che conferma,
+«Chiudi e disdici 1 prenotazione», e poi nel messaggio che arriva dopo,
+«Chiusura salvata. Disdetta 1 prenotazione.». Un «queste 1 prenotazioni», o un
+«Disdette 1 prenotazioni», è un difetto da segnalare: questa è la schermata in
+cui il gestore decide di disdire la partita a qualcuno, e si legge come un
+conto fatto male.
+
+Torna sulla scheda del cliente e apri `/prenotazioni`: la prenotazione che
+avevi appena fatto deve comparire fra le passate, etichettata **Disdetta** —
+l'ha cancellata la chiusura, non tu.
+
+---
+
+## 12 · Le stesse tre cose, ma col pollice
+
+I campi di data e ora del pannello, e il riordino dei campi, hanno preso il
+posto dei controlli nativi del telefono — la ruota di `<input type="date">`,
+in particolare, che era grande, familiare e gratis. Questo scenario esiste
+solo per verificare che non abbiamo peggiorato quello che abbiamo sostituito:
+va provato su un **telefono vero**, non in una finestra del browser ridotta.
+Una finestra stretta con l'emulazione touch mostra se qualcosa si rompe nel
+layout, ma non dice come un controllo si sente sotto un pollice vero, né
+arbitra un vero scorrimento col dito contro un trascinamento.
+
+Avvia il server rivolto alla rete locale:
+
+```bash
+npm run dev:phone   # porta 5175, ascolta su tutte le interfacce di rete
+```
+
+Trova l'indirizzo di questa macchina sulla Wi-Fi (`ip addr` o le impostazioni
+di rete: qualcosa come `192.168.1.x`) e apri `http://<quell'indirizzo>:5175/admin`
+dal telefono, sulla stessa rete. Entra come gestore (`347 220 15 63`, codice
+`472839`).
+
+**1 · Una data, col pollice.** Su **Chiusure** → «Aggiungi chiusura», tocca il
+campo «Da». Deve aprirsi la griglia del mese, non la ruota nativa del
+telefono. Ogni giorno deve essere comodo da centrare al primo tocco, senza
+mirare con cura né allontanare lo schermo per vederci meglio. Confrontalo
+onestamente con la ruota che sostituisce: se quella era più comoda, è un
+difetto da scrivere, non da archiviare — lo dice la specifica di questo
+lavoro, non solo questa guida.
+
+**2 · Un'ora, da una lista di 97.** Nello stesso dialogo, tocca un campo
+orario. Deve aprirsi un elenco che scorre con un dito come scorrerebbe
+qualunque lista lunga — senza salti, senza una riga che sfugge al tocco e ne
+seleziona un'altra. Raggiungere un orario lontano da mezzanotte non deve
+servire più di uno o due scorrimenti.
+
+**3 · Un campo, trascinato con un dito.** Su **Campi**, appoggia il dito sulla
+maniglia a sinistra del nome di un campo (le tre righe orizzontali) e
+trascinala sopra un altro campo della lista. La riga deve seguire il dito da
+subito; se invece si muove la pagina intera e il campo resta fermo, la
+maniglia ha fallito il suo unico compito. Rilascia: l'ordine deve restare
+quello a cui l'hai portato, e ricaricando la pagina non deve tornare quello
+precedente.
+
+> Nota per chi legge prima di avere un telefono in mano, con le misure lette
+> nel codice: la cella di un giorno del calendario è 44×44px — la soglia che
+> questa guida chiede — e lo sono anche le frecce del mese. La maniglia di
+> trascinamento è un bottone di 44×44px: le tre righe che si vedono sono un
+> `<svg>` di 20×20px disegnato dentro di esso, e sono il bottone intero — non
+> il solo glifo — a portare l'ascolto del trascinamento e il `touch-none` che
+> impedisce al browser di scambiare il dito per uno scorrimento di pagina.
+> Nessuno dei due controlli ha quindi un difetto di misura noto da imputare in
+> partenza: se al punto 1 o al punto 3 qualcosa risulta comunque scomodo, è
+> un'informazione nuova e va segnalata com'è — la soglia rispettata non è la
+> prova che sotto un pollice vero funzioni.
+
+---
+
 ## I test automatici
 
 ```bash
-npm run test        # 63 test: funzioni pure, messaggi d'errore, render
-npm run test:db     # 64 test pgTAP: regole di dominio, RLS, autorizzazione
+npm run test        # 211 test: funzioni pure, messaggi d'errore, render
+npm run test:db     # 84 test pgTAP: regole di dominio, RLS, autorizzazione
 npm run build       # compilazione e pacchetti
 ```
 

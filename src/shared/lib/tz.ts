@@ -47,3 +47,11 @@ export function slotRange(day: string, startMin: number, minutes: number): strin
   const end = new Date(start.getTime() + minutes * 60_000)
   return `["${start.toISOString()}","${end.toISOString()}")`
 }
+
+// An <input type="datetime-local"> reports 'yyyy-MM-ddTHH:mm' with no
+// timezone of its own. Reading it as a wall-clock instant in the facility's
+// zone — not the device's — is the same discipline slotRange already applies
+// to a day and a minute-of-day.
+export function localInputToDate(value: string): Date {
+  return fromZonedTime(value, TZ)
+}

@@ -8,9 +8,9 @@ insert into public.facilities (id, slug, name, booking_horizon_days)
 insert into public.fields (id, facility_id, name, kind)
   values ('aaaaaaaa-0000-0000-0000-000000000001',
           '11111111-1111-1111-1111-111111111111', 'Campo 1', 'calcio5');
-insert into public.price_bands (facility_id, field_id, weekdays, starts_min, ends_min, price_cents)
-  values ('11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
-          '{1,2,3,4,5,6,7}', 0, 1440, 2500);
+insert into public.price_bands (facility_id, field_id, weekday, starts_min, ends_min, price_cents)
+select '11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001',
+       d, 0, 1440, 2500 from generate_series(1, 7) as d;
 insert into public.members (id, facility_id, name)
   values ('bbbbbbbb-0000-0000-0000-000000000001',
           '11111111-1111-1111-1111-111111111111', 'Amici del Martedì');

@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19 · TypeScript · Vite 8 · Tailwind 4 (config in `src/index.css`, no `tailwind.config`) · TanStack Query v5 · React Router 7 · date-fns · Supabase (Postgres 17, RLS, pgTAP) · Vitest
 
-**Spec:** `docs/superpowers/specs/2026-09-11-configurazione-impianto-design.md`
+**Spec:** `docs/superpowers/specs/2026-09-11-facility-configuration-design.md`
 
 ## Global Constraints
 

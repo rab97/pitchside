@@ -349,7 +349,7 @@ export type Database = {
           id: string
           price_cents: number
           starts_min: number
-          weekdays: number[]
+          weekday: number
         }
         Insert: {
           ends_min: number
@@ -358,7 +358,7 @@ export type Database = {
           id?: string
           price_cents: number
           starts_min: number
-          weekdays: number[]
+          weekday: number
         }
         Update: {
           ends_min?: number
@@ -367,7 +367,7 @@ export type Database = {
           id?: string
           price_cents?: number
           starts_min?: number
-          weekdays?: number[]
+          weekday?: number
         }
         Relationships: [
           {
@@ -565,6 +565,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_closure: {
+        Args: {
+          p_facility_id: string
+          p_field_id: string
+          p_period: unknown
+          p_reason: string
+        }
+        Returns: number
       }
       ensure_my_member: { Args: { p_facility: string }; Returns: string }
       generate_recurrence: {

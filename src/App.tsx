@@ -18,6 +18,14 @@ import { BookingPage } from '@/features/booking/components/BookingPage'
 // a parte, caricato solo entrando su /admin.
 const AdminPage = lazy(() =>
   import('@/features/admin/components/AdminPage').then((m) => ({ default: m.AdminPage })))
+const FacilityPage = lazy(() =>
+  import('@/features/admin/components/FacilityPage').then((m) => ({ default: m.FacilityPage })))
+const FieldsPage = lazy(() =>
+  import('@/features/admin/components/FieldsPage').then((m) => ({ default: m.FieldsPage })))
+const PriceBandsPage = lazy(() =>
+  import('@/features/admin/components/PriceBandsPage').then((m) => ({ default: m.PriceBandsPage })))
+const ClosuresPage = lazy(() =>
+  import('@/features/admin/components/ClosuresPage').then((m) => ({ default: m.ClosuresPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -45,12 +53,19 @@ export function App() {
                   path="/admin"
                   element={<RequireAdmin><AdminPage /></RequireAdmin>}
                 />
+                <Route path="/admin/struttura" element={<RequireAdmin><FacilityPage /></RequireAdmin>} />
+                <Route path="/admin/campi" element={<RequireAdmin><FieldsPage /></RequireAdmin>} />
+                <Route path="/admin/tariffe" element={<RequireAdmin><PriceBandsPage /></RequireAdmin>} />
+                <Route path="/admin/chiusure" element={<RequireAdmin><ClosuresPage /></RequireAdmin>} />
               </Routes>
             </Suspense>
           </AuthProvider>
         </FacilityProvider>
       </BrowserRouter>
-      <Toaster richColors position="top-center" />
+      {/* Bottom, and closable. Top-center sat directly over the settings tab bar
+          and swallowed clicks while it showed; moving it alone would recreate that
+          over whatever sits at the bottom, so it also gains a close button. */}
+      <Toaster richColors position="bottom-center" closeButton />
     </QueryClientProvider>
   )
 }

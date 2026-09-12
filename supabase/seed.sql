@@ -15,8 +15,8 @@ insert into public.fields (id, facility_id, name, kind, covered, sort_order) val
   ('c0000000-0000-0000-0000-000000000002','f0000000-0000-0000-0000-000000000001','Campo 2','calcio5', false, 2),
   ('c0000000-0000-0000-0000-000000000003','f0000000-0000-0000-0000-000000000001','Campo 3','calcio7', false, 3);
 
-insert into public.price_bands (facility_id, field_id, weekdays, starts_min, ends_min, price_cents)
-select 'f0000000-0000-0000-0000-000000000001', f.id, w.days, w.s, w.e,
+insert into public.price_bands (facility_id, field_id, weekday, starts_min, ends_min, price_cents)
+select 'f0000000-0000-0000-0000-000000000001', f.id, d, w.s, w.e,
        case when f.kind = 'calcio7' then w.p + 1000 else w.p end
 from public.fields f
 cross join (values
@@ -24,6 +24,7 @@ cross join (values
   ('{1,2,3,4,5}'::smallint[], 1140::smallint, 1440::smallint, 2500),
   ('{6,7}'::smallint[], 540::smallint, 1440::smallint, 2800)
 ) as w(days, s, e, p)
+cross join lateral unnest(w.days) as d
 where f.facility_id = 'f0000000-0000-0000-0000-000000000001';
 
 insert into public.members (facility_id, name, phone) values

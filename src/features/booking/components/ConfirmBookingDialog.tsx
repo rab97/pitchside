@@ -8,7 +8,7 @@ import { formatEuro } from '@/shared/lib/money'
 import { dayKey, minToLabel } from '@/shared/lib/tz'
 import { useMyMember } from '@/features/auth/hooks/useMyMember'
 import type { FieldRow } from '@/shared/hooks/useFields'
-import { fieldKind } from '../utils/fieldKind'
+import { fieldKind } from '@/shared/lib/fieldKind'
 import { useBookAsMember } from '../hooks/useBookAsMember'
 import { MEMBER_ERROR } from '../utils/messages'
 

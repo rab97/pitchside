@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { formatEuro } from '@/shared/lib/money'
 import type { FieldRow } from '@/shared/hooks/useFields'
-import { fieldKind } from '../utils/fieldKind'
+import { fieldKind } from '@/shared/lib/fieldKind'
 import { durationLabel } from '../utils/durationLabel'
 
 /**

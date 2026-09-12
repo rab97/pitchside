@@ -3,16 +3,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { format, isToday, subHours } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
+import { FieldPicker } from '@/shared/components/ui/FieldPicker'
 import { MobileFrame } from '@/shared/components/ui/MobileFrame'
 import { formatEuro } from '@/shared/lib/money'
 import { parseRange } from '@/shared/lib/range'
 import { LOGIN_ROUTE } from '@/shared/lib/routes'
 import { dayKey, minToLabel, minutesOfDay, slotRange } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
-import { useFields, type FieldRow } from '@/shared/hooks/useFields'
+import { useFields } from '@/shared/hooks/useFields'
 import { useAuth } from '@/features/auth/hooks/AuthProvider'
 import { freeSlots } from '../utils/freeSlots'
-import { fieldKind } from '../utils/fieldKind'
 import { durationLabel } from '../utils/durationLabel'
 import { savePendingSelection, takePendingSelection } from '../utils/pendingSelection'
 import { FIELDS_ERROR, NO_FIELDS, SLOT_GONE, SLOTS_ERROR } from '../utils/messages'
@@ -380,38 +380,5 @@ export function BookPage() {
         cancelDeadline={cancelDeadline}
       />
     </MobileFrame>
-  )
-}
-
-function FieldPicker({ fields, selected, onSelect }: {
-  fields: FieldRow[]
-  selected: string | null
-  onSelect: (id: string) => void
-}) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {fields.map((f) => {
-        const isSelected = f.id === selected
-        return (
-          <button
-            key={f.id}
-            type="button"
-            aria-pressed={isSelected}
-            onClick={() => onSelect(f.id)}
-            className={
-              'rounded-lg border px-3 py-2 text-left transition ' +
-              (isSelected
-                ? 'border-pitch bg-pitch-tint text-pitch'
-                : 'border-line bg-surface text-ink-2 hover:border-pitch')
-            }
-          >
-            <span className="block text-[13px] font-medium">{f.name}</span>
-            <span className="block text-[10.5px] text-muted">
-              {fieldKind(f.kind)} · {f.covered ? 'coperto' : 'scoperto'}
-            </span>
-          </button>
-        )
-      })}
-    </div>
   )
 }
