@@ -134,6 +134,29 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     expect(createBooking).not.toHaveBeenCalled()
   }, TIMEOUT)
 
+  it('scegliendo un cliente sparisce l’errore che ne chiedeva uno', async () => {
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Rossi' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+    await waitFor(() =>
+      expect(screen.getByText('Scegli un cliente dall’elenco, oppure creane uno nuovo.')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /Rossi Luca/ }))
+    await waitFor(() =>
+      expect(screen.queryByText('Scegli un cliente dall’elenco, oppure creane uno nuovo.'))
+        .not.toBeInTheDocument())
+  }, TIMEOUT)
+
+  // The button went inert while still reading «Conferma»: the manager presses
+  // it, nothing happens, and nothing on screen says why.
+  it('mentre nasce il cliente il pulsante dice che sta salvando', () => {
+    vi.spyOn(createMemberHook, 'useCreateMember').mockReturnValue({
+      createMember: vi.fn() as never, creating: true,
+    })
+    renderDialog()
+    expect(screen.getByRole('button', { name: 'Salvo…' })).toBeDisabled()
+  }, TIMEOUT)
+
   it('creando un cliente nuovo prenota con l’id appena creato', async () => {
     stubCreateMember(vi.fn().mockResolvedValue('m9'))
     vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({

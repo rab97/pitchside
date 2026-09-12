@@ -180,7 +180,14 @@ export function NewBookingDialog({ target, onClose }: {
           Nuova prenotazione
         </h3>
 
-        <MemberSearchField choice={choice} onChoose={setChoice} inputRef={nameRef} />
+        {/* The refusal that asked for a customer goes as soon as the manager
+            complies: an error that outlives what it was about teaches people
+            to stop reading errors. */}
+        <MemberSearchField
+          choice={choice}
+          onChoose={(c) => { setChoice(c); setError(null); setTakenPhone(null) }}
+          inputRef={nameRef}
+        />
 
         {choice.kind === 'existing' && card && (
           <MemberCard
@@ -269,8 +276,10 @@ export function NewBookingDialog({ target, onClose }: {
             {/* §2.7's first choice, made clickable. One click turns a failed
                 creation into the right existing customer — which is the common
                 case, and the one that stops a duplicate. The second choice is
-                correcting the number, and the field is still there for it. */}
-            {takenBy.map((m) => (
+                correcting the number, and the field is still there for it.
+                Gated on `takenPhone` rather than on the search being empty:
+                these rows belong to a refused number, and only to that. */}
+            {takenPhone && takenBy.map((m) => (
               <button
                 key={m.id}
                 type="button"
@@ -303,7 +312,7 @@ export function NewBookingDialog({ target, onClose }: {
             disabled={create.isPending || createRecurrence.isPending || creating}
             className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
           >
-            {create.isPending || createRecurrence.isPending ? 'Salvo…' : 'Conferma'}
+            {create.isPending || createRecurrence.isPending || creating ? 'Salvo…' : 'Conferma'}
           </button>
         </div>
       </form>

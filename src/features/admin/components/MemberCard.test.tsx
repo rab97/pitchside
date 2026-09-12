@@ -107,7 +107,9 @@ describe('MemberCard', () => {
     const { rerender } = render(<MemberCard card={base} onNotesBlur={() => {}} saveError={null} />)
     fireEvent.change(screen.getByRole('textbox', { name: 'Note interne' }), { target: { value: 'Bozza su Rossi mai inviata' } })
     rerender(<MemberCard card={memberB} onNotesBlur={() => {}} saveError={null} />)
+    // Asserted on the value, not with `queryByText`: a textarea's content is
+    // its `value`, so a `getByText` for it never matched anything and the
+    // assertion that used to stand here could not have failed.
     expect(screen.getByRole('textbox', { name: 'Note interne' })).toHaveValue('Nota di Anna')
-    expect(screen.queryByText('Bozza su Rossi mai inviata')).not.toBeInTheDocument()
   })
 })
