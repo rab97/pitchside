@@ -73,15 +73,31 @@ function buildAnnouncements(items: { id: string }[]): Announcements {
  * `renderItem` gets the item back together with the props for its drag
  * handle, so the caller decides where the handle sits in the row and the
  * rest of the row stays exactly as clickable as before.
+ *
+ * The `<ul>` is this component's own, not the caller's, and that is not a
+ * matter of taste. `DndContext` renders its accessibility layer — a hidden
+ * instructions div and a `role="status"` live region — as a *sibling* of its
+ * children, inline, unless it is handed a portal container
+ * (`@dnd-kit/core`: `return container ? createPortal(markup, container) :
+ * markup;`). A caller that wraps `<SortableList>` in its own `<ul>`
+ * therefore ends up with two `div`s as direct children of a list, one of
+ * them the live region. Nothing shows — both are `display: none` /
+ * clipped — but a `ul` may contain only `li`, assistive technology varies in
+ * what it does with the rest, and the announcements those `<li>`s exist for
+ * are exactly what is put at risk. Owning the list element makes the shape
+ * right by construction and stops the next caller repeating it; `className`
+ * is how the caller still styles it.
  */
 export function SortableList<T extends { id: string }>({
   items,
   onReorder,
   renderItem,
+  className,
 }: {
   items: T[]
   onReorder: (next: T[]) => void
   renderItem: (item: T, handleProps: SortHandleProps) => ReactNode
+  className?: string
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -110,11 +126,13 @@ export function SortableList<T extends { id: string }>({
       onDragEnd={handleDragEnd}
       accessibility={{ screenReaderInstructions, announcements: buildAnnouncements(items) }}
     >
-      <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-        {items.map((item) => (
-          <SortableRow key={item.id} item={item} renderItem={renderItem} />
-        ))}
-      </SortableContext>
+      <ul className={className}>
+        <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+          {items.map((item) => (
+            <SortableRow key={item.id} item={item} renderItem={renderItem} />
+          ))}
+        </SortableContext>
+      </ul>
     </DndContext>
   )
 }

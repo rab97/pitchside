@@ -15,16 +15,27 @@ vi.mock('../hooks/useAdminFields', () => ({ useAdminFields: vi.fn() }))
 // keeps trusting a `onReorder` snapshot after the write behind it settles.
 // The stand-in renders every item and exposes a single button that reports
 // the list reversed, as a real drop would report some new order.
+//
+// It renders the `<ul>` itself, and takes the `className` for it, because
+// that is the real component's contract now: the list element belongs to
+// `SortableList`, so that dnd-kit's inline live region cannot land inside
+// it. A stand-in that left the `<ul>` to the caller would describe a shape
+// the app no longer has. The trigger button sits *outside* the list for the
+// same reason — it is not an `<li>`, and a mock has no business
+// reintroducing the defect its own component was moved to prevent.
 vi.mock('@/shared/components/ui/SortableList', () => ({
-  SortableList: ({ items, onReorder, renderItem }: {
+  SortableList: ({ items, onReorder, renderItem, className }: {
     items: AdminField[]
     onReorder: (next: AdminField[]) => void
     renderItem: (item: AdminField, handle: { ref: () => void; attributes: object; listeners: object }) => React.ReactNode
+    className?: string
   }) => (
-    <ul>
-      {items.map((item) => <li key={item.id}>{renderItem(item, { ref: () => {}, attributes: {}, listeners: {} })}</li>)}
+    <>
+      <ul className={className}>
+        {items.map((item) => <li key={item.id}>{renderItem(item, { ref: () => {}, attributes: {}, listeners: {} })}</li>)}
+      </ul>
       <button onClick={() => onReorder([...items].reverse())}>simula trascinamento</button>
-    </ul>
+    </>
   ),
 }))
 

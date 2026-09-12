@@ -186,114 +186,113 @@ export function FieldsPage() {
             Nessun campo. Aggiungine uno per cominciare a prendere prenotazioni.
           </p>
         ) : (
-          <ul className="flex flex-col divide-y divide-line-soft">
-            <SortableList
-              items={displayFields}
-              onReorder={handleReorder}
-              renderItem={(field, handle) => (
-                <div className="flex flex-col gap-2 p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      ref={handle.ref}
-                      {...handle.attributes}
-                      {...handle.listeners}
-                      aria-label="Riordina"
-                      // 44×44 — the same floor the calendar's day cells meet
-                      // (spec: "the tab bar's own floor"), missed here the
-                      // first time round because the listeners sat directly
-                      // on the visible 20×20 glyph with no hit-area padding
-                      // around it. `touch-none`: without it, the browser
-                      // takes a finger dragging vertically for a page
-                      // scroll instead of a drag (`ConfirmSheet.tsx` hit the
-                      // same thing on its own handle), and the row stays
-                      // put while the page moves underneath it.
-                      className="grid h-11 w-11 shrink-0 touch-none place-items-center rounded-md text-ink-2 cursor-grab active:cursor-grabbing"
+          <SortableList
+            className="flex flex-col divide-y divide-line-soft"
+            items={displayFields}
+            onReorder={handleReorder}
+            renderItem={(field, handle) => (
+              <div className="flex flex-col gap-2 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    ref={handle.ref}
+                    {...handle.attributes}
+                    {...handle.listeners}
+                    aria-label="Riordina"
+                    // 44×44 — the same floor the calendar's day cells meet
+                    // (spec: "the tab bar's own floor"), missed here the
+                    // first time round because the listeners sat directly
+                    // on the visible 20×20 glyph with no hit-area padding
+                    // around it. `touch-none`: without it, the browser
+                    // takes a finger dragging vertically for a page
+                    // scroll instead of a drag (`ConfirmSheet.tsx` hit the
+                    // same thing on its own handle), and the row stays
+                    // put while the page moves underneath it.
+                    className="grid h-11 w-11 shrink-0 touch-none place-items-center rounded-md text-ink-2 cursor-grab active:cursor-grabbing"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      stroke="currentColor"
+                      fill="none"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      viewBox="0 0 20 20"
+                      className="h-5 w-5"
                     >
-                      <svg
-                        aria-hidden="true"
-                        stroke="currentColor"
-                        fill="none"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        viewBox="0 0 20 20"
-                        className="h-5 w-5"
-                      >
-                        <line x1="4" y1="6" x2="16" y2="6" />
-                        <line x1="4" y1="10" x2="16" y2="10" />
-                        <line x1="4" y1="14" x2="16" y2="14" />
-                      </svg>
-                    </button>
+                      <line x1="4" y1="6" x2="16" y2="6" />
+                      <line x1="4" y1="10" x2="16" y2="10" />
+                      <line x1="4" y1="14" x2="16" y2="14" />
+                    </svg>
+                  </button>
 
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13.5px] font-medium text-ink">{field.name}</span>
-                        {!field.active && (
-                          <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
-                            disattivato
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[12px] text-muted">
-                        {fieldKind(field.kind)} · {field.surface} · {field.covered ? 'coperto' : 'scoperto'}
-                      </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13.5px] font-medium text-ink">{field.name}</span>
+                      {!field.active && (
+                        <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
+                          disattivato
+                        </span>
+                      )}
                     </div>
-
-                    <label className="flex items-center gap-1.5 text-[12px] text-ink-2">
-                      <input
-                        type="checkbox"
-                        checked={field.active}
-                        onChange={() => toggleActive(field)}
-                        className="h-[15px] w-[15px] accent-pitch"
-                      />
-                      Attivo
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() => openEdit(field)}
-                      className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
-                    >
-                      Modifica
-                    </button>
-
-                    {field.booking_count === 0 && (
-                      confirmingDeleteId === field.id ? (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setConfirmingDeleteId(null)}
-                            className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
-                          >
-                            Annulla
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(field)}
-                            className="rounded-[7px] border border-terra px-2.5 py-1 text-[12px] text-terra transition-colors hover:bg-terra-tint"
-                          >
-                            Conferma
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => { setDeleteError(null); setConfirmingDeleteId(field.id) }}
-                          className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-terra hover:text-terra"
-                        >
-                          Elimina
-                        </button>
-                      )
-                    )}
+                    <span className="text-[12px] text-muted">
+                      {fieldKind(field.kind)} · {field.surface} · {field.covered ? 'coperto' : 'scoperto'}
+                    </span>
                   </div>
 
-                  {confirmingDeleteId === field.id && (
-                    <ErrorNote message={deleteError} />
+                  <label className="flex items-center gap-1.5 text-[12px] text-ink-2">
+                    <input
+                      type="checkbox"
+                      checked={field.active}
+                      onChange={() => toggleActive(field)}
+                      className="h-[15px] w-[15px] accent-pitch"
+                    />
+                    Attivo
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => openEdit(field)}
+                    className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                  >
+                    Modifica
+                  </button>
+
+                  {field.booking_count === 0 && (
+                    confirmingDeleteId === field.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingDeleteId(null)}
+                          className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                        >
+                          Annulla
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(field)}
+                          className="rounded-[7px] border border-terra px-2.5 py-1 text-[12px] text-terra transition-colors hover:bg-terra-tint"
+                        >
+                          Conferma
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setDeleteError(null); setConfirmingDeleteId(field.id) }}
+                        className="rounded-[7px] border border-line px-2.5 py-1 text-[12px] text-ink-2 transition-colors hover:border-terra hover:text-terra"
+                      >
+                        Elimina
+                      </button>
+                    )
                   )}
                 </div>
-              )}
-            />
-          </ul>
+
+                {confirmingDeleteId === field.id && (
+                  <ErrorNote message={deleteError} />
+                )}
+              </div>
+            )}
+          />
         )}
       </div>
 
