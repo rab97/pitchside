@@ -212,7 +212,7 @@ function AccountRow({ label, value, numeric = false }: {
  * The second and third are separate on purpose. `updateUser` records the pending
  * change and sends a link; the session's `new_email` only catches up when
  * `USER_UPDATED` propagates, so the render right after a successful click is
- * normally `sent` with no `pending` yet. Both must say the same thing — the
+ * normally `awaiting` with no `pending` yet. Both must say the same thing — the
  * message has gone out, the address is not yet the customer's — because the
  * sentence that would come naturally there is «indirizzo salvato», and an
  * address shown as working that receives nothing is the product claiming
@@ -256,7 +256,7 @@ function EmailSection({ active, pending }: {
         </p>
       ) : pending ? (
         // `role="status"` rather than `alert`: this is not a failure, it is a
-        // wait. It names the address, which the `sent` notice below cannot.
+        // wait. It names the address, which the `awaiting` notice below cannot.
         <p role="status" className={noticeClass}>
           In attesa di conferma: {pending}. Apri il collegamento che ti abbiamo
           mandato lì: fino ad allora l’indirizzo non è il tuo e non ci arriva
