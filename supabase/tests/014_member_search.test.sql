@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(16);
 
 insert into public.facilities (id, slug, name, booking_horizon_days) values
   ('e1000000-0000-0000-0000-0000000000f1', 'test-search-a', 'Struttura A', 3650),
@@ -63,6 +63,33 @@ select is(
        from public.search_members('e1000000-0000-0000-0000-0000000000f1','333111')) s),
   array['Rossi Luca','Rossini Ada'],
   'il prefisso del telefono trova entrambi, in ordine di indice');
+
+-- Il numero che il gestore ha davvero davanti. Il chiamante arriva dal
+-- caller ID, che su un telefono italiano lo scrive «+39 333 111 2233»; la
+-- riga in members tiene «3331112233». Confrontare dodici cifre con dieci non
+-- trovava nessuno, cioè proprio sull'ingresso più probabile di tutti.
+select is(
+  (select name from public.search_members('e1000000-0000-0000-0000-0000000000f1','+39 333 111 2233') limit 1),
+  'Rossi Luca',
+  'il numero scritto col prefisso trova la stessa riga delle dieci cifre nude');
+
+select is(
+  (select rank from public.search_members('e1000000-0000-0000-0000-0000000000f1','+39 333 111 2233') where name = 'Rossi Luca'),
+  1::smallint,
+  'col prefisso resta una corrispondenza esatta, rank 1: il numero intero vince su tutto come prima');
+
+select is(
+  (select name from public.search_members('e1000000-0000-0000-0000-0000000000f1','0039 333 111 2233') limit 1),
+  'Rossi Luca',
+  'anche scritto 0039, perché a normalizzare è phone_key e non un conteggio di cifre scritto a mano');
+
+-- La troncatura non deve toccare quello che sta sotto le dieci cifre: è il
+-- prefisso letto ad alta voce mentre il cliente detta il numero, ed è ciò che
+-- rende utile il campo prima che il numero sia finito.
+select is(
+  (select array_agg(name) from public.search_members('e1000000-0000-0000-0000-0000000000f1','3339')),
+  array['Nicolò Bianchi'],
+  'un numero parziale continua a restringere invece di prendere tutto');
 
 select is(
   (select rank from public.search_members('e1000000-0000-0000-0000-0000000000f1','Rossi') where name = 'Rossi Luca'),

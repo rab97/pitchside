@@ -48,7 +48,26 @@ as $$
   with q as (
     select
       public.name_key(btrim(coalesce(p_query, ''))) as name_q,
-      nullif(regexp_replace(coalesce(p_query, ''), '\D', '', 'g'), '') as digits
+      -- The typed digits, normalised by the very function the other side of
+      -- every comparison below is keyed by. This used to be its own
+      -- `regexp_replace`, which produced *all* the digits typed while
+      -- `phone_key(m.phone)` is the last ten — so «+39 333 111 2233» compared
+      -- twelve digits against ten and found nobody. That is the number the
+      -- manager actually has in front of them, because it is how caller ID
+      -- writes one on an Italian phone: the feature's headline case missed.
+      --
+      -- `phone_key` rather than a second `right(…, 10)` here on purpose. It is
+      -- already this project's answer to "which digits identify a number", it
+      -- is what the unique index is built over (0016_member_adoption.sql:31),
+      -- and one definition cannot drift from itself. It also does the
+      -- digits-only pass itself, so this is one call where there were two
+      -- rules.
+      --
+      -- Below ten digits it changes nothing — `right(s, 10)` of a shorter
+      -- string is that string — so a partial number still narrows as the
+      -- manager reads digits aloud, and the `length(…) >= 3` guard below still
+      -- counts the digits they actually typed.
+      public.phone_key(p_query) as digits
   ),
   scored as (
     select
@@ -57,9 +76,11 @@ as $$
       m.phone,
       m.missed_count > 0 as has_missed,
       (case
-         -- Digits are matched as a prefix of `phone_key`, never as a fragment
-         -- from the middle: a manager reading a caller ID has the start of a
-         -- number, and a mid-string match would scan for a case nobody has.
+         -- Both sides are `phone_key` now, so these compare the same kind of
+         -- thing: a whole number typed any way round lands on rank 1, and a
+         -- partial one is matched as a prefix of the key — never as a fragment
+         -- from the middle, because a manager reading a caller ID has the start
+         -- of a number and a mid-string match would scan for a case nobody has.
          when q.digits is not null and length(q.digits) >= 3
               and public.phone_key(m.phone) = q.digits              then 1
          when q.digits is not null and length(q.digits) >= 3
