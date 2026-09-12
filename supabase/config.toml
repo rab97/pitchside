@@ -155,7 +155,12 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+# Il server di sviluppo di questo progetto gira sulla 5173 (`npm run dev`, che
+# lascia a vite la sua porta predefinita). Con la 3000 il collegamento di
+# conferma funzionava ma rimandava su una porta dove non ascolta nessuno: la
+# conferma era gia' avvenuta e chi provava vedeva "connessione rifiutata",
+# quindi segnalava un difetto che non c'era.
+site_url = "http://127.0.0.1:5173"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
@@ -246,6 +251,17 @@ otp_expiry = 3600
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+# La conferma del cambio indirizzo e' l'unica email che il prodotto manda oggi,
+# e la riceve un cliente italiano: il testo predefinito di Supabase e' inglese.
+# Il modello SMS qui sotto e' in italiano dalla fase 1B — questo non lo era solo
+# perche' fino ad ora nessun cliente aveva un indirizzo.
+#
+# Sul progetto ospitato lo stesso testo va incollato nel pannello di Supabase,
+# sezione Email Templates: le due configurazioni non si parlano.
+[auth.email.template.email_change]
+subject = "Conferma il tuo indirizzo — Prenota Campi"
+content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

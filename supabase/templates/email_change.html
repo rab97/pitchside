@@ -1,0 +1,36 @@
+<!--
+  The confirmation for an address change, in Italian.
+
+  Supabase's default is English («Confirm your new email address»), which is the
+  only message this product sends today and it goes to a customer in Alba. The
+  SMS template beside it in `config.toml` has been Italian since phase 1B; the
+  email was never done because until now nobody had an address.
+
+  Two things this template deliberately does NOT do:
+
+  - it does not name the facility. Templates are one per Supabase project while
+    the product is multi-structure, so «Palacalcetto» here would be correct for
+    the first client and a lie for the second. It says «Prenota Campi», matching
+    the SMS template's wording;
+  - it does not restyle anything with the club's colour, for the same reason:
+    that colour is per-facility data and this file cannot read it.
+
+  With `double_confirm_changes = true` this same template is sent TWICE — once
+  to the new address and once to the old — so the copy names both and says both
+  links have to be opened. A message written as though it were the only one is
+  how a customer opens one link and never understands why nothing happened.
+-->
+<h2>Conferma il tuo indirizzo</h2>
+
+<p>Hai chiesto di usare <strong>{{ .NewEmail }}</strong> come indirizzo del tuo
+account su Prenota Campi.</p>
+
+<p>Per confermarlo apri questo collegamento:</p>
+
+<p><a href="{{ .ConfirmationURL }}">Conferma l'indirizzo</a></p>
+
+<p>Abbiamo mandato lo stesso messaggio anche a {{ .Email }}: l'indirizzo cambia
+quando sono stati aperti <strong>tutti e due</strong> i collegamenti.</p>
+
+<p>Se non hai chiesto tu questo cambio, non aprire il collegamento: senza, non
+succede niente e il tuo indirizzo resta quello di prima.</p>
