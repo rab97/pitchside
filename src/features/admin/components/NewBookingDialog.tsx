@@ -17,6 +17,7 @@ import { useCreateBooking } from '../hooks/useCreateBooking'
 import { useCreateMember } from '../hooks/useCreateMember'
 import { useCreateRecurrence } from '../hooks/useCreateRecurrence'
 import { useMemberCard } from '../hooks/useMemberCard'
+import { useMemberSearch } from '../hooks/useMemberSearch'
 import { useUpdateMemberNotes } from '../hooks/useUpdateMemberNotes'
 
 const DURATIONS = [60, 90, 120]
@@ -35,6 +36,14 @@ export function NewBookingDialog({ target, onClose }: {
   const { card } = useMemberCard(choice.kind === 'existing' ? choice.member.id : null)
   const { saveNotes, saveError } = useUpdateMemberNotes()
   const [phone, setPhone] = useState('')
+  // The digits the unique index has just refused, and the customer already
+  // holding them. Looked up through the same search the field uses — the
+  // digits are exactly what `search_members` matches against `phone_key` —
+  // so the failed creation can be turned into the right existing customer
+  // with one click, instead of a sentence telling the manager to search again
+  // by a name that has already failed them.
+  const [takenPhone, setTakenPhone] = useState<string | null>(null)
+  const { results: takenBy } = useMemberSearch(takenPhone ?? '')
   const [minutes, setMinutes] = useState(facility.min_duration_minutes || 60)
   const [repeat, setRepeat] = useState(false)
   const [until, setUntil] = useState('')
@@ -46,7 +55,7 @@ export function NewBookingDialog({ target, onClose }: {
   // optional.
   useEffect(() => {
     if (target) {
-      setChoice({ kind: 'none' }); setPhone(''); setError(null)
+      setChoice({ kind: 'none' }); setPhone(''); setError(null); setTakenPhone(null)
       setMinutes(facility.min_duration_minutes || 60)
       setRepeat(false)
       setUntil(format(defaultSeasonEnd(target.day), 'yyyy-MM-dd'))
@@ -145,6 +154,10 @@ export function NewBookingDialog({ target, onClose }: {
       )
       onClose()
     } catch (e) {
+      // The collision names a customer who exists, so it is answered with that
+      // customer and not only with a sentence: the search below the message
+      // asks for the digits the index refused.
+      if (isPhoneTaken(e)) setTakenPhone(digitsOf(phone))
       setError(isPhoneTaken(e) ? memberMessage(e, 'create')
         : e instanceof Error ? e.message
         : 'La prenotazione non è riuscita. Riprova.')
@@ -190,7 +203,13 @@ export function NewBookingDialog({ target, onClose }: {
             <input
               className="field placeholder:text-muted"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                setPhone(e.target.value)
+                // Correcting the number is the other half of §2.7's answer, so
+                // the refusal and the card it offered go as soon as the manager
+                // takes it.
+                if (takenPhone) { setTakenPhone(null); setError(null) }
+              }}
               placeholder="obbligatorio"
               aria-required="true"
               inputMode="tel"
@@ -230,9 +249,30 @@ export function NewBookingDialog({ target, onClose }: {
         />
 
         {error && (
-          <p role="alert" className="rounded-lg border border-terra bg-terra-tint px-3 py-2 text-[12.5px] text-terra">
-            {error}
-          </p>
+          <div
+            role="alert"
+            className="flex flex-col gap-2 rounded-lg border border-terra bg-terra-tint px-3 py-2 text-[12.5px] text-terra"
+          >
+            <p>{error}</p>
+            {/* §2.7's first choice, made clickable. One click turns a failed
+                creation into the right existing customer — which is the common
+                case, and the one that stops a duplicate. The second choice is
+                correcting the number, and the field is still there for it. */}
+            {takenBy.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => {
+                  setChoice({ kind: 'existing', member: m })
+                  setTakenPhone(null); setError(null)
+                }}
+                className="flex w-full items-baseline gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 text-left text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:min-h-11"
+              >
+                Usa la scheda di {m.name}
+                <span className="tabular-nums text-[11px] text-muted">{m.phone ?? ''}</span>
+              </button>
+            ))}
+          </div>
         )}
 
         <div className="flex justify-end gap-2 pt-0.5">

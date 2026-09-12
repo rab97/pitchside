@@ -133,6 +133,51 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     expect(createBooking).not.toHaveBeenCalled()
   }, TIMEOUT)
 
+  // §2.7 and §6: the collision has to offer that card, not a sentence telling
+  // the manager to search again. Searching again by the name they have fails
+  // exactly as it just did — the existing row is under a different spelling,
+  // which is why they were creating a customer in the first place. With §2.6's
+  // required number this is no longer a corner: it is the one thing that will
+  // routinely stop a manager mid-call.
+  it('se il numero è già di un altro, offre la sua scheda e sceglierla prenota per lui', async () => {
+    stubCreateMember(vi.fn().mockRejectedValue({ code: '23505', message: 'duplicate key' }))
+    // Stubbed per term: the collision asks the search for the digits, the
+    // field asks it for what was typed into it.
+    vi.spyOn(searchHook, 'useMemberSearch').mockImplementation((q: string) => ({
+      results: q.trim() === '3331112233' ? [hit] : [],
+      isPending: false,
+      failed: false,
+    }))
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '333 111 22 33' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Usa la scheda di Rossi Luca/ })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /Usa la scheda di Rossi Luca/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+    await waitFor(() => expect(createBooking).toHaveBeenCalled())
+    expect(createBooking.mock.calls[0][0]).toMatchObject({ memberId: 'm1' })
+  }, TIMEOUT)
+
+  it('se il numero è già di un altro ma la scheda non si trova, dice comunque cosa fare', async () => {
+    stubCreateMember(vi.fn().mockRejectedValue({ code: '23505', message: 'duplicate key' }))
+    vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({
+      results: [], isPending: false, failed: true,
+    })
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '3331112233' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+
+    await waitFor(() => expect(screen.getByText(/correggi il numero/)).toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: /Usa la scheda/ })).not.toBeInTheDocument()
+  }, TIMEOUT)
+
   it('con la ricerca rotta si prenota lo stesso, creando il cliente', async () => {
     stubCreateMember(vi.fn().mockResolvedValue('m9'))
     vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({

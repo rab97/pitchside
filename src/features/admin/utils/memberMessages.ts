@@ -17,7 +17,13 @@ export function isPhoneTaken(error: unknown): boolean {
 
 export function memberMessage(error: unknown, action: 'save' | 'create'): string {
   if (isPhoneTaken(error)) {
-    return 'Questo numero è già di un altro cliente. Qualcuno potrebbe averlo appena creato: cerca di nuovo.'
+    // Two choices, and both are real ones — §2.7. It used to say «cerca di
+    // nuovo», which is the one thing that cannot work: the manager is here
+    // because searching by the name they have found nothing, and the existing
+    // row is under a different spelling. So the card is offered beside this
+    // sentence, and «togli il numero» is gone, because §2.6 no longer allows
+    // a customer to be created without one.
+    return 'Questo numero è già di un altro cliente: usa la sua scheda, oppure correggi il numero.'
   }
   return action === 'save'
     ? 'Non siamo riusciti a salvare la nota. Riprova.'

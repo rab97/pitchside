@@ -169,15 +169,29 @@ whose card carries an old name.
 There is no "go on anyway" here, and the dialog must not offer one: the unique
 index on `phone_key` refuses a second row with that number, so an option to
 proceed would be a button that always fails. The two real choices are **use
-that card** — the common case, and the one that stops a duplicate — or **remove
-the number** and create the customer without it, accepting §2.6's cost.
+that card** — the common case, and the one that stops a duplicate — or
+**correct the number**.
+
+> Updated 12 September. This paragraph used to offer **remove the number** as
+> the second choice. §2.6 made the number required, so that option no longer
+> exists: a customer cannot be created without one. §2.6 also turns this from
+> a corner into the main failure mode, because every creation now carries a
+> number and so every creation can collide.
+
+**The card is offered, not described.** The message alone cannot be the answer:
+it used to end «cerca di nuovo», and searching again by the name in the
+manager's hand fails exactly as it just did — the existing row is under a
+different spelling, which is why they were creating a customer at all. So on
+the unique violation the dialog runs `search_members` against the digits it
+just tried to write and renders the row it finds as a choosable card under the
+message. One click turns the failed creation into the right existing customer.
 
 Saying this in Italian, before the write, is better than letting a database
 error arrive after it.
 
 Two managers creating the same number at the same moment land in the same
-place: the unique violation becomes «qualcuno l'ha appena creato, eccolo», and
-the search re-runs.
+place: the unique violation offers the row the other manager has just written,
+and the booking goes on against it.
 
 ### 2.7b A name already in the book is a question too
 
