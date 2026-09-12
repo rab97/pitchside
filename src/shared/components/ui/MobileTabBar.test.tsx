@@ -20,7 +20,12 @@ describe('matchesTab', () => {
     expect(matchesTab('/', '/prenota')).toBe(false)
   })
 
-  it('accende «Profilo» solo sulla sua rotta, non su un\'altra che vi somiglia', () => {
+  it('«Profilo» risponde alla propria rotta, non a quella di un altro tab', () => {
+    // `/profilo` non condivide un prefisso con `/`, `/prenota` o
+    // `/prenotazioni`, quindi qui non si guarda il rischio del `startsWith`
+    // secco — quello resta coperto dal test sopra, `/prenota` contro
+    // `/prenotazioni`. Questo controlla solo che il quarto tab sia
+    // riconosciuto sulla propria rotta e non su quella di un fratello.
     expect(matchesTab('/profilo', '/profilo')).toBe(true)
     expect(matchesTab('/prenota', '/profilo')).toBe(false)
   })

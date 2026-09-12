@@ -394,8 +394,8 @@ un'eccezione muta né una mail di conferma inviata comunque.
 ## I test automatici
 
 ```bash
-npm run test        # 211 test: funzioni pure, messaggi d'errore, render
-npm run test:db     # 84 test pgTAP: regole di dominio, RLS, autorizzazione
+npm run test        # 309 test: funzioni pure, messaggi d'errore, render
+npm run test:db     # 113 test pgTAP: regole di dominio, RLS, autorizzazione
 npm run build       # compilazione e pacchetti
 ```
 
