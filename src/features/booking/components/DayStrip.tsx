@@ -63,13 +63,25 @@ export function DayStrip({ day, onSelect, horizonDays }: {
         />
       </div>
 
+      {/* Both arrows grow to 44×44 under a finger — the spec's floor (§2.4),
+          already met by the `DateJump` above and by the whole admin
+          toolbar. Gated on `pointer-coarse:` for the reasons set out in
+          `AdminPage.tsx`; the machine that query serves worst — a precise
+          primary pointer on a screen a finger also touches — barely exists
+          on this page, which is a customer's phone.
+          This changes no row height. The arrows share their row with the
+          seven day cells, which are sized by two lines of text plus
+          `py-1.5` and already stand taller than 44px, so `items-center`
+          simply centres a bigger arrow in the height that was there. The
+          `DateJump` is in the month-label row above, a different flex row,
+          so the two never have to agree on a height. */}
       <div className="flex items-center gap-1.5">
         <button
           type="button"
           aria-label="Settimana precedente"
           disabled={!canGoBack}
           onClick={() => setWindowStart((w) => addDays(w, -7))}
-          className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+          className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:h-11 pointer-coarse:w-11"
         >
           ‹
         </button>
@@ -108,7 +120,7 @@ export function DayStrip({ day, onSelect, horizonDays }: {
           aria-label="Settimana successiva"
           disabled={!canGoForward}
           onClick={() => setWindowStart((w) => addDays(w, 7))}
-          className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+          className="grid h-8 w-6 shrink-0 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:h-11 pointer-coarse:w-11"
         >
           ›
         </button>
