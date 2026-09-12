@@ -104,7 +104,9 @@ create index if not exists price_bands_field_day_idx
 
 -- Body carried verbatim from 0005_price_bands.sql, with one line changed:
 -- `and dow = any(pb.weekdays)` becomes `and dow = pb.weekday`. The Italian
--- comments below are the original ones, kept as-is so the diff stays honest.
+-- comments below are the original ones, kept as-is so the diff stays honest;
+-- the one English comment on the band `select` was added here, and explains
+-- why that `select` is safe now that the overlap constraint exists.
 --
 -- Prezzo di uno slot, sommando i minuti che cadono in ciascuna fascia.
 -- L'assenza di fascia significa "fuori orario di apertura": le fasce, per
@@ -146,6 +148,10 @@ begin
     dow := extract(isodow from loc)::smallint;
     cur_min := extract(hour from loc)::int * 60 + extract(minute from loc)::int;
 
+    -- `limit 1` with no `order by` is deterministic, not lucky: the
+    -- `price_bands_no_overlap` constraint added above lets at most one band
+    -- match a field, weekday and minute. Without it this line picked an
+    -- arbitrary band out of several — the money bug this migration closes.
     select * into b from public.price_bands pb
      where pb.field_id = p_field_id
        and dow = pb.weekday
