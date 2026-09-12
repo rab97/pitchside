@@ -19,6 +19,28 @@ import postcss from 'postcss'
  * and their `min-` counterparts. Content-driven sizes are deliberately not
  * inferred — a control whose tap size depends on its text has no measurable
  * floor, and the right fix there is to declare one, not to estimate it here.
+ *
+ * What it does *not* see, because it compiles a bare `@import "tailwindcss"`
+ * and not `src/index.css`:
+ *
+ * - **the project's own component classes.** `field` measures
+ *   `{width: null, height: null}` here; it is really 36px, declared in
+ *   `src/index.css` (`.field { height: 2.25rem }`).
+ * - **the project's own theme extensions.** `h-topbar` and `h-tabbar` are
+ *   `--spacing-topbar` / `--spacing-tabbar`, defined in the same file, so
+ *   they measure `null` too. That is worth naming out loud, because §2.4 of
+ *   the spec words its floor as "no smaller than the tab bar's" — and the
+ *   tab bar is precisely the thing this helper cannot measure. 44 is the
+ *   number the tests assert, read off `--spacing-tabbar: 3.5rem` by hand.
+ * - **ceilings.** `max-width` and `max-height` are not read at all, so
+ *   `h-11 max-h-6` reports 44 where a browser would paint 24.
+ *
+ * None of this touches the six figures the suite asserts today — every class
+ * measured is a plain `h-`/`w-`/`min-h-`/`min-w-` utility, and every one of
+ * them does come out of bare Tailwind. The rule that keeps it that way:
+ * `null` means "bare Tailwind declares nothing on that axis", and never "the
+ * element has no floor". Read as the second it would turn a class this
+ * helper cannot see into a passing assertion.
  */
 
 // The project root: `compile` resolves `@import "tailwindcss"` against it.
@@ -26,7 +48,11 @@ import postcss from 'postcss'
 // Vitest `import.meta.url` reads `http://…/@fs/home/…/src/test/…` rather
 // than a plain `file://`. The prefix is stripped rather than worked around
 // with `process.cwd()`, which would depend on where the runner was started.
-const ROOT = new URL('../../', import.meta.url).pathname.replace(/^\/@fs\//, '/')
+// `pathname` is percent-encoded, so it is decoded first: a checkout under a
+// path with a space in it would otherwise arrive as `…/my%20projects/…` and
+// resolve to nothing.
+const ROOT = decodeURIComponent(new URL('../../', import.meta.url).pathname)
+  .replace(/^\/@fs\//, '/')
 
 export type Pointer = 'fine' | 'coarse'
 
@@ -177,9 +203,11 @@ export async function boxOf(element: Element, pointer: Pointer): Promise<Box> {
 }
 
 /**
- * The smallest tap area the classes guarantee, in px. `null` on either axis
- * means nothing declares a floor there — the control's size depends on its
- * content, and cannot be asserted.
+ * The smallest tap area the classes guarantee, in px. `null` on an axis
+ * means bare Tailwind declares nothing there — usually a control sized by
+ * its own content, which cannot be asserted, but also anything declared in
+ * `src/index.css` instead, which this helper never compiles. See the note at
+ * the top of the file: `null` is "not declared here", not "no floor".
  */
 export async function tapTarget(element: Element, pointer: Pointer): Promise<{
   width: number | null
