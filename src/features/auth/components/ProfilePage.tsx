@@ -14,10 +14,14 @@ import { displayPhone } from '../utils/phoneDisplay'
 const cardClass = 'rounded-card border border-line bg-surface p-4 shadow-card'
 const sectionTitleClass =
   'text-[13px] font-medium uppercase tracking-[.08em] text-muted'
+// A wait, not a failure: ochre, the tone this app keeps for "not yet".
+const noticeClass =
+  'mt-3 rounded-lg border border-ochre bg-ochre-tint px-3 py-2 text-[12.5px] leading-[1.5] text-ochre'
 
 // Every control here is meant for a thumb: the floor is the tab bar's, reached
 // with `pointer-coarse:` for the reason set out over the admin toolbar
 // (`AdminPage.tsx`) — window width answers nothing about what is pointing.
+// `ProfilePage.test.tsx` measures each of them.
 const primaryButtonClass =
   'w-full rounded-lg bg-pitch px-3 py-2.5 text-center text-sm font-medium ' +
   'text-on-pitch transition-colors hover:bg-pitch-strong pointer-coarse:min-h-11'
@@ -28,18 +32,19 @@ const quietButtonClass =
 
 /**
  * The account screen, and the first one this app has ever had for the
- * customer's own account: the number they sign in with, the address we can
- * write to, the other door they may want to attach, and the way out.
+ * customer's own account: the ways they sign in, the address we can write to,
+ * the Google door they may want to attach, and the way out.
  *
- * Il guscio è quello di `MyBookingsPage`: barra alta col titolo su telefono,
- * intestazione della struttura da `lg` in su. Questa è una schermata sorella
- * di quella, non una specie nuova di pagina.
+ * The shell is `MyBookingsPage`'s — `MobileFrame` with a title on the phone,
+ * the facility header from `lg` up — so this reads as a sibling of that
+ * screen rather than a new kind of page. Loading renders inside the frame and
+ * not in place of it: the tab bar belongs to the app, not to the state this
+ * one screen happens to be in, and a bar that vanishes on every mount of a
+ * tab is a bar that moves under the thumb.
  */
 export function ProfilePage(): JSX.Element {
   const facility = useFacility()
   const { session, loading } = useAuth()
-
-  if (loading) return <div className="p-8 text-muted">Caricamento…</div>
 
   return (
     <MobileFrame title="Profilo">
@@ -63,24 +68,25 @@ export function ProfilePage(): JSX.Element {
         <p className="hidden text-[11px] uppercase tracking-[.14em] text-pitch lg:block">
           {facility.name}
         </p>
-        {/* Come in `MyBookingsPage`: su telefono il titolo visibile è quello
-            della barra alta, e l'`<h1>` resta in `sr-only` perché una pagina
-            senza intestazione non dice a chi la ascolta di cosa parla. */}
+        {/* As in `MyBookingsPage`: on a phone the visible title is the top
+            bar's, and the `<h1>` stays `sr-only`, because a page without a
+            heading does not tell whoever is listening what it is about. */}
         <h1 className="sr-only lg:not-sr-only lg:mt-1.5 lg:text-2xl lg:font-semibold lg:tracking-[-.02em]">
           Profilo
         </h1>
 
-        {session ? <Account user={session.user} /> : <Invitation />}
+        {loading
+          ? <p className="mt-6 text-ink-2">Caricamento…</p>
+          : session ? <Account user={session.user} /> : <Invitation />}
       </main>
     </MobileFrame>
   )
 }
 
 /**
- * Il tab c'è sempre, anche per chi non è entrato (§3.1): qui si dice cosa
- * tiene questa schermata e si offre la strada per entrare. Non un rimbalzo
- * altrove, non una porta chiusa — sarebbe l'unico posto dell'app a buttare
- * fuori chi tocca un tab.
+ * The tab is there for everyone, signed in or not (spec §3.1): this says what
+ * the screen holds and offers the way in. Not a redirect, not a locked door —
+ * it would be the only place in the app that throws you out on tap.
  */
 function Invitation() {
   return (
@@ -100,8 +106,9 @@ function Invitation() {
 }
 
 function Account({ user }: { user: User }) {
-  // `new_email` è il cambio in sospeso, `email` quello che vale davvero:
-  // sono due campi diversi proprio perché sono due cose diverse (§3.2).
+  // `new_email` is the change awaiting confirmation, `email` the address that
+  // actually works. They are two fields because they are two different things
+  // (spec §3.2), and this screen never conflates them.
   const pending = user.new_email
   const hasGoogle = (user.identities ?? []).some((i) => i.provider === 'google')
   const { signOut, leaving, error } = useSignOut()
@@ -110,27 +117,32 @@ function Account({ user }: { user: User }) {
     <div className="mt-6 flex flex-col gap-5">
       <section className={cardClass}>
         <h2 className={sectionTitleClass}>Come entri</h2>
-        {/* L'elenco tiene i dati dell'account: quelli che valgono adesso, e
-            nient'altro. Un indirizzo in attesa non entra qui — sta nel suo
-            avviso, più sotto, e la differenza è il punto di tutta §3.2. */}
+        {/* The list holds the account's working data and nothing else. An
+            address awaiting confirmation does not appear here — it lives in
+            its own notice further down, and that difference is the whole of
+            §3.2.
+
+            Every row is conditional, the phone included. `ensure_my_member`
+            creates the card whether or not a phone is confirmed, so a
+            customer who only ever signed in with Google is a fully working
+            customer with no number — and Google is the route `LoginPage`
+            pushes people towards. An unconditional row would print an empty
+            value and claim they sign in with something they do not have. */}
         <ul aria-label="Dati dell’account" className="mt-3 flex flex-col gap-2.5">
-          <li className="flex items-baseline justify-between gap-3">
-            <span className="text-[13px] text-ink-2">Telefono</span>
-            <span className="tabular-nums text-[15px] font-medium">
-              {displayPhone(user.phone)}
-            </span>
-          </li>
-          {user.email && (
-            <li className="flex items-baseline justify-between gap-3">
-              <span className="text-[13px] text-ink-2">Email</span>
-              <span className="break-all text-[15px] font-medium">{user.email}</span>
-            </li>
+          {user.phone && (
+            <AccountRow label="Telefono" value={displayPhone(user.phone)} numeric />
           )}
+          {user.email && <AccountRow label="Email" value={user.email} />}
+          {hasGoogle && <AccountRow label="Google" value="Collegato" />}
         </ul>
-        <p className="mt-3 text-[12px] leading-[1.5] text-muted">
-          Il numero è la tua chiave: è con quello che ritrovi lo storico delle
-          prenotazioni fatte al telefono.
-        </p>
+        {/* True only of an account that has a number: the adoption of a card
+            the manager created over the phone keys on exactly that. */}
+        {user.phone && (
+          <p className="mt-3 text-[12px] leading-[1.5] text-muted">
+            Il numero è la tua chiave: è con quello che ritrovi lo storico
+            delle prenotazioni fatte al telefono.
+          </p>
+        )}
       </section>
 
       <EmailSection active={user.email} pending={pending} />
@@ -152,11 +164,41 @@ function Account({ user }: { user: User }) {
   )
 }
 
+function AccountRow({ label, value, numeric = false }: {
+  label: string
+  value: string
+  numeric?: boolean
+}) {
+  return (
+    <li className="flex items-baseline justify-between gap-3">
+      <span className="text-[13px] text-ink-2">{label}</span>
+      <span
+        className={
+          'text-[15px] font-medium ' + (numeric ? 'tabular-nums' : 'break-all')
+        }
+      >
+        {value}
+      </span>
+    </li>
+  )
+}
+
 /**
- * Tre stati, in quest'ordine: un cambio in attesa, un indirizzo attivo,
- * nessun indirizzo. Il campo resta in tutti e tre — un indirizzo scritto
- * sbagliato, o in attesa su una casella che non si apre più, altrimenti da
- * qui non si correggerebbe, e `updateUser` è lo stesso gesto per entrambi.
+ * Four states, in this order: a change awaiting confirmation, a confirmation
+ * just sent, an address that works, no address at all.
+ *
+ * The first two are separate on purpose. `updateUser` records the pending
+ * change and sends a link; the session's `new_email` only catches up when
+ * `USER_UPDATED` propagates, so the render right after a successful click is
+ * normally `sent` with no `pending` yet. Both must say the same thing — the
+ * message has gone out, the address is not yet the customer's — because the
+ * sentence that would come naturally there is «indirizzo salvato», and an
+ * address shown as working that receives nothing is the product claiming
+ * something it is not doing (spec §3.2).
+ *
+ * The field stays in all four: an address typed wrong, or pending on a
+ * mailbox nobody opens, would otherwise be uncorrectable from this screen,
+ * and `updateUser` is the same gesture either way.
  */
 function EmailSection({ active, pending }: {
   active?: string | null
@@ -170,20 +212,15 @@ function EmailSection({ active, pending }: {
       <h2 className={sectionTitleClass}>Dove ti scriviamo</h2>
 
       {pending ? (
-        // `role="status"` e non `alert`: non è un guasto, è un'attesa.
-        <p
-          role="status"
-          className="mt-3 rounded-lg border border-ochre bg-ochre-tint px-3 py-2 text-[12.5px] leading-[1.5] text-ochre"
-        >
+        // `role="status"` rather than `alert`: this is not a failure, it is a
+        // wait. It names the address, which the `sent` notice below cannot.
+        <p role="status" className={noticeClass}>
           In attesa di conferma: {pending}. Apri il collegamento che ti abbiamo
           mandato lì: fino ad allora l’indirizzo non è il tuo e non ci arriva
           niente.
         </p>
       ) : sent ? (
-        <p
-          role="status"
-          className="mt-3 rounded-lg border border-ochre bg-ochre-tint px-3 py-2 text-[12.5px] leading-[1.5] text-ochre"
-        >
+        <p role="status" className={noticeClass}>
           Ti abbiamo mandato un messaggio. L’indirizzo diventa il tuo quando
           apri il collegamento che contiene, non prima.
         </p>
@@ -204,7 +241,7 @@ function EmailSection({ active, pending }: {
       >
         <label className="flex flex-col gap-1.5">
           <span className="text-[10.5px] uppercase tracking-[.1em] text-muted">
-            {active || pending ? 'Cambia indirizzo' : 'Il tuo indirizzo email'}
+            {active || pending ? 'Cambia indirizzo email' : 'Il tuo indirizzo email'}
           </span>
           <input
             className="field pointer-coarse:min-h-11"
@@ -217,6 +254,8 @@ function EmailSection({ active, pending }: {
           />
         </label>
         <ErrorNote message={error} />
+        {/* Nothing to send is not a gesture: the button stays out until
+            there is something in the field. */}
         <button
           type="submit"
           disabled={saving || !value.trim()}
@@ -230,9 +269,9 @@ function EmailSection({ active, pending }: {
 }
 
 /**
- * Solo per chi non ha già Google attaccato. Il rischio da nominare prima del
- * gesto, non dopo (§5): Supabase non unisce due account, quindi un secondo
- * account nato per sbaglio non si disfa più.
+ * Only for an account with no Google identity yet. The risk is named before
+ * the gesture, not after (spec §5): Supabase never merges two users, so a
+ * second account created by mistake cannot be undone.
  */
 function GoogleSection() {
   const { linkGoogle, linking, error } = useLinkGoogle()

@@ -1,6 +1,7 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { tapTarget } from '@/test/tailwindBox'
 import { ProfilePage } from './ProfilePage'
 import * as authProvider from '../hooks/AuthProvider'
 import * as signOutHook from '../hooks/useSignOut'
@@ -131,5 +132,140 @@ describe('ProfilePage', () => {
     expect(within(account).getByText(/3331112233/)).toBeInTheDocument()
     expect(within(account).queryByText(/rossi@example.com/)).not.toBeInTheDocument()
     expect(screen.getByText(/in attesa di conferma/i)).toBeInTheDocument()
+  })
+
+  // Il ramo normale subito dopo il clic su «Salva»: `updateUser` ha mandato
+  // la mail, ma `session.user.new_email` è ancora vecchio finché
+  // `USER_UPDATED` non arriva. È qui che la frase sbagliata — «indirizzo
+  // salvato» — verrebbe naturale a chiunque tocchi questo file, e finché
+  // nessuno apre il collegamento quella frase è falsa.
+  it('a messaggio partito si dice che è partito, non che è salvato', () => {
+    vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
+      setEmail: vi.fn(), saving: false, error: null, sent: true,
+    })
+    stubSession({ phone: '393331112233', email: null, identities: [] })
+    renderPage()
+
+    const avviso = screen.getByRole('status')
+    expect(avviso).toHaveTextContent(/ti abbiamo mandato un messaggio/i)
+    expect(avviso).toHaveTextContent(/apri il collegamento/i)
+    // Le due frasi che qui sarebbero una bugia: quella del salvataggio e
+    // quella dello stato attivo.
+    expect(screen.queryByText(/salvat/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/ti scriviamo qui/i)).not.toBeInTheDocument()
+
+    // E l'account, intanto, non ha nessun indirizzo.
+    const account = screen.getByRole('list', { name: 'Dati dell’account' })
+    expect(within(account).queryByText(/@/)).not.toBeInTheDocument()
+  })
+
+  // Il gesto che attraversa il ponte di §2.2: senza questo, il campo e il
+  // pulsante potrebbero sparire del tutto e gli altri test passerebbero.
+  it('l’indirizzo scritto nel campo arriva a setEmail', () => {
+    const setEmail = vi.fn()
+    vi.spyOn(emailHook, 'useUpdateEmail').mockReturnValue({
+      setEmail, saving: false, error: null, sent: false,
+    })
+    stubSession({ phone: '393331112233', email: null, identities: [] })
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText(/indirizzo email/i), {
+      target: { value: 'rossi@example.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+
+    expect(setEmail).toHaveBeenCalledWith('rossi@example.com')
+  })
+
+  it('il pulsante di Google chiama linkGoogle', () => {
+    const linkGoogle = vi.fn()
+    vi.spyOn(googleHook, 'useLinkGoogle').mockReturnValue({
+      linkGoogle, linking: false, error: null,
+    })
+    stubSession({ phone: '393331112233', email: null, identities: [] })
+    renderPage()
+
+    screen.getByRole('button', { name: 'Collega Google' }).click()
+
+    expect(linkGoogle).toHaveBeenCalled()
+  })
+
+  // `ensure_my_member` crea la scheda anche senza numero confermato, e Google
+  // è la strada che `LoginPage` spinge a prendere: un cliente che entra solo
+  // da lì è un cliente a tutti gli effetti e non ha un telefono. Per lui la
+  // sezione «Come entri» diceva tre cose false in fila — una riga «Telefono»
+  // vuota, la frase sulla chiave, e nessuna traccia di Google.
+  it('chi entra solo con Google non ha un telefono, e non glielo inventiamo', () => {
+    stubSession({
+      phone: null, email: 'rossi@example.com',
+      identities: [{ provider: 'google' }],
+    })
+    renderPage()
+
+    const account = screen.getByRole('list', { name: 'Dati dell’account' })
+    expect(within(account).queryByText('Telefono')).not.toBeInTheDocument()
+    expect(screen.queryByText(/il numero è la tua chiave/i)).not.toBeInTheDocument()
+    // E la strada da cui entra davvero è nominata: `GoogleSection` si
+    // nasconde proprio quando l'identità c'è già, quindi senza questa riga
+    // la schermata non direbbe da nessuna parte come fa a entrare.
+    expect(within(account).getByText('Google')).toBeInTheDocument()
+  })
+})
+
+// spec §2.4: «bersagli non più piccoli di quelli della barra dei tab».
+const FLOOR = 44
+
+const CONTROLS: [string, () => Element][] = [
+  ['Il campo dell’indirizzo', () => screen.getByLabelText(/indirizzo email/i)],
+  ['Salva', () => screen.getByRole('button', { name: 'Salva' })],
+  ['Collega Google', () => screen.getByRole('button', { name: 'Collega Google' })],
+  ['Esci', () => screen.getByRole('button', { name: 'Esci' })],
+]
+
+/**
+ * Le misure escono da una compilazione vera di Tailwind sulle classi che
+ * l'elemento porta davvero (`src/test/tailwindBox.ts`): jsdom non impagina e
+ * butta via le regole `@media`, che è esattamente il ramo dove vivono le
+ * utility `pointer-coarse:`.
+ *
+ * Due cose che il lettore non deve dedurre da sé.
+ *
+ * Sull'asse orizzontale la risposta è `null` per tutti e quattro: qui i
+ * comandi sono `w-full` dentro una colonna, quindi la larghezza è quella
+ * della scheda e nessuna utility la dichiara. Si asserisce esplicitamente,
+ * perché `null` vuol dire «Tailwind non dichiara niente su quell'asse», mai
+ * «il bersaglio non ha un minimo»: letto nel secondo modo trasformerebbe una
+ * classe invisibile a questo strumento in un test che passa.
+ *
+ * Sul campo di testo i 44 arrivano tutti da `min-h-11`. `tailwindBox`
+ * compila `@import "tailwindcss"` e non `src/index.css`, quindi i 36px che
+ * `.field` dichiara lì non li vede: il numero resta comunque quello che
+ * dipinge un browser, perché `min-height` vince su `height`.
+ */
+describe('ProfilePage — i bersagli sotto il pollice', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    stubHooks()
+    stubSession({ phone: '393331112233', email: null, identities: [] })
+  })
+
+  it.each(CONTROLS)('«%s» arriva a 44 in altezza su un telefono', async (_name, find) => {
+    renderPage()
+
+    const { width, height } = await tapTarget(find(), 'coarse')
+
+    expect(height).toEqual(expect.any(Number))
+    expect(height).toBeGreaterThanOrEqual(FLOOR)
+    expect(width).toBeNull()
+  })
+
+  it('con un mouse non cresce niente', async () => {
+    renderPage()
+
+    // L'altra metà della scelta: `pointer-coarse:` ingrandisce dove tocca un
+    // dito e lascia stare il resto. Se questo diventasse 44, la variante è
+    // stata sostituita da qualcosa di incondizionato.
+    expect(await tapTarget(screen.getByRole('button', { name: 'Esci' }), 'fine'))
+      .toEqual({ width: null, height: null })
   })
 })
