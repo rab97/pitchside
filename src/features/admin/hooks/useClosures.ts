@@ -106,9 +106,17 @@ export function useClosures() {
       qc.invalidateQueries({ queryKey })
       // This write cancels bookings, so every query that reads a booking is
       // now answering with rows that no longer exist as it describes them.
-      // There are three, and they belong to three different screens:
+      // There are four, and they belong to four different screens:
       // the day grid must stop showing what was just cancelled…
       qc.invalidateQueries({ queryKey: ['bookings', facility.id] })
+      // …the customer's own list must show it as cancelled, because it is
+      // the customer whose match was just called off — keyed
+      // ['my-bookings', facilityId, memberId] in
+      // `src/features/booking/hooks/useMyBookings.ts`, so this prefix
+      // matches whichever member is signed in. `useCancelBooking` already
+      // invalidates it for the very same event; a closure cancels through
+      // `create_closure` instead, and reaches the same rows…
+      qc.invalidateQueries({ queryKey: ['my-bookings', facility.id] })
       // …the customer's availability on `/prenota` must free those slots —
       // `busy_slots` is a view over `bookings where status = 'active'`
       // (`supabase/migrations/0007_busy_slots.sql`), read under

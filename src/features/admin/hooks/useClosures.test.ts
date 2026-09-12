@@ -45,12 +45,15 @@ describe('useClosures', () => {
   })
 
   // `create_closure` cancels every booking inside the period, in the same
-  // transaction. Three cached queries read a booking, on three screens, and
-  // all three are wrong the instant this returns. `busy` is the one that had
-  // been missed: `busy_slots` is a view over `bookings where status =
-  // 'active'`, and it is what tells a customer on `/prenota` that a slot is
-  // taken — so without it the app kept offering slots it had just freed, and
-  // kept hiding a closure it had just made.
+  // transaction. Four cached queries read a booking, on four screens, and all
+  // four are wrong the instant this returns. Two of them had been missed:
+  // `busy` — `busy_slots` is a view over `bookings where status = 'active'`,
+  // and it is what tells a customer on `/prenota` that a slot is taken, so
+  // without it the app kept offering slots it had just freed and kept hiding
+  // a closure it had just made — and `my-bookings`, the customer's own list,
+  // which is where the person whose match was called off goes to look. The
+  // count is asserted too: this test is the list of what a closure touches,
+  // and a fifth key appearing without a line here would defeat the point.
   it('frees the customer availability a new closure just cancelled', async () => {
     const { result } = renderHook(() => useClosures(), { wrapper })
 
@@ -65,8 +68,12 @@ describe('useClosures', () => {
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['closures', 'f1'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['bookings', 'f1'] })
+    // A prefix of the key `useMyBookings` really uses, which ends in the
+    // signed-in member's id: the panel does not know it, and does not need to.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['my-bookings', 'f1'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['busy', 'f1'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['closure-conflicts', 'f1'] })
+    expect(invalidate).toHaveBeenCalledTimes(5)
   })
 
   // The other half of the rule, and the reason this one is not symmetrical:
