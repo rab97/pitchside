@@ -1,0 +1,41 @@
+name: Sonar
+
+# Analysis runs on the default branch and on every pull request. The pull
+# request run is what decorates the diff with Sonar's findings in place, on the
+# lines being changed — which is the form of this feedback people actually act
+# on, as opposed to a backlog of issues opened elsewhere.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  analyze:
+    name: Coverage and analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Sonar reads git history to attribute issues to authors and to work
+          # out what "new code" means. A shallow clone silently degrades both.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # `.env.test` is committed with deliberately fake credentials, because
+      # `src/shared/lib/supabase.ts` throws at import time without them and the
+      # suite would not load here at all. See that file's comment.
+      - run: npm run test:coverage
+
+      - uses: SonarSource/sonarqube-scan-action@v8
+        env:
+          # Repository secret, added by hand in Settings -> Secrets and
+          # variables -> Actions. SONAR_HOST_URL is not set: the action
+          # defaults to SonarQube Cloud.
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
