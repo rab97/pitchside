@@ -44,12 +44,12 @@ const CONTROLS = [
  * neither lays out nor evaluates `@media` — and `(pointer: coarse)` is
  * precisely the branch that matters.
  */
-describe('AdminPage — la barra della giornata sotto un dito', () => {
+describe('AdminPage — the day toolbar under a finger', () => {
   function renderPage() {
     return render(<MemoryRouter initialEntries={['/admin']}><AdminPage /></MemoryRouter>)
   }
 
-  it.each(CONTROLS)('«%s» misura almeno 44×44 su un dispositivo tattile', async (name) => {
+  it.each(CONTROLS)('«%s» measures at least 44×44 on a touch device', async (name) => {
     renderPage()
     const control = screen.getByRole(name === 'Impostazioni' ? 'link' : 'button', { name })
 
@@ -67,7 +67,7 @@ describe('AdminPage — la barra della giornata sotto un dito', () => {
     expect(height).toBeGreaterThanOrEqual(FLOOR)
   })
 
-  it('lascia la barra compatta quando a puntare è un mouse', async () => {
+  it('leaves the toolbar dense when a mouse is doing the pointing', async () => {
     renderPage()
     const previous = screen.getByRole('button', { name: 'Giorno precedente' })
 
