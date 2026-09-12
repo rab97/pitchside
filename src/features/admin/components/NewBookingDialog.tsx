@@ -1,58 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
 import { formatEuro } from '@/shared/lib/money'
-import { supabase } from '@/shared/lib/supabase'
 import { dayKey, minToLabel } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import type { FieldRow } from '@/shared/hooks/useFields'
-import { pickExistingMember } from '../utils/pickMember'
+import { isPhoneTaken, memberMessage } from '../utils/memberMessages'
 import { defaultSeasonEnd } from '../utils/recurrence'
+import { MemberCard } from './MemberCard'
+import { MemberSearchField, type MemberChoice } from './MemberSearchField'
 import { RecurrenceForm } from './RecurrenceForm'
 import { useCreateBooking } from '../hooks/useCreateBooking'
+import { useCreateMember } from '../hooks/useCreateMember'
 import { useCreateRecurrence } from '../hooks/useCreateRecurrence'
+import { useMemberCard } from '../hooks/useMemberCard'
+import { useUpdateMemberNotes } from '../hooks/useUpdateMemberNotes'
 
 const DURATIONS = [60, 90, 120]
 
 export type NewBookingTarget = { field: FieldRow; day: Date; startMin: number }
-
-/**
- * Se la telefonata corrisponde a una scheda esistente si riusa quella;
- * altrimenti si crea un member con `user_id` nullo. È il punto in cui si evita
- * metà dei doppioni: senza, ogni telefonata crea una scheda nuova.
- *
- * La ricerca guarda telefono *e* nome perché la prenotazione può fallire dopo
- * che la scheda è stata creata — lo slot occupato nel frattempo — e al secondo
- * tentativo il gestore ridigita lo stesso nome. La regola di scelta sta in
- * pickExistingMember, con i suoi test.
- */
-async function resolveMember(facilityId: string, name: string, phone: string) {
-  const digits = phone.replace(/\D/g, '')
-  const trimmed = name.trim()
-
-  // I valori vanno fra virgolette: un nome con una virgola spezzerebbe la
-  // sintassi del filtro `or` di PostgREST.
-  const quoted = (v: string) => `"${v.replace(/"/g, '\\"')}"`
-  const conditions = [`name.ilike.${quoted(trimmed)}`]
-  if (digits) conditions.unshift(`phone.eq.${quoted(digits)}`)
-
-  const { data: candidates } = await supabase.from('members')
-    .select('id, name, phone')
-    .eq('facility_id', facilityId)
-    .or(conditions.join(','))
-
-  const existing = pickExistingMember(candidates ?? [], trimmed, digits)
-  if (existing) return existing
-
-  const { data, error } = await supabase.from('members')
-    .insert({ facility_id: facilityId, name: trimmed, phone: digits || null })
-    .select('id').single()
-  if (error) throw error
-  return data.id
-}
 
 export function NewBookingDialog({ target, onClose }: {
   target: NewBookingTarget | null
@@ -61,7 +29,10 @@ export function NewBookingDialog({ target, onClose }: {
   const facility = useFacility()
   const create = useCreateBooking()
   const createRecurrence = useCreateRecurrence()
-  const [name, setName] = useState('')
+  const { createMember, creating } = useCreateMember()
+  const [choice, setChoice] = useState<MemberChoice>({ kind: 'none' })
+  const { card } = useMemberCard(choice.kind === 'existing' ? choice.member.id : null)
+  const { saveNotes, saveError } = useUpdateMemberNotes()
   const [phone, setPhone] = useState('')
   const [minutes, setMinutes] = useState(facility.min_duration_minutes || 60)
   const [repeat, setRepeat] = useState(false)
@@ -69,11 +40,12 @@ export function NewBookingDialog({ target, onClose }: {
   const [error, setError] = useState<string | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
-  // La schermata si usa col telefono all'orecchio: si apre col fuoco sul nome
-  // e si conferma con Invio. Tutto il resto è facoltativo.
+  // This screen is used with the phone against an ear: it opens with the focus
+  // on the customer field and is confirmed with Enter. Everything else is
+  // optional.
   useEffect(() => {
     if (target) {
-      setName(''); setPhone(''); setError(null)
+      setChoice({ kind: 'none' }); setPhone(''); setError(null)
       setMinutes(facility.min_duration_minutes || 60)
       setRepeat(false)
       setUntil(format(defaultSeasonEnd(target.day), 'yyyy-MM-dd'))
@@ -81,18 +53,44 @@ export function NewBookingDialog({ target, onClose }: {
     }
   }, [target, facility.min_duration_minutes])
 
-  const suggestions = useMemberSuggestions(facility.id, name)
-
   const context = useMemo(() => {
     if (!target) return ''
     return `${target.field.name.toUpperCase()} · ${format(target.day, 'EEE d MMM', { locale: it }).toUpperCase()} · ${minToLabel(target.startMin)}`
   }, [target])
 
+  // Never takes `{ kind: 'none' }`: nothing chosen is not a member to resolve,
+  // it is a sentence to show, and `submit` returns before ever getting here.
+  async function memberIdFor(c: Exclude<MemberChoice, { kind: 'none' }>): Promise<string> {
+    if (c.kind === 'existing') return c.member.id
+    // `kind: 'new'` is the only place a customer is born, and it is reached
+    // only by an explicit click. Before this, `resolveMember` inserted on its
+    // own every time it failed to recognize a name.
+    const id = await createMember({ name: c.name, phone })
+    // The booking can still fail after the row exists — the slot taken in the
+    // meantime — and the manager presses «Conferma» again. The customer is
+    // real now, so the choice becomes a chosen one: a second attempt books for
+    // them instead of inserting them twice, which the unique index on the
+    // phone would reject and report as a collision with the row just written.
+    // That retry is the case `resolveMember` searched by name to cover.
+    setChoice({
+      kind: 'existing',
+      member: { id, name: c.name, phone: phone.replace(/\D/g, '') || null, hasMissed: false },
+    })
+    return id
+  }
+
   async function submit() {
-    if (!target || !name.trim()) return
+    if (!target) return
+    if (choice.kind === 'none') {
+      setError('Scegli un cliente dall’elenco, oppure creane uno nuovo.')
+      return
+    }
     setError(null)
+    // The name in the toast comes from the choice, never from a text field:
+    // the whole point of this screen is that the two can no longer disagree.
+    const bookedName = choice.kind === 'existing' ? choice.member.name : choice.name
     try {
-      const memberId = await resolveMember(facility.id, name, phone)
+      const memberId = await memberIdFor(choice)
 
       if (repeat && until) {
         const { created, skipped, skipped_dates } = await createRecurrence.mutateAsync({
@@ -131,12 +129,14 @@ export function NewBookingDialog({ target, onClose }: {
       })
       const price = (booking as { price_cents: number } | null)?.price_cents
       toast.success(
-        `Prenotato: ${name.trim()}, ${minToLabel(target.startMin)}–${minToLabel(target.startMin + minutes)}` +
+        `Prenotato: ${bookedName}, ${minToLabel(target.startMin)}–${minToLabel(target.startMin + minutes)}` +
         (price != null ? ` · ${formatEuro(price)}` : ''),
       )
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'La prenotazione non è riuscita. Riprova.')
+      setError(isPhoneTaken(e) ? memberMessage(e, 'create')
+        : e instanceof Error ? e.message
+        : 'La prenotazione non è riuscita. Riprova.')
     }
   }
 
@@ -151,39 +151,20 @@ export function NewBookingDialog({ target, onClose }: {
           Nuova prenotazione
         </h3>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[11px] uppercase tracking-[.06em] text-muted">Nome</span>
-          <input
-            ref={nameRef}
-            className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none focus:border-pitch"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="off"
-            required
-          />
-        </label>
+        <MemberSearchField choice={choice} onChoose={setChoice} inputRef={nameRef} />
 
-        {suggestions.length > 0 && (
-          <ul className="-mt-1 flex flex-col overflow-hidden rounded-[7px] border border-line-soft">
-            {suggestions.map((m) => (
-              <li key={m.id}>
-                <button
-                  type="button"
-                  className="flex w-full items-baseline gap-2 px-2.5 py-1.5 text-left text-[12.5px] hover:bg-surface-2"
-                  onClick={() => { setName(m.name); setPhone(m.phone ?? '') }}
-                >
-                  {m.name}
-                  <span className="tabular-nums text-[11px] text-muted">{m.phone ?? ''}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+        {choice.kind === 'existing' && card && (
+          <MemberCard
+            card={card}
+            saveError={saveError}
+            onNotesBlur={(notes) => { void saveNotes(card.id, notes) }}
+          />
         )}
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
           <input
-            className="rounded-[7px] border border-line bg-surface-2 px-2.5 py-2 text-[13.5px] text-ink outline-none placeholder:text-muted focus:border-pitch"
+            className="field placeholder:text-muted"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="facoltativo"
@@ -191,6 +172,12 @@ export function NewBookingDialog({ target, onClose }: {
             autoComplete="off"
           />
         </label>
+
+        {choice.kind === 'new' && phone.trim() === '' && (
+          <p className="text-[11.5px] text-muted">
+            Senza numero questo cliente non sarà riconoscibile la prossima volta.
+          </p>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-[.06em] text-muted">Durata</span>
@@ -236,9 +223,12 @@ export function NewBookingDialog({ target, onClose }: {
           >
             Annulla
           </button>
+          {/* Deliberately not disabled on the choice: a button that refuses
+              without saying why is worse than one that names what is missing,
+              which is what `submit` does when nothing has been chosen. */}
           <button
             type="submit"
-            disabled={create.isPending || createRecurrence.isPending || !name.trim()}
+            disabled={create.isPending || createRecurrence.isPending || creating}
             className="rounded-[7px] bg-pitch px-3 py-1.5 text-[12.5px] font-medium text-on-pitch transition-colors hover:bg-pitch-strong"
           >
             {create.isPending || createRecurrence.isPending ? 'Salvo…' : 'Conferma'}
@@ -247,25 +237,4 @@ export function NewBookingDialog({ target, onClose }: {
       </form>
     </Dialog>
   )
-}
-
-function useMemberSuggestions(facilityId: string, term: string) {
-  const q = term.trim()
-  const { data } = useQuery({
-    queryKey: ['member-search', facilityId, q],
-    enabled: q.length >= 2,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('members')
-        .select('id, name, phone')
-        .eq('facility_id', facilityId)
-        .ilike('name', `%${q}%`)
-        .limit(5)
-      if (error) throw error
-      return data
-    },
-  })
-  // Un solo risultato identico a quanto digitato non è un suggerimento utile.
-  if (!data || (data.length === 1 && data[0].name === q)) return []
-  return data
 }
