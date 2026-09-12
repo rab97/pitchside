@@ -9,7 +9,12 @@ vi.mock('@/shared/lib/supabase', () => ({
 import { useLinkGoogle } from './useLinkGoogle'
 
 describe('useLinkGoogle', () => {
-  beforeEach(() => linkIdentityMock.mockReset())
+  // Le graffe non sono cosmetiche: senza, la freccia restituisce il mock,
+  // e un `beforeEach` che restituisce una funzione la fa chiamare da vitest
+  // come pulizia dopo ogni test. Con linkIdentityMock che rifiuta, quella
+  // chiamata di troppo produce un rifiuto che nessuno raccoglie, e il test
+  // fallisce con l'errore che stava provando a gestire.
+  beforeEach(() => { linkIdentityMock.mockReset() })
 
   it('chiede a Supabase di collegare Google', async () => {
     linkIdentityMock.mockResolvedValue({ data: {}, error: null })
@@ -18,6 +23,18 @@ describe('useLinkGoogle', () => {
     expect(linkIdentityMock).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'google' }))
     expect(result.current.error).toBeNull()
+  })
+
+  // Come negli altri due ganci di questa schermata: il lock di `gotrue-js`
+  // solleva, non restituisce, e senza `finally` il pulsante resta disabilitato
+  // fino a un ricaricamento.
+  it('se la chiamata solleva, il pulsante non resta bloccato', async () => {
+    linkIdentityMock.mockRejectedValue(new Error('lock timeout'))
+    const { result } = renderHook(() => useLinkGoogle())
+    const failure = await act(async () =>
+      result.current.linkGoogle().catch((e: unknown) => e))
+    expect(failure).toBeInstanceOf(Error)
+    expect(result.current.linking).toBe(false)
   })
 
   it('se il collegamento non è disponibile lo dice, invece di rompersi', async () => {

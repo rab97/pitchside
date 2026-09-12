@@ -27,12 +27,16 @@ export function useLinkGoogle() {
   async function linkGoogle() {
     setLinking(true)
     setError(null)
-    const { error } = await supabase.auth.linkIdentity({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
-    })
-    if (error) setError(accountMessage(error, 'google'))
-    setLinking(false)
+    // See `useUpdateEmail`: gotrue's lock throws instead of returning.
+    try {
+      const { error } = await supabase.auth.linkIdentity({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
+      })
+      if (error) setError(accountMessage(error, 'google'))
+    } finally {
+      setLinking(false)
+    }
   }
 
   return { linkGoogle, linking, error }

@@ -17,9 +17,14 @@ export function useSignOut() {
   async function signOut() {
     setLeaving(true)
     setError(null)
-    const { error } = await supabase.auth.signOut()
-    if (error) setError(accountMessage(error, 'signout'))
-    setLeaving(false)
+    // See `useUpdateEmail`: gotrue's lock throws instead of returning, and a
+    // stuck `leaving` is a sign-out button that no longer signs out.
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) setError(accountMessage(error, 'signout'))
+    } finally {
+      setLeaving(false)
+    }
   }
 
   return { signOut, leaving, error }

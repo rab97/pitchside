@@ -20,12 +20,19 @@ export function useUpdateEmail() {
     setSaving(true)
     setError(null)
     setSent(false)
-    const { error } = await supabase.auth.updateUser({
-      email: email.trim().toLowerCase(),
-    })
-    if (error) setError(accountMessage(error, 'email'))
-    else setSent(true)
-    setSaving(false)
+    // `finally`, because `updateUser` runs inside gotrue's `_acquireLock` and
+    // its `NavigatorLockAcquireTimeoutError` is thrown rather than returned:
+    // two tabs of the app contending would otherwise leave `saving` true and
+    // the button dead until the page is reloaded.
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: email.trim().toLowerCase(),
+      })
+      if (error) setError(accountMessage(error, 'email'))
+      else setSent(true)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return { setEmail, saving, error, sent }

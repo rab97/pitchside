@@ -9,7 +9,12 @@ vi.mock('@/shared/lib/supabase', () => ({
 import { useUpdateEmail } from './useUpdateEmail'
 
 describe('useUpdateEmail', () => {
-  beforeEach(() => updateUserMock.mockReset())
+  // Le graffe non sono cosmetiche: senza, la freccia restituisce il mock,
+  // e un `beforeEach` che restituisce una funzione la fa chiamare da vitest
+  // come pulizia dopo ogni test. Con updateUserMock che rifiuta, quella
+  // chiamata di troppo produce un rifiuto che nessuno raccoglie, e il test
+  // fallisce con l'errore che stava provando a gestire.
+  beforeEach(() => { updateUserMock.mockReset() })
 
   it('manda la richiesta con l’indirizzo ripulito', async () => {
     updateUserMock.mockResolvedValue({ data: {}, error: null })
@@ -36,6 +41,20 @@ describe('useUpdateEmail', () => {
     expect(result.current.error)
       .toBe('Questo indirizzo è già collegato a un altro account. Entra con quello, oppure usane uno diverso.')
     expect(result.current.sent).toBe(false)
+  })
+
+  // `updateUser` gira dentro `_acquireLock`, e il suo
+  // `NavigatorLockAcquireTimeoutError` viene *sollevato*, non restituito: due
+  // schede dell'app aperte insieme se lo contendono. Senza un `finally`,
+  // `saving` resta true e il pulsante è morto fino al ricaricamento della
+  // pagina — cioè il guasto meno rimediabile fra quelli possibili qui.
+  it('se la chiamata solleva, il pulsante non resta bloccato', async () => {
+    updateUserMock.mockRejectedValue(new Error('lock timeout'))
+    const { result } = renderHook(() => useUpdateEmail())
+    const failure = await act(async () =>
+      result.current.setEmail('rossi@example.com').catch((e: unknown) => e))
+    expect(failure).toBeInstanceOf(Error)
+    expect(result.current.saving).toBe(false)
   })
 
   it('un secondo tentativo azzera l’esito del primo', async () => {
