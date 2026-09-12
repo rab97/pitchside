@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(12);
 
 insert into public.facilities (id, slug, name, booking_horizon_days) values
   ('e1000000-0000-0000-0000-0000000000f1', 'test-search-a', 'Struttura A', 3650),
@@ -12,9 +12,12 @@ insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at,
   created_at, updated_at)
 values
   ('00000000-0000-0000-0000-000000000000','e1000000-0000-0000-0000-0000000000aa',
-   'authenticated','authenticated','390000000201', now(), '','','','', now(), now());
+   'authenticated','authenticated','390000000201', now(), '','','','', now(), now()),
+  ('00000000-0000-0000-0000-000000000000','e1000000-0000-0000-0000-0000000000bb',
+   'authenticated','authenticated','390000000202', now(), '','','','', now(), now());
 insert into public.facility_admins (facility_id, user_id)
   values ('e1000000-0000-0000-0000-0000000000f1','e1000000-0000-0000-0000-0000000000aa');
+-- bb non amministra niente: è un cliente che ha rivendicato la propria scheda.
 
 -- Rossi ha il numero esatto; Rossini comincia con le stesse cifre; Nicolò
 -- serve agli accenti; De Rossi contiene «rossi» ma non ci comincia; Marco sta
@@ -25,6 +28,14 @@ insert into public.members (id, facility_id, name, phone, missed_count) values
   ('e1000000-0000-0000-0000-0000000000c3','e1000000-0000-0000-0000-0000000000f1','Nicolò Bianchi','3339990000', 0),
   ('e1000000-0000-0000-0000-0000000000c4','e1000000-0000-0000-0000-0000000000f1','De Rossi Ugo', null, 0),
   ('e1000000-0000-0000-0000-0000000000c5','e1000000-0000-0000-0000-0000000000f2','Marco Neri','3331112233', 0);
+
+-- Verdi ha rivendicato la sua scheda: `members_read_own` gliela fa leggere, e
+-- quindi la fa arrivare anche a `search_members`, che non è SECURITY DEFINER.
+-- Il nome sta lontano dagli altri apposta, così le asserzioni di sopra non
+-- cambiano di significato.
+insert into public.members (id, facility_id, user_id, name, phone, missed_count) values
+  ('e1000000-0000-0000-0000-0000000000c6','e1000000-0000-0000-0000-0000000000f1',
+   'e1000000-0000-0000-0000-0000000000bb','Verdi Rivendicato','3337770000', 0);
 
 -- De Rossi ha giocato ieri, Rossi Luca un anno fa: a parità di rank il più
 -- recente sta sopra, e questa è l'unica coppia che lo mette alla prova.
@@ -85,6 +96,33 @@ select is_empty(
 select is_empty(
   $$select * from public.search_members('e1000000-0000-0000-0000-0000000000f1','R')$$,
   'sotto i due caratteri non si cerca');
+
+-- Le tre asserzioni che seguono stanno qui perché il commento in
+-- 0020_member_search.sql diceva il falso: «la RLS su members ammette esattamente
+-- il gestore della struttura». Non è così — `members_read_own` ammette anche il
+-- cliente che ha rivendicato la propria riga, e quindi questa funzione è
+-- raggiungibile da lui. Oggi è innocuo: le colonne che escono sono sue. Domani
+-- non lo è più, se qualcuno ci aggiunge `notes` o `price_list` leggendo quel
+-- commento e concludendo che la funzione è solo del gestore.
+set local request.jwt.claims to '{"sub":"e1000000-0000-0000-0000-0000000000bb","role":"authenticated"}';
+
+select is(
+  (select array_agg(name) from public.search_members('e1000000-0000-0000-0000-0000000000f1','Verdi')),
+  array['Verdi Rivendicato'],
+  'un cliente che ha rivendicato la scheda raggiunge search_members, e ne esce la sua riga: la funzione non è solo del gestore');
+
+select is_empty(
+  $$select * from public.search_members('e1000000-0000-0000-0000-0000000000f1','Rossi')$$,
+  'dalle righe degli altri però non esce niente: quello che legge è solo suo');
+
+select is(
+  (select array_agg(x.name order by x.ord)
+     from pg_proc p,
+          unnest(p.proargnames, p.proargmodes) with ordinality as x(name, mode, ord)
+    where p.oid = 'public.search_members(uuid,text)'::regprocedure
+      and x.mode = 't'),
+  array['id','name','phone','has_missed','rank'],
+  'le colonne di ritorno sono queste cinque: aggiungerne una del gestore la consegnerebbe al cliente delle due asserzioni qui sopra, e va fatto solo con un predicato is_facility_admin come in member_card');
 
 select * from finish();
 rollback;

@@ -18,9 +18,28 @@ as $$
   select lower(extensions.unaccent('extensions.unaccent'::regdictionary, coalesce(p_name, '')));
 $$;
 
--- Not SECURITY DEFINER, deliberately. RLS on `members` already admits exactly
--- the facility admin, and on `bookings` the same; a definer function would have
--- to re-implement that check, and the second copy is the one that drifts.
+-- Not SECURITY DEFINER, deliberately: RLS stays in force under the caller's own
+-- role, and a definer function would have to re-implement the tenant check —
+-- the second copy being the one that drifts.
+--
+-- Do not read that as "only a facility admin can call this". `members` carries
+-- two SELECT policies, OR'd together: `members_read_admin` and
+-- `members_read_own` (0004_members.sql:54-57, and see 0021_member_card.sql:18-27
+-- for what that costs there). A customer who has claimed their own row reaches
+-- this function and gets that row back.
+--
+-- Which is safe for the five columns below, and safe *only* because of them: an
+-- id, a name, a phone and a missed-booking flag that are the caller's own.
+-- Widening this return table is therefore not a free change. `notes`,
+-- `price_list` or anything else the manager alone should read would be handed
+-- to the very customer it is written about — the same leak `member_card` had to
+-- carry its own `is_facility_admin` predicate to close. A `search_members` that
+-- ever has to return such a column needs that predicate too.
+--
+-- §1 of the spec invites a future registry page to reuse this function, so that
+-- day will come. `014_member_search.test.sql` asserts both halves — the claimed
+-- member reaching this function, and the exact list of columns it returns — so
+-- whoever widens it trips a test instead of a customer.
 create or replace function public.search_members(p_facility uuid, p_query text)
 returns table (id uuid, name text, phone text, has_missed boolean, rank smallint)
 language sql
