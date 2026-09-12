@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import { availableParallelism } from 'node:os'
 import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -114,21 +115,24 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
-    // One worker per core is a loss here, not a gain. Every worker builds its
-    // own jsdom — vitest says so after each run, "jsdom was created 50 times,
-    // 33% of tracked time" — so past a point the workers compete for the cores
-    // they are waiting on. Measured on a 16-core machine, whole suite, idle:
+    // One worker per core is a loss, not a gain. Every worker builds its own
+    // jsdom — vitest says so after each run, "jsdom was created 50 times,
+    // 33% of tracked time" — so past a point the workers compete for the very
+    // cores they are waiting on, and several component tests here drive real
+    // Radix popovers whose cost grows with that contention.
     //
-    //   4 workers   211 passed   34.6s
-    //   8 workers   211 passed   29.3s
-    //   16 (default) 1 failed    32.7s
+    // Measured, whole suite, idle 16-core machine:
     //
-    // The failure at 16 was deterministic, 5 runs out of 5: the first test in
-    // `NewClosureDialog.test.tsx` drives four real Radix popovers and pays that
-    // file's cold import, and under full contention it crossed its 10s timeout.
-    // Raising that timeout a second time would have bought a slower suite and
-    // hidden the reason. Capping the pool is both faster and green.
-    maxWorkers: 8,
+    //   4 workers    211 passed   34.6s
+    //   8 workers    211 passed   29.3s
+    //   16 (default)   1 failed   32.7s
+    //
+    // This MUST stay proportional to the machine. A flat `maxWorkers: 8` was
+    // tried first and broke CI: a GitHub runner has 4 cores, so a fixed 8 is
+    // the same oversubscription this setting exists to prevent, and three
+    // tests timed out there while the 16-core machine stayed green. Verified
+    // by reproducing the runner with `taskset -c 0-3`.
+    maxWorkers: Math.max(1, Math.min(8, availableParallelism() - 1)),
     coverage: {
       provider: 'v8',
       // `text-summary` so a local run says something useful in one screen;
