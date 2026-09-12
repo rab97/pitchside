@@ -77,6 +77,27 @@ describe('ProfilePage', () => {
     expect(screen.queryByText(/in attesa di conferma/i)).not.toBeInTheDocument()
   })
 
+  // Non c'è una riga di codice che mandi posta in questo repository: né
+  // funzioni edge, né un modulo di notifiche. Il primo promemoria parte nel
+  // sotto-progetto successivo. Una frase al presente — «ti scriviamo qui per
+  // le conferme» — è lo stesso difetto di §2.5, spostato da un interruttore
+  // alle parole: il prodotto che promette ciò che non fa.
+  it('l’indirizzo attivo dice a cosa serve senza promettere posta che nessuno manda', () => {
+    stubSession({
+      phone: '393331112233', email: 'rossi@example.com', identities: [],
+    })
+    renderPage()
+    expect(screen.getByText(/è qui che ti scriveremo/i)).toBeInTheDocument()
+    expect(screen.getByText(/non mandiamo ancora niente/i)).toBeInTheDocument()
+  })
+
+  it('senza indirizzo si dice perché serve, non che lo useremmo già', () => {
+    stubSession({ phone: '393331112233', email: null, identities: [] })
+    renderPage()
+    expect(screen.getByText(/non abbiamo un indirizzo per te/i)).toBeInTheDocument()
+    expect(screen.getByText(/non mandiamo ancora niente/i)).toBeInTheDocument()
+  })
+
   it('offre di collegare Google solo se non è già collegato', () => {
     stubSession({ phone: '393331112233', email: null, identities: [] })
     const { unmount } = renderPage()
@@ -152,7 +173,7 @@ describe('ProfilePage', () => {
     // Le due frasi che qui sarebbero una bugia: quella del salvataggio e
     // quella dello stato attivo.
     expect(screen.queryByText(/salvat/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/ti scriviamo qui/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/è qui che ti scriveremo/i)).not.toBeInTheDocument()
 
     // E l'account, intanto, non ha nessun indirizzo.
     const account = screen.getByRole('list', { name: 'Dati dell’account' })

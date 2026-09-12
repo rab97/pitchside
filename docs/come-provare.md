@@ -365,11 +365,13 @@ Supabase in locale. Nessuna email lascia mai questa macchina — ogni
 messaggio che l'app manda finisce lì, intercettato. Trova il messaggio
 appena arrivato e apri il collegamento di conferma al suo interno.
 
-Torna su `/profilo`: l'indirizzo deve comparire come attivo — la frase «Ti
-scriviamo qui per le conferme delle prenotazioni», non più l'avviso
-d'attesa. Se lo trovi ancora «in attesa di conferma», il collegamento non
-ha fatto il suo lavoro: è il difetto che questo scenario esiste per
-scoprire.
+Torna su `/profilo`: l'indirizzo deve comparire come attivo — la frase «È
+qui che ti scriveremo delle tue prenotazioni. Oggi non mandiamo ancora
+niente…», non più l'avviso d'attesa. Quel «non mandiamo ancora niente» è
+voluto e fa parte di ciò che devi vedere: di codice che manda posta qui non
+ce n'è ancora, e la schermata non deve far credere il contrario. Se lo
+trovi ancora «in attesa di conferma», il collegamento non ha fatto il suo
+lavoro: è il difetto che questo scenario esiste per scoprire.
 
 **Un indirizzo già preso.** Prova a salvare un indirizzo già associato a un
 altro account di prova. Deve arrivare un errore leggibile nel form, non

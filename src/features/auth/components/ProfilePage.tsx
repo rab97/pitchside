@@ -95,8 +95,8 @@ function Invitation() {
         Il tuo account
       </h2>
       <p className="text-[13.5px] leading-[1.55] text-ink-2">
-        Qui trovi il numero con cui entri, l’indirizzo a cui mandarti le
-        conferme delle prenotazioni e il modo per uscire. Entra per vederli.
+        Qui trovi il numero con cui entri, l’indirizzo email a cui potremo
+        avvisarti delle prenotazioni e il modo per uscire. Entra per vederli.
       </p>
       <Link to={LOGIN_ROUTE} className={primaryButtonClass}>
         Accedi
@@ -226,12 +226,16 @@ function EmailSection({ active, pending }: {
         </p>
       ) : active ? (
         <p className="mt-3 text-[13px] leading-[1.5] text-ink-2">
-          Ti scriviamo qui per le conferme delle prenotazioni.
+          È qui che ti scriveremo delle tue prenotazioni. Oggi non mandiamo
+          ancora niente: l’indirizzo è la condizione perché i promemoria
+          possano partire.
         </p>
       ) : (
         <p className="mt-3 text-[13px] leading-[1.5] text-ink-2">
-          Non abbiamo un indirizzo per te. Serve per mandarti le conferme
-          delle prenotazioni: il numero resta quello con cui entri.
+          Non abbiamo un indirizzo per te. Ci serve per poterti avvisare delle
+          tue prenotazioni: oggi non mandiamo ancora niente, ma senza un
+          indirizzo i promemoria non potranno partire. Il numero resta quello
+          con cui entri.
         </p>
       )}
 
