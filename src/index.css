@@ -180,10 +180,39 @@ button:disabled:hover {
     font-size: 13.5px;
     outline: none;
   }
+  /* The border colour is the affordance for "this is the control you are
+     on" — hover, focus, an open popover alike. It is not, on its own, an
+     indication of keyboard focus: it is 1px, it changes hue only, and the
+     same treatment already means three other things here. */
   .field:focus,
   .field:focus-visible,
   .field[data-state="open"] {
     border-color: var(--pitch);
+  }
+  /* Keyboard focus gets a real ring, matching the calendar's day cells
+     (`MonthGridPopover.cellClassName`). `outline: none` above was written
+     for the mouse — a click on a Select trigger should not paint a ring —
+     but it took the keyboard's only landmark with it: before this class
+     existed these inputs carried the browser's default ring, and most of
+     the panel's keyboard focus lands on a `.field` (every text input,
+     every `Select` trigger, every `DateField` trigger). The failure is the
+     one already diagnosed on the day cells: the focus moved correctly and
+     a sighted keyboard user had no way to see where they were.
+     `:focus-visible`, not `:focus`, is what keeps the mouse case quiet.
+     The offset clears the 1px border so the ring reads as a ring and not
+     as a thicker border; no call site clips it — dialogs pad their forms
+     by 16px and nothing around a `.field` sets `overflow: hidden`. The one
+     state worth checking is a trigger whose popover is open, which carries
+     `[data-state="open"]` and could in principle also be focused: it is
+     not, because both openers hand focus to the panel they open —
+     `MonthGridPopover` in its own `onOpenAutoFocus` (pinned by
+     `DateField.test.tsx`), Radix Select in `focusFirst`, which focuses the
+     selected item as soon as the popper is positioned. Even if it were,
+     the listbox sits flush against the trigger (`sideOffset={-1}`) and
+     would simply cover the ring's bottom edge, joining the two. */
+  .field:focus-visible {
+    outline: 2px solid var(--pitch);
+    outline-offset: 2px;
   }
 }
 
