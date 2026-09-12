@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { Dialog } from '@/shared/components/ui/Dialog'
+import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import { formatEuro } from '@/shared/lib/money'
 import { dayKey, minToLabel } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
@@ -33,7 +34,7 @@ export function NewBookingDialog({ target, onClose }: {
   const createRecurrence = useCreateRecurrence()
   const { createMember, creating } = useCreateMember()
   const [choice, setChoice] = useState<MemberChoice>({ kind: 'none' })
-  const { card } = useMemberCard(choice.kind === 'existing' ? choice.member.id : null)
+  const { card, failed: cardFailed } = useMemberCard(choice.kind === 'existing' ? choice.member.id : null)
   const { saveNotes, saveError } = useUpdateMemberNotes()
   const [phone, setPhone] = useState('')
   // The digits the unique index has just refused, and the customer already
@@ -187,6 +188,17 @@ export function NewBookingDialog({ target, onClose }: {
             saveError={saveError}
             onNotesBlur={(notes) => { void saveNotes(card.id, notes) }}
           />
+        )}
+
+        {/* A failure is not a fact — the rule `ErrorNote` exists to enforce.
+            Dropped, the chosen name with nothing under it is indistinguishable
+            from a customer who genuinely has no history, and the manager
+            prices the call on notes, misses and a price list nobody ever read.
+            `card: null` without `failed` is the other case and stays silent:
+            `member_card` answers a caller it does not recognise with zero rows
+            rather than an error. */}
+        {choice.kind === 'existing' && cardFailed && (
+          <ErrorNote message="Non siamo riusciti a leggere la scheda di questo cliente: puoi comunque prenotare." />
         )}
 
         {/* Only while a customer is being created. `createMember`'s insert is

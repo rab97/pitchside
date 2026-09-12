@@ -85,6 +85,37 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     await waitFor(() => expect(screen.getByText('Si è presentato 4 volte')).toBeInTheDocument())
   }, TIMEOUT)
 
+  // `ErrorNote`'s own doc comment is this project's doctrine on exactly this
+  // failure: a hook that reads `data` and throws away `error` turns a broken
+  // network into a false statement. Here the chosen name with nothing under it
+  // is visually identical to a customer who genuinely has no history, and the
+  // manager prices the call on «nessuna nota, nessuna mancata, listino
+  // standard» — none of which was ever read.
+  it('se la scheda non si riesce a leggere lo dice, invece di sembrare un cliente senza storia', async () => {
+    vi.spyOn(cardHook, 'useMemberCard').mockReturnValue({
+      card: null, isPending: false, failed: true,
+    })
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Rossi' } })
+    fireEvent.click(screen.getByRole('button', { name: /Rossi Luca/ }))
+
+    await waitFor(() =>
+      expect(screen.getByText('Non siamo riusciti a leggere la scheda di questo cliente: puoi comunque prenotare.'))
+        .toBeInTheDocument())
+  }, TIMEOUT)
+
+  it('una scheda che semplicemente non c’è non è un guasto e non si annuncia', async () => {
+    vi.spyOn(cardHook, 'useMemberCard').mockReturnValue({
+      card: null, isPending: false, failed: false,
+    })
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Rossi' } })
+    fireEvent.click(screen.getByRole('button', { name: /Rossi Luca/ }))
+
+    await waitFor(() => expect(screen.getByText('Rossi Luca')).toBeInTheDocument())
+    expect(screen.queryByText(/Non siamo riusciti a leggere la scheda/)).not.toBeInTheDocument()
+  }, TIMEOUT)
+
   it('prenota con l’id del cliente scelto, non con uno indovinato dal nome', async () => {
     renderDialog()
     fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Rossi' } })
