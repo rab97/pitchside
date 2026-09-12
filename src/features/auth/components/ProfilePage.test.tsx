@@ -58,10 +58,15 @@ describe('ProfilePage', () => {
     expect(screen.queryByRole('button', { name: 'Esci' })).not.toBeInTheDocument()
   })
 
-  it('mostra il numero con cui si entra', () => {
+  it('mostra il numero con cui si entra, e perché è quello', () => {
     stubSession({ phone: '393331112233', email: null, identities: [] })
     renderPage()
     expect(screen.getByText(/3331112233/)).toBeInTheDocument()
+    // La frase che spiega al cliente la decisione fondativa del progetto — il
+    // numero è l'identità, ed è con quello che lo storico preso al telefono
+    // torna suo (§2.1). Finora solo la sua *assenza* su un account senza
+    // numero era asserita: cancellarla lasciava l'intera suite verde.
+    expect(screen.getByText(/il numero è la tua chiave/i)).toBeInTheDocument()
   })
 
   it('un indirizzo in attesa è detto in attesa, non come se funzionasse', () => {
@@ -341,7 +346,12 @@ describe('ProfilePage', () => {
   })
 })
 
-// spec §2.4: «bersagli non più piccoli di quelli della barra dei tab».
+// La regola sta in `docs/superpowers/specs/2026-09-11-ui-primitives-design.md`
+// §2.4 — «touch targets no smaller than the tab bar's» — dove nasce a
+// proposito del selettore di data che sostituisce quello del sistema
+// operativo, ed è la stessa che `AdminPage.tsx` applica alla propria barra.
+// Il 44 non è scritto lì: lo spiega `src/test/tailwindBox.ts`, che non sa
+// misurare `h-tabbar` e per questo tiene il numero a mano.
 const FLOOR = 44
 
 const CONTROLS: [string, () => Element][] = [
