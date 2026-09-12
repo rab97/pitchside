@@ -86,6 +86,16 @@ export function NewBookingDialog({ target, onClose }: {
       setError('Scegli un cliente dall’elenco, oppure creane uno nuovo.')
       return
     }
+    // §2.6: the number is required, because the name identifies nobody and the
+    // number identifies everybody — the unique index on `phone_key(phone)`
+    // makes every customer distinguishable by construction rather than by
+    // anyone's diligence. Refused here and not by disabling «Conferma»: a
+    // button that refuses without saying why is worse than one that names what
+    // is missing, which is the same call already made for "nobody chosen".
+    if (choice.kind === 'new' && digitsOf(phone) === '') {
+      setError('Serve il numero di telefono: senza, questo cliente non sarà riconoscibile la prossima volta.')
+      return
+    }
     setError(null)
     // The name in the toast comes from the choice, never from a text field:
     // the whole point of this screen is that the two can no longer disagree.
@@ -168,29 +178,21 @@ export function NewBookingDialog({ target, onClose }: {
             belongs to the registry, not to a screen answered with the phone in
             hand. Left rendered for a chosen customer the field would be typeable
             and unwritable at once — worst right after a retry, where the manager
-            has just been told this person will be unrecognisable without a
-            number, would type it, and would watch it be dropped. `MemberCard`
-            shows the number the record actually holds. */}
+            would type a number and watch it be dropped. `MemberCard` shows the
+            number the record actually holds. */}
         {choice.kind === 'new' && (
-          <>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
-              <input
-                className="field placeholder:text-muted"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="facoltativo"
-                inputMode="tel"
-                autoComplete="off"
-              />
-            </label>
-
-            {phone.trim() === '' && (
-              <p className="text-[11.5px] text-muted">
-                Senza numero questo cliente non sarà riconoscibile la prossima volta.
-              </p>
-            )}
-          </>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[11px] uppercase tracking-[.06em] text-muted">Telefono</span>
+            <input
+              className="field placeholder:text-muted"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="obbligatorio"
+              aria-required="true"
+              inputMode="tel"
+              autoComplete="off"
+            />
+          </label>
         )}
 
         <div className="flex flex-col gap-1.5">

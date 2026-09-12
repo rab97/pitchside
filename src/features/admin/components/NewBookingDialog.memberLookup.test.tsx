@@ -111,8 +111,9 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     renderDialog()
     fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
     fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '3339990000' } })
     fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
-    await waitFor(() => expect(createMember).toHaveBeenCalledWith({ name: 'Mario Neri', phone: '' }))
+    await waitFor(() => expect(createMember).toHaveBeenCalledWith({ name: 'Mario Neri', phone: '3339990000' }))
     await waitFor(() => expect(createBooking).toHaveBeenCalled())
     expect(createBooking.mock.calls[0][0]).toMatchObject({ memberId: 'm9' })
   }, TIMEOUT)
@@ -140,6 +141,7 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     renderDialog()
     fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
     fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '3339990000' } })
     fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
     await waitFor(() => expect(createBooking).toHaveBeenCalled())
     expect(createBooking.mock.calls[0][0]).toMatchObject({ memberId: 'm9' })
@@ -189,7 +191,7 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     renderDialog()
     fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
     fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
-    expect(screen.getByRole('textbox', { name: 'Telefono' })).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '3339990000' } })
 
     // The booking fails, the customer exists anyway, and the choice becomes a
     // chosen one — which is exactly when the field must stop being offered.
@@ -198,7 +200,10 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     expect(screen.queryByRole('textbox', { name: 'Telefono' })).not.toBeInTheDocument()
   }, TIMEOUT)
 
-  it('creando un cliente senza numero, dice cosa costa', async () => {
+  // §2.6: the number is required, and the refusal is a sentence rather than a
+  // dead button — the branch already settled that a button that refuses
+  // without saying why is worse than one that names what is missing.
+  it('senza numero non crea il cliente e dice cosa manca', async () => {
     stubCreateMember(vi.fn().mockResolvedValue('m9'))
     vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({
       results: [], isPending: false, failed: false,
@@ -206,11 +211,30 @@ describe('NewBookingDialog — riconoscere chi telefona', () => {
     renderDialog()
     fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
     fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
-    expect(screen.getByText('Senza numero questo cliente non sarà riconoscibile la prossima volta.'))
-      .toBeInTheDocument()
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: '3331112233' } })
-    expect(screen.queryByText('Senza numero questo cliente non sarà riconoscibile la prossima volta.'))
-      .not.toBeInTheDocument()
+    const conferma = screen.getByRole('button', { name: 'Conferma' })
+    expect(conferma).toBeEnabled()
+    fireEvent.click(conferma)
+
+    await waitFor(() =>
+      expect(screen.getByText('Serve il numero di telefono: senza, questo cliente non sarà riconoscibile la prossima volta.'))
+        .toBeInTheDocument())
+    expect(createMember).not.toHaveBeenCalled()
+    expect(createBooking).not.toHaveBeenCalled()
+  }, TIMEOUT)
+
+  it('un numero fatto di sole parentesi e spazi non conta come numero', async () => {
+    stubCreateMember(vi.fn().mockResolvedValue('m9'))
+    vi.spyOn(searchHook, 'useMemberSearch').mockReturnValue({
+      results: [], isPending: false, failed: false,
+    })
+    renderDialog()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Cliente' }), { target: { value: 'Mario Neri' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Nuovo cliente: Mario Neri' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Telefono' }), { target: { value: ' ( ) - ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(createMember).not.toHaveBeenCalled()
   }, TIMEOUT)
 })
