@@ -328,13 +328,17 @@ maniglia ha fallito il suo unico compito. Rilascia: l'ordine deve restare
 quello a cui l'hai portato, e ricaricando la pagina non deve tornare quello
 precedente.
 
-> Nota per chi legge prima di avere un telefono in mano: misurata in un
-> browser desktop, la cella di un giorno nel calendario è 44×44px — la soglia
-> che questa guida chiede — ma la maniglia di trascinamento è un `<svg>` di
-> soli 20×20px, senza margine di tolleranza attorno. Se al punto 3 la maniglia
-> risulta difficile da agganciare con un dito, non è un'impressione: è quella
-> misura, ed è la cosa più probabile da segnalare come difetto in questo
-> scenario.
+> Nota per chi legge prima di avere un telefono in mano, con le misure lette
+> nel codice: la cella di un giorno del calendario è 44×44px — la soglia che
+> questa guida chiede — e lo sono anche le frecce del mese. La maniglia di
+> trascinamento è un bottone di 44×44px: le tre righe che si vedono sono un
+> `<svg>` di 20×20px disegnato dentro di esso, e sono il bottone intero — non
+> il solo glifo — a portare l'ascolto del trascinamento e il `touch-none` che
+> impedisce al browser di scambiare il dito per uno scorrimento di pagina.
+> Nessuno dei due controlli ha quindi un difetto di misura noto da imputare in
+> partenza: se al punto 1 o al punto 3 qualcosa risulta comunque scomodo, è
+> un'informazione nuova e va segnalata com'è — la soglia rispettata non è la
+> prova che sotto un pollice vero funzioni.
 
 ---
 
