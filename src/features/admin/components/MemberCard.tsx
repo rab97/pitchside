@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
@@ -28,12 +28,44 @@ export function MemberCard({ card, onNotesBlur, saveError }: {
 }) {
   const [draft, setDraft] = useState(card.notes ?? '')
 
+  // The cleanup below runs with whatever the refs hold at that moment, not
+  // with what the render that created it closed over: a cleanup closing over
+  // `draft` would flush the note as it stood several keystrokes ago.
+  // `handedUp` is the last value given to `onNotesBlur`, so a note the blur
+  // has already saved is not saved a second time on the way out.
+  const latest = useRef(draft)
+  latest.current = draft
+  const handedUp = useRef(card.notes ?? '')
+  const onNotesBlurRef = useRef(onNotesBlur)
+  onNotesBlurRef.current = onNotesBlur
+
+  const flush = useCallback(() => {
+    if (latest.current === handedUp.current) return
+    handedUp.current = latest.current
+    onNotesBlurRef.current(latest.current)
+  }, [])
+
   // These are the manager's private notes about a named person: a switch to
   // a different member must never leave the previous member's unsent draft
   // sitting under the new name. This mirrors the reset idiom already used
   // for other per-selection state on this branch (see `BookingDetailDialog`
   // and `BookingPage`, both keyed on the identity they reset for).
-  useEffect(() => { setDraft(card.notes ?? '') }, [card.id])
+  useEffect(() => {
+    setDraft(card.notes ?? '')
+    latest.current = card.notes ?? ''
+    handedUp.current = card.notes ?? ''
+  }, [card.id])
+
+  // Spec §3.1: the note saves even if the booking is then abandoned, because
+  // it is about the person and not about the appointment. `onBlur` alone does
+  // not deliver that. `Dialog` is a native <dialog>: Escape fires `onCancel`,
+  // the parent nulls its target, and this subtree is removed while the
+  // textarea still holds focus — and browsers do not fire `blur` on an element
+  // that is removed from the DOM. Annulla and a click on the backdrop happened
+  // to save, because mousedown moves focus first; Escape, the gesture the
+  // dialog advertises as free, dropped the note without a word. The guarantee
+  // belongs to this component, for the same reason the draft reset above does.
+  useEffect(() => flush, [flush])
 
   const history: string[] = []
   if (card.lastPlayed) {
@@ -72,9 +104,10 @@ export function MemberCard({ card, onNotesBlur, saveError }: {
           onChange={(e) => setDraft(e.target.value)}
           // Saves on leaving the field, not on a button: notes get typed in
           // a hurry on the phone, and a note lost because nobody clicked is
-          // worse than one written halfway. The comparison avoids resaving
-          // something that never changed.
-          onBlur={() => { if (draft !== (card.notes ?? '')) onNotesBlur(draft) }}
+          // worse than one written halfway. `flush` is the same call the
+          // unmount makes, and it declines to resave something that never
+          // changed.
+          onBlur={flush}
         />
       </label>
 

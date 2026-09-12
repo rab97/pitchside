@@ -60,6 +60,43 @@ describe('MemberCard', () => {
     expect(onNotesBlur).not.toHaveBeenCalled()
   })
 
+  // Spec §3.1: the note saves even if the booking is then abandoned, because
+  // it is about the person and not about the appointment. The only save path
+  // was `onBlur`, and Escape on a native <dialog> removes this subtree while
+  // the textarea still has focus — browsers do not fire `blur` on an element
+  // that is removed. Annulla and a click on the backdrop did save, because
+  // mousedown moves focus first: three ways of closing one dialog, two
+  // behaviours, and the silent one is the gesture the dialog advertises as
+  // free.
+  it('una nota scritta e mai salvata dal blur si salva quando la scheda sparisce', () => {
+    const onNotesBlur = vi.fn()
+    const { unmount } = render(<MemberCard card={base} onNotesBlur={onNotesBlur} saveError={null} />)
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note interne' }), { target: { value: 'Paga sempre in contanti' } })
+    expect(onNotesBlur).not.toHaveBeenCalled()
+
+    unmount()
+    expect(onNotesBlur).toHaveBeenCalledWith('Paga sempre in contanti')
+  })
+
+  it('una nota già salvata dal blur non si risalva quando la scheda sparisce', () => {
+    const onNotesBlur = vi.fn()
+    const { unmount } = render(<MemberCard card={base} onNotesBlur={onNotesBlur} saveError={null} />)
+    const notes = screen.getByRole('textbox', { name: 'Note interne' })
+    fireEvent.change(notes, { target: { value: 'Paga sempre in contanti' } })
+    fireEvent.blur(notes)
+    expect(onNotesBlur).toHaveBeenCalledTimes(1)
+
+    unmount()
+    expect(onNotesBlur).toHaveBeenCalledTimes(1)
+  })
+
+  it('chiudere senza aver scritto niente non salva niente', () => {
+    const onNotesBlur = vi.fn()
+    const { unmount } = render(<MemberCard card={base} onNotesBlur={onNotesBlur} saveError={null} />)
+    unmount()
+    expect(onNotesBlur).not.toHaveBeenCalled()
+  })
+
   it('dice se il salvataggio della nota non è riuscito', () => {
     render(<MemberCard card={base} onNotesBlur={() => {}} saveError="Non siamo riusciti a salvare la nota. Riprova." />)
     expect(screen.getByText('Non siamo riusciti a salvare la nota. Riprova.')).toBeInTheDocument()
