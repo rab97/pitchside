@@ -185,9 +185,22 @@ manager reads their own facility and no other. They are not `security definer` �
 there is nothing here a facility admin may not already read, and a definer
 function would have to re-implement the tenant check that RLS already enforces.
 
-`member_card` returns `notes`, which are internal and never shown to a
-customer. The dialog is behind `RequireAdmin`; the function is reachable only
-by someone `is_facility_admin` already admits.
+`member_card` returns `notes`, which are internal and must never reach the
+customer they are about. **This does not follow from RLS**, and an earlier draft
+of this spec wrongly said it did. `members` carries two OR'd select policies —
+`members_read_own` on `user_id = auth.uid()` and `members_read_admin` on
+`is_facility_admin(facility_id)` — so a customer whose row has been claimed can
+read their own row, `notes` included. The project spec has recorded that hazard
+since 5 September, and the established mitigation is that a self-service caller
+never selects the column (`useDayBookings.ts` lists its columns for exactly this
+reason).
+
+So `member_card` carries the rule itself: it filters on
+`is_facility_admin(m.facility_id)` in its own `where` clause, rather than
+trusting the table's policies to do it. The grant stays `authenticated`, because
+that is how every RPC here is granted — the predicate is what confines it, not
+the grant. A pgTAP assertion proves a member reading their own card through this
+function gets zero rows.
 
 ### 3.1 Notes save on blur
 
