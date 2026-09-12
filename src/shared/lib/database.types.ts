@@ -589,8 +589,19 @@ export type Database = {
         Args: { m: Database["public"]["Tables"]["members"]["Row"] }
         Returns: number
       }
+      name_key: { Args: { p_name: string }; Returns: string }
       owns_member: { Args: { p_member_id: string }; Returns: boolean }
       phone_key: { Args: { p_phone: string }; Returns: string }
+      search_members: {
+        Args: { p_facility: string; p_query: string }
+        Returns: {
+          has_missed: boolean
+          id: string
+          name: string
+          phone: string
+          rank: number
+        }[]
+      }
       slot_prices: {
         Args: { p_day: string; p_duration_minutes: number; p_field_id: string }
         Returns: {
