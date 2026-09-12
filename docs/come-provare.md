@@ -365,13 +365,46 @@ Supabase in locale. Nessuna email lascia mai questa macchina — ogni
 messaggio che l'app manda finisce lì, intercettato. Trova il messaggio
 appena arrivato e apri il collegamento di conferma al suo interno.
 
+> **Il collegamento porta alla 3000, non alla 5174, e la pagina non si apre.**
+> Supabase costruisce l'indirizzo di conferma su `site_url`, che in
+> `supabase/config.toml` è `http://127.0.0.1:3000`, mentre il server di
+> sviluppo gira sulla 5174. Cliccando finisci quindi su «connessione
+> rifiutata» — e **la conferma a quel punto è già avvenuta**: il token è stato
+> consumato da Supabase prima che il browser provasse a caricare qualcosa.
+> Non è un difetto, e segnalarlo come tale è il malinteso più facile di questo
+> scenario. Torna a mano su `http://localhost:5174/profilo` e leggi lì il
+> risultato.
+
 Torna su `/profilo`: l'indirizzo deve comparire come attivo — la frase «È
 qui che ti scriveremo delle tue prenotazioni. Oggi non mandiamo ancora
 niente…», non più l'avviso d'attesa. Quel «non mandiamo ancora niente» è
 voluto e fa parte di ciò che devi vedere: di codice che manda posta qui non
 ce n'è ancora, e la schermata non deve far credere il contrario. Se lo
-trovi ancora «in attesa di conferma», il collegamento non ha fatto il suo
-lavoro: è il difetto che questo scenario esiste per scoprire.
+trovi ancora «in attesa di conferma» **e l'account non aveva nessun
+indirizzo**, il collegamento non ha fatto il suo lavoro: è il difetto che
+questo scenario esiste per scoprire.
+
+> **Se l'account un indirizzo ce l'aveva già, i collegamenti da aprire sono
+> due.** `double_confirm_changes = true` in `supabase/config.toml`: un
+> *cambio* di indirizzo manda un messaggio al nuovo e uno al vecchio, e vale
+> solo quando sono stati aperti tutti e due. Su Inbucket cercali entrambi.
+> Finché ne manca uno, «in attesa di conferma» è la risposta giusta e non un
+> difetto — e la schermata, in quel caso, lo dice: l'avviso nomina tutti e due
+> gli indirizzi. Se invece parla di un collegamento solo, quello sì è un
+> difetto.
+
+> **Prima che parta posta vera servono due cose che qui non ci sono, e non
+> sono rifiniture.** In `supabase/config.toml` non esiste nessun blocco
+> `[auth.email.smtp]`: in locale la posta la intercetta Inbucket e va bene
+> così, ma un progetto senza provider SMTP non manda niente su cui si possa
+> contare. E `email_sent = 2`, sotto `[auth.rate_limit]`, è il numero di
+> messaggi all'ora: insieme alla doppia conferma qui sopra, **un solo cambio
+> di indirizzo li consuma tutti e due**. Il cliente successivo riceve un 429,
+> che la schermata traduce in «Non siamo riusciti a salvare l'indirizzo.
+> Riprova» — un invito a riprovare che per il resto dell'ora non può
+> riuscire. Un provider vero e un limite realistico sono **condizioni** del
+> sotto-progetto dei promemoria: vanno decisi e configurati prima che il primo
+> promemoria esista, non dopo.
 
 **Un indirizzo già preso.** Prova a salvare un indirizzo già associato a un
 altro account di prova. Deve arrivare un errore leggibile nel form, non
