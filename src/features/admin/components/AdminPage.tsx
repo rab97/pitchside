@@ -34,18 +34,31 @@ export function AdminPage() {
               in tempo reale
             </span>
 
-            {/* Every control in this row grows to 44×44 when a finger is
-                doing the pointing — the floor the spec sets (§2.4, "touch
-                targets no smaller than the tab bar's"), already met by the
-                calendar's day cells (`MonthGridPopover`) and the pitch
-                list's drag handle. The gate is `pointer-coarse:`, not an
-                `sm:`/`lg:` breakpoint, because the question a touch target
-                asks is *what is pointing at it*, not how wide the window
-                is: a tablet on a desk with a trackpad is wide and precise,
-                a phone held sideways is wide and is still a thumb, and a
-                breakpoint answers neither. A dense toolbar driven by a
-                mouse is not broken and does not need the extra 20px, so it
-                keeps the sizes it had. */}
+            {/* Every control in this row grows to 44×44 where the device's
+                *primary* pointer is coarse — the floor the spec sets (§2.4,
+                "touch targets no smaller than the tab bar's"), already met
+                by the calendar's day cells (`MonthGridPopover`) and the
+                pitch list's drag handle.
+
+                The gate is `pointer-coarse:` rather than an `sm:`/`lg:`
+                breakpoint because window width answers nothing here: a
+                tablet on a desk with a trackpad is wide and precise, a
+                phone held sideways is wide and is still a thumb.
+
+                But `pointer:` does not answer "could a finger be used"
+                either — it reports only the primary pointing device. The
+                machine this serves worse is the touchscreen laptop or
+                convertible used with its trackpad: it reports
+                `pointer: fine`, so a manager who reaches up and taps the
+                screen gets the 24px arrows. `any-pointer-coarse:` is the
+                query that would catch it (and it does compile in Tailwind
+                4.3.3), and it is deliberately not used: it matches on the
+                mere presence of a touchscreen, so that same laptop, driven
+                all day by its trackpad, would carry a toolbar grown for a
+                thumb it mostly does not use. Between an occasionally
+                awkward tap and a permanently coarser dense toolbar, the
+                trade taken is the first. A toolbar driven by a mouse is
+                not broken and does not need the extra 20px. */}
             <div className="ml-auto flex items-center gap-2">
               <button
                 type="button"
