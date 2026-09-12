@@ -277,8 +277,8 @@ subito sotto, questa, che non deve mai mancare:
 
 Qui la prenotazione in conflitto è **una sola**, e ogni parola che la
 accompagna deve essere al singolare. L'avviso sopra l'elenco non porta nessun
-numero — dice «Chiudendo, questa prenotazione verrà disdetta.» — e non
-cercarcelo: il conteggio compare solo in due punti, sul pulsante che conferma,
+numero — dice «Chiudendo, questa prenotazione verrà disdetta.» — e non andarlo
+a cercare: il conteggio compare solo in due punti, sul pulsante che conferma,
 «Chiudi e disdici 1 prenotazione», e poi nel messaggio che arriva dopo,
 «Chiusura salvata. Disdetta 1 prenotazione.». Un «queste 1 prenotazioni», o un
 «Disdette 1 prenotazioni», è un difetto da segnalare: questa è la schermata in
