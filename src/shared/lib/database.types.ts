@@ -585,6 +585,21 @@ export type Database = {
         }[]
       }
       is_facility_admin: { Args: { p_facility: string }; Returns: boolean }
+      member_card: {
+        Args: { p_member_id: string }
+        Returns: {
+          appearances: number
+          email: string
+          id: string
+          last_played: string
+          missed: number
+          name: string
+          notes: string
+          phone: string
+          price_list: string
+          usual_field_name: string
+        }[]
+      }
       member_reliability: {
         Args: { m: Database["public"]["Tables"]["members"]["Row"] }
         Returns: number
