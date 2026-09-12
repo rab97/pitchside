@@ -68,6 +68,46 @@ describe('ProfilePage', () => {
     expect(screen.getByText(/rossi@example.com/)).toBeInTheDocument()
   })
 
+  // `double_confirm_changes = true` in `supabase/config.toml`, e verificato
+  // sullo stack: chi ha già un indirizzo confermato e ne chiede un altro
+  // riceve DUE messaggi — uno al nuovo indirizzo, uno al vecchio — e il
+  // cambio vale solo quando sono stati aperti entrambi i collegamenti. La
+  // frase al singolare mandava il cliente ad aprirne uno solo e a tornare qui
+  // a rileggere «in attesa di conferma», senza che niente dicesse perché.
+  it('con un indirizzo attivo e uno in attesa dice che i collegamenti sono due', () => {
+    stubSession({
+      phone: '393331112233', email: 'vecchio@example.com',
+      new_email: 'nuovo@example.com', identities: [],
+    })
+    renderPage()
+
+    const avviso = screen.getByRole('status')
+    expect(avviso).toHaveTextContent(/in attesa di conferma/i)
+    expect(avviso).toHaveTextContent(/nuovo@example.com/)
+    expect(avviso).toHaveTextContent(/vecchio@example.com/)
+    expect(avviso).toHaveTextContent(/tutti e due i collegamenti/i)
+
+    // E l'indirizzo dell'account, intanto, è ancora il vecchio: è quello che
+    // riceve, ed è l'unico che compare fra i dati.
+    const account = screen.getByRole('list', { name: 'Dati dell’account' })
+    expect(within(account).getByText('vecchio@example.com')).toBeInTheDocument()
+    expect(within(account).queryByText('nuovo@example.com')).not.toBeInTheDocument()
+  })
+
+  // L'altra metà: senza un indirizzo attivo il messaggio è uno solo, e dire
+  // «tutti e due» sarebbe falso nel verso opposto.
+  it('senza un indirizzo attivo il collegamento da aprire è uno solo', () => {
+    stubSession({
+      phone: '393331112233', email: null,
+      new_email: 'nuovo@example.com', identities: [],
+    })
+    renderPage()
+
+    const avviso = screen.getByRole('status')
+    expect(avviso).toHaveTextContent(/apri il collegamento che ti abbiamo mandato lì/i)
+    expect(avviso).not.toHaveTextContent(/tutti e due/i)
+  })
+
   it('un indirizzo confermato è mostrato senza avvisi', () => {
     stubSession({
       phone: '393331112233', email: 'rossi@example.com', identities: [],

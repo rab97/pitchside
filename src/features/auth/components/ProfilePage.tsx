@@ -184,10 +184,18 @@ function AccountRow({ label, value, numeric = false }: {
 }
 
 /**
- * Four states, in this order: a change awaiting confirmation, a confirmation
- * just sent, an address that works, no address at all.
+ * Five states, in this order: a change awaiting confirmation over an address
+ * that already works, a change awaiting confirmation with nothing behind it, a
+ * confirmation just sent, an address that works, no address at all.
  *
- * The first two are separate on purpose. `updateUser` records the pending
+ * The first two are one situation with two different truths in it. Supabase is
+ * configured with `double_confirm_changes = true`, so a customer who already
+ * has a confirmed address gets two messages — one at each address — and the
+ * change lands only once both links are opened. Saying "open the link we sent
+ * there" to that customer sends them to do half the job and leaves them
+ * reading «in attesa di conferma» afterwards with no explanation.
+ *
+ * The second and third are separate on purpose. `updateUser` records the pending
  * change and sends a link; the session's `new_email` only catches up when
  * `USER_UPDATED` propagates, so the render right after a successful click is
  * normally `sent` with no `pending` yet. Both must say the same thing — the
@@ -196,7 +204,7 @@ function AccountRow({ label, value, numeric = false }: {
  * address shown as working that receives nothing is the product claiming
  * something it is not doing (spec §3.2).
  *
- * The field stays in all four: an address typed wrong, or pending on a
+ * The field stays in all five: an address typed wrong, or pending on a
  * mailbox nobody opens, would otherwise be uncorrectable from this screen,
  * and `updateUser` is the same gesture either way.
  */
@@ -211,7 +219,20 @@ function EmailSection({ active, pending }: {
     <section className={cardClass}>
       <h2 className={sectionTitleClass}>Dove ti scriviamo</h2>
 
-      {pending ? (
+      {pending && active ? (
+        // Two messages, and both links have to be opened: `config.toml` sets
+        // `double_confirm_changes = true`, which is the right setting — it is
+        // what stops a stolen session from silently moving the account to an
+        // address its owner never sees. The cost is that the singular sentence
+        // below is false here, and the customer who opens only the one link it
+        // named comes back to an unchanged screen with nothing explaining why.
+        <p role="status" className={noticeClass}>
+          In attesa di conferma: {pending}. Per sicurezza il messaggio è andato
+          a tutti e due gli indirizzi, il nuovo e {active}: il cambio vale
+          quando hai aperto tutti e due i collegamenti. Fino ad allora
+          l’indirizzo resta {active}.
+        </p>
+      ) : pending ? (
         // `role="status"` rather than `alert`: this is not a failure, it is a
         // wait. It names the address, which the `sent` notice below cannot.
         <p role="status" className={noticeClass}>
