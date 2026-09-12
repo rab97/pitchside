@@ -7,6 +7,7 @@ import { formatEuro } from '@/shared/lib/money'
 import { dayKey, minToLabel } from '@/shared/lib/tz'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
 import type { FieldRow } from '@/shared/hooks/useFields'
+import { digitsOf } from '../utils/memberKeys'
 import { isPhoneTaken, memberMessage } from '../utils/memberMessages'
 import { defaultSeasonEnd } from '../utils/recurrence'
 import { MemberCard } from './MemberCard'
@@ -74,7 +75,7 @@ export function NewBookingDialog({ target, onClose }: {
     // That retry is the case `resolveMember` searched by name to cover.
     setChoice({
       kind: 'existing',
-      member: { id, name: c.name, phone: phone.replace(/\D/g, '') || null, hasMissed: false },
+      member: { id, name: c.name, phone: digitsOf(phone) || null, hasMissed: false },
     })
     return id
   }

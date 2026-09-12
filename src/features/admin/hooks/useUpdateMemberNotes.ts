@@ -3,9 +3,9 @@ import { supabase } from '@/shared/lib/supabase'
 import { memberMessage } from '../utils/memberMessages'
 
 /**
- * L'unica scrittura possibile dalla scheda. Le note si salvano uscendo dal
- * campo e anche se la prenotazione poi non si fa: riguardano la persona, non
- * l'appuntamento.
+ * The one write the card can make. Notes save on leaving the field, and they
+ * save even if the booking is then abandoned: they are about the person, not
+ * about the appointment.
  */
 export function useUpdateMemberNotes(): {
   saveNotes: (memberId: string, notes: string) => Promise<void>
@@ -17,10 +17,10 @@ export function useUpdateMemberNotes(): {
   const mutation = useMutation({
     mutationFn: async ({ memberId, notes }: { memberId: string; notes: string }) => {
       const trimmed = notes.trim()
-      // `select()` dopo la `update`: una scrittura esclusa dalla clausola
-      // `using` di RLS non corrisponde a nessuna riga e NON restituisce
-      // errore. Senza la riga indietro, «non ho scritto niente» e «ho scritto»
-      // sono indistinguibili.
+      // `select()` after the `update`: a write excluded by an RLS `using`
+      // clause matches no row and returns NO error. Without asking for the
+      // row back, "I wrote nothing" and "I wrote" are indistinguishable, and
+      // the manager would be told a note was saved that never was.
       const { data, error } = await supabase
         .from('members')
         .update({ notes: trimmed === '' ? null : trimmed })

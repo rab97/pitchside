@@ -1,11 +1,13 @@
 /**
- * Un errore che il gestore legge deve dire cosa non è riuscito e cosa può
- * fare, mai riportare la risposta del database. `closureMessages.ts` e
- * `bandMessages.ts` fanno lo stesso per le loro schermate, e restano tre file
- * distinti apposta: ognuno mappa SQLSTATE diversi su azioni diverse.
+ * An error the manager reads has to say what failed and what they can do about
+ * it, never repeat what the database answered. `closureMessages.ts` and
+ * `bandMessages.ts` do the same for their own screens, and the three stay
+ * separate files on purpose: each maps different SQLSTATEs onto different
+ * actions, and merging them would mean one table of codes that no screen can
+ * read in full.
  */
 
-/** Unique violation: l'indice su `phone_key(phone)` ha rifiutato la riga. */
+/** Unique violation: the index on `phone_key(phone)` refused the row. */
 const UNIQUE_VIOLATION = '23505'
 
 export function isPhoneTaken(error: unknown): boolean {

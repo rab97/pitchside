@@ -1,14 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/shared/lib/supabase'
 import { useFacility } from '@/shared/tenant/FacilityProvider'
+import { digitsOf } from '../utils/memberKeys'
 
 /**
- * La creazione deliberata. Non c'è più nessuna euristica che inserisca una
- * scheda per conto suo: è l'unico punto in cui nasce un cliente, e costa un
- * gesto esplicito perché è l'unico momento in cui nascono i doppioni.
+ * The deliberate creation. No heuristic inserts a card on its own any more:
+ * this is the single place a customer is born, and it costs an explicit
+ * gesture because it is the single moment duplicates are born with them.
  *
- * L'errore di collisione viene rilanciato così com'è, con il suo `code`: solo
- * il chiamante sa se mostrarlo come domanda («è questo?») o come messaggio.
+ * The collision error is rethrown exactly as it arrived, `code` and all: only
+ * the caller knows whether to show it as a question («is this the one?») or as
+ * a message. Translating it here would take that choice away and leave the
+ * caller matching on a sentence.
  */
 export function useCreateMember(): {
   createMember: (input: { name: string; phone: string }) => Promise<string>
@@ -19,7 +22,7 @@ export function useCreateMember(): {
 
   const mutation = useMutation({
     mutationFn: async ({ name, phone }: { name: string; phone: string }) => {
-      const digits = phone.replace(/\D/g, '')
+      const digits = digitsOf(phone)
       const { data, error } = await supabase
         .from('members')
         .insert({
