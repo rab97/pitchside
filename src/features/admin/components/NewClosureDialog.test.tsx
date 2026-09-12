@@ -46,17 +46,28 @@ describe('NewClosureDialog — l’anteprima delle prenotazioni in conflitto', (
     vi.useRealTimers()
   })
 
-  // `setPeriod` now drives four separate popovers (two `DateField`s, two
-  // `TimeField`s) instead of two synthetic `change` events on native
-  // inputs — real work Radix's focus/portal machinery has to do on every
-  // open and close. That is comfortably inside the default 5s per test in
-  // isolation, but the whole suite runs its ~40 files in parallel, and
-  // under that contention this file's tests are the ones that occasionally
-  // cross the default timeout — not a hang, just more real time for more
-  // real interaction. A longer timeout says so plainly, rather than the
-  // suite intermittently failing for a reason no one re-reading it later
-  // could see.
-  const TIMEOUT = 10_000
+  // `setPeriod` drives four separate popovers (two `DateField`s, two
+  // `TimeField`s) instead of two synthetic `change` events on native inputs —
+  // real work Radix's focus and portal machinery has to do on every open and
+  // close. In isolation the whole file costs about two seconds.
+  //
+  // What it costs under the full suite depends entirely on contention, and the
+  // spread is roughly fivefold. Measured on a 16-core machine:
+  //
+  //   file alone, with coverage      5 passed
+  //   suite, 8 workers               5 passed
+  //   suite, 8 workers + coverage    this test crossed 10s
+  //   suite, 16 workers              this test crossed 10s, 5 runs of 5
+  //
+  // So a 10s budget was being decided by how many workers vitest happened to
+  // start and whether coverage instrumentation was on — which is not something
+  // this test is meant to assert. A timeout is there to catch a hang, not to
+  // enforce a performance budget: 20s still catches a hang, and stops a green
+  // suite from turning red because it was asked for a coverage report.
+  //
+  // The pool is separately capped in `vite.config.ts`, for a different and
+  // measured reason: past 8 workers the suite gets slower, not faster.
+  const TIMEOUT = 20_000
 
   it('mentre il controllo è in corso, il pulsante è disattivato e non promette un numero', () => {
     vi.spyOn(conflictsHook, 'useClosureConflicts').mockReturnValue(
