@@ -132,14 +132,33 @@ says "the match happened", which is real work and a sub-project of its own.
 Deciding that is explicitly **not** part of this one, and the card does not
 depend on it.
 
-### 2.6 A phone number is optional, and the cost is stated
+### 2.6 A phone number is required to create a customer
 
-A caller may refuse to give a number and the booking must still happen;
-refusing it would be absurd. But a member with no phone is the row that cannot
-be recognised next time, and that is where duplicates come from.
+**Decided by the author on 12 September, after walking the built screen, and
+reversing this spec's original position.** The earlier draft made the number
+optional with a sentence explaining the cost. It is now required: a customer
+cannot be created without one.
 
-So the dialog says so, in one line, at the moment of deciding — not as a
-warning to dismiss, as a statement of fact.
+The reasoning is that the name identifies nobody and the number identifies
+everybody. A unique index on `(facility_id, phone_key(phone))` already exists,
+so requiring the number makes every customer distinguishable **by
+construction** rather than by anyone's diligence — and this screen is the
+phone-booking path (`source: 'phone'` is hard-coded), so the number is nearly
+always in the manager's hand.
+
+**The risk that was raised and accepted.** A required field that a user
+sometimes cannot fill does not produce data — it produces invented data. A
+caller who refuses to leave a number still has to be booked, and the manager
+will type `3331111111` rather than turn them away. An invented number is worse
+than an absent one: it looks real, so nobody ever corrects it, and the second
+time the manager reaches for the same digits the unique index refuses the
+write — losing exactly the guarantee the rule was meant to provide, in exactly
+the case it was meant to cover.
+
+A middle option was offered — required, with an explicit «non lascia il numero»
+escape, so an absence stays an absence instead of becoming a fiction — and was
+declined in favour of the simpler rule. If invented numbers start appearing in
+the data, this is the paragraph to come back to.
 
 ### 2.7 A number already on another name is a question, not an error
 
@@ -176,6 +195,13 @@ So when the typed name matches an existing member exactly, «Nuovo cliente» doe
 not create. It names who is already there and asks whether this is the same
 person or a different one. The manager can say "different" and proceed — the
 point is that they say it, rather than discovering later that they didn't.
+
+With §2.6's required number this becomes a warning rather than a guard, and
+that is the correct weight for it. Two customers sharing a name now necessarily
+hold different numbers, so they are genuinely two people; the identical pair —
+same name, same number — is refused by the unique index before this question
+can even be asked. What remains is worth saying out loud and not worth
+refusing.
 
 It is the same shape as §2.7's answer for a number already assigned, which is
 deliberate: two near-identical situations should not teach the manager two
