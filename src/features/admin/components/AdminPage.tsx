@@ -34,12 +34,24 @@ export function AdminPage() {
               in tempo reale
             </span>
 
+            {/* Every control in this row grows to 44×44 when a finger is
+                doing the pointing — the floor the spec sets (§2.4, "touch
+                targets no smaller than the tab bar's"), already met by the
+                calendar's day cells (`MonthGridPopover`) and the pitch
+                list's drag handle. The gate is `pointer-coarse:`, not an
+                `sm:`/`lg:` breakpoint, because the question a touch target
+                asks is *what is pointing at it*, not how wide the window
+                is: a tablet on a desk with a trackpad is wide and precise,
+                a phone held sideways is wide and is still a thumb, and a
+                breakpoint answers neither. A dense toolbar driven by a
+                mouse is not broken and does not need the extra 20px, so it
+                keeps the sizes it had. */}
             <div className="ml-auto flex items-center gap-2">
               <button
                 type="button"
                 aria-label="Giorno precedente"
                 onClick={() => setDay((d) => addDays(d, -1))}
-                className="grid h-6 w-6 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                className="grid h-6 w-6 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:h-11 pointer-coarse:w-11"
               >
                 ‹
               </button>
@@ -51,7 +63,7 @@ export function AdminPage() {
                 type="button"
                 aria-label="Giorno successivo"
                 onClick={() => setDay((d) => addDays(d, 1))}
-                className="grid h-6 w-6 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                className="grid h-6 w-6 place-items-center rounded-md border border-line bg-surface text-xs text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:h-11 pointer-coarse:w-11"
               >
                 ›
               </button>
@@ -64,7 +76,9 @@ export function AdminPage() {
                 disabled={isToday(day)}
                 aria-label="Torna a oggi"
                 onClick={() => setDay(new Date())}
-                className="ml-1 h-6 rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                // `min-w-11` rather than `w-11`: the label already makes this
+                // wider than the floor, and a fixed width would cut it off.
+                className="ml-1 h-6 rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:h-11 pointer-coarse:min-w-11"
               >
                 Oggi
               </button>
@@ -77,7 +91,7 @@ export function AdminPage() {
               <DateJump onSelect={setDay} label="Vai a una data" />
               <Link
                 to="/admin/struttura"
-                className="ml-1 inline-flex h-6 items-center rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+                className="ml-1 inline-flex h-6 items-center justify-center rounded-md border border-line bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:h-11 pointer-coarse:min-w-11"
               >
                 Impostazioni
               </Link>

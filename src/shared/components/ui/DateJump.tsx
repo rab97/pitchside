@@ -43,7 +43,14 @@ export function DateJump({ min, max, onSelect, label }: {
           type="button"
           title="Scegli una data"
           aria-label={label}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-surface text-ink-2 transition-colors hover:border-pitch hover:text-pitch"
+          // 32×32 under a mouse, 44×44 under a finger — the spec's floor
+          // (§2.4), reached with `pointer-coarse:` for the reason spelled
+          // out over the admin toolbar in `AdminPage.tsx`: the size follows
+          // what is pointing, not how wide the window is. Both call sites
+          // want the same thing, and the customer's is the one that is
+          // always a phone — on `/prenota` this sits in `DayStrip`'s month
+          // row, which grows from 32 to 44px tall there and nowhere else.
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-surface text-ink-2 transition-colors hover:border-pitch hover:text-pitch pointer-coarse:h-11 pointer-coarse:w-11"
         >
           <svg
             viewBox="0 0 24 24"
