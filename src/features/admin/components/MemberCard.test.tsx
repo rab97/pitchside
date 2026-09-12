@@ -64,4 +64,13 @@ describe('MemberCard', () => {
     render(<MemberCard card={base} onNotesBlur={() => {}} saveError="Non siamo riusciti a salvare la nota. Riprova." />)
     expect(screen.getByText('Non siamo riusciti a salvare la nota. Riprova.')).toBeInTheDocument()
   })
+
+  it('cambiando cliente non mostra la bozza non salvata del precedente', () => {
+    const memberB: MemberCardData = { ...base, id: 'm2', name: 'Bianchi Anna', notes: 'Nota di Anna' }
+    const { rerender } = render(<MemberCard card={base} onNotesBlur={() => {}} saveError={null} />)
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note interne' }), { target: { value: 'Bozza su Rossi mai inviata' } })
+    rerender(<MemberCard card={memberB} onNotesBlur={() => {}} saveError={null} />)
+    expect(screen.getByRole('textbox', { name: 'Note interne' })).toHaveValue('Nota di Anna')
+    expect(screen.queryByText('Bozza su Rossi mai inviata')).not.toBeInTheDocument()
+  })
 })

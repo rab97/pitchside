@@ -1,17 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ErrorNote } from '@/shared/components/ui/ErrorNote'
 import type { MemberCardData } from '../hooks/useMemberCard'
 
 /**
- * Quello che il gestore legge mentre parla.
+ * What the manager reads while someone is talking to them on the phone.
  *
- * Niente percentuali, per scelta: `honored_count` non lo incrementa nessuno,
- * quindi `member_reliability` varrebbe `null` oppure `0%` e basta — un cliente
- * con cinquanta presenze e una assenza leggerebbe zero. Qui le presenze si
- * contano dalle prenotazioni passate e si dicono a parole: una percentuale
- * invita a confrontare le persone e nasconde su quanti casi è calcolata.
+ * No percentage, by choice: nothing in this project increments
+ * `honored_count`, so `member_reliability` would only ever read `null` or
+ * `0%` — a regular with fifty appearances and one no-show would read zero.
+ * Appearances here are counted from past bookings and stated in words
+ * instead: a percentage invites comparing people against each other and
+ * hides how many cases it was computed over.
  */
 function reliabilitySentence(appearances: number, missed: number): string {
   if (appearances === 0 && missed === 0) return 'Cliente nuovo'
@@ -26,6 +27,13 @@ export function MemberCard({ card, onNotesBlur, saveError }: {
   saveError: string | null
 }) {
   const [draft, setDraft] = useState(card.notes ?? '')
+
+  // These are the manager's private notes about a named person: a switch to
+  // a different member must never leave the previous member's unsent draft
+  // sitting under the new name. This mirrors the reset idiom already used
+  // for other per-selection state on this branch (see `BookingDetailDialog`
+  // and `BookingPage`, both keyed on the identity they reset for).
+  useEffect(() => { setDraft(card.notes ?? '') }, [card.id])
 
   const history: string[] = []
   if (card.lastPlayed) {
@@ -62,9 +70,10 @@ export function MemberCard({ card, onNotesBlur, saveError }: {
           className="field h-auto min-h-16 resize-y py-1.5 text-[12.5px]"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          // Si salva uscendo dal campo: al telefono si scrive di fretta, e una
-          // nota persa perché nessuno ha cliccato è peggio di una scritta a
-          // metà. Il confronto evita di riscrivere ciò che non è cambiato.
+          // Saves on leaving the field, not on a button: notes get typed in
+          // a hurry on the phone, and a note lost because nobody clicked is
+          // worse than one written halfway. The comparison avoids resaving
+          // something that never changed.
           onBlur={() => { if (draft !== (card.notes ?? '')) onNotesBlur(draft) }}
         />
       </label>
