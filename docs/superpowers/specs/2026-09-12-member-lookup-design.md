@@ -160,6 +160,27 @@ Two managers creating the same number at the same moment land in the same
 place: the unique violation becomes «qualcuno l'ha appena creato, eccolo», and
 the search re-runs.
 
+### 2.7b A name already in the book is a question too
+
+Added after the author walked the built screen: a customer must not be created
+under a name an existing customer already carries.
+
+This is a **confirmation, not a constraint**, and the distinction is the whole
+decision. Two different people genuinely share a name — two «Marco Rossi» in one
+facility is ordinary, not a corner case — and a unique index on the name would
+leave the manager unable to register the second one. What they would actually do
+is write «Marco Rossi 2», and that name is worse data than two clean rows, for
+as long as the row exists.
+
+So when the typed name matches an existing member exactly, «Nuovo cliente» does
+not create. It names who is already there and asks whether this is the same
+person or a different one. The manager can say "different" and proceed — the
+point is that they say it, rather than discovering later that they didn't.
+
+It is the same shape as §2.7's answer for a number already assigned, which is
+deliberate: two near-identical situations should not teach the manager two
+different habits.
+
 ### 2.8 A failed search never blocks a booking
 
 The phone is ringing. If `search_members` fails, the field falls back to plain
