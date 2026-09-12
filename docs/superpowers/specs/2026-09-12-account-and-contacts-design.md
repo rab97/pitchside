@@ -98,6 +98,34 @@ The cost is stated rather than hidden: the sync is lazy. A customer who confirms
 an address and never opens the app again has it on their account and not on
 their card.
 
+It is also **single-facility**, which is the sharper half of the same cost. The
+refresh is scoped by `p_facility`, so it updates only the card belonging to the
+app the customer is using, while its sibling `claim_members_by_verified_phone`
+deliberately works across every facility — the two disagree about scope on
+purpose, and this is where that is written down. In a product whose first rule
+is multi-structure, the consequence is easy to reach: a customer of two
+facilities confirms an address in the first one's app and goes on booking at the
+second by telephone, as always, so he never opens its app. The second
+facility's card holds `NULL` for good.
+
+Widening the refresh to `m.user_id = auth.uid()` is the obvious fix and is
+deliberately not done here. It needs an index on `user_id` first —
+`members_facility_user_uniq` is `(facility_id, user_id)` and cannot serve a
+lookup on `user_id` alone — and the moment to weigh that index is when the
+reminder job exists and we know whether it reads the card at all or goes to
+`auth.users` directly, which would retire the question. **So this is a decision
+the reminders sub-project has to take, not a defect to carry:** it must either
+widen the refresh, or read addresses from a place that is not per-facility.
+
+And a rule fixed here while it is cheap, because two writers for one column
+arrive the day the manager's screen gains an email field: **the account's
+confirmed address wins over one typed by the manager.** Only the confirmed one
+is evidence that somebody reads that mailbox, and only it can be corrected by
+the person it belongs to. A manager's entry holds until the customer confirms
+an address, and is replaced on the next visit afterwards — so that screen will
+have to say as much where the field is, rather than let an entry vanish
+silently.
+
 ### 2.5 No reminder toggle in this sub-project
 
 The customer will choose whether to be told, and that switch belongs on this

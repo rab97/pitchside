@@ -1,5 +1,5 @@
 begin;
-select plan(4);
+select plan(5);
 
 insert into public.facilities (id, slug, name, booking_horizon_days) values
   ('e4000000-0000-0000-0000-0000000000f1', 'test-mail-sync', 'Test Recapiti', 3650);
@@ -25,13 +25,16 @@ insert into public.members (id, facility_id, user_id, name, phone, email) values
    'e4000000-0000-0000-0000-0000000000bb','Bianchi','3337778899', 'vecchia@example.com');
 
 -- Una scheda senza account, con un numero che corrisponde a un terzo utente:
--- serve a provare che l'adozione continua a funzionare come prima.
-insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at,
+-- serve a provare che l'adozione continua a funzionare come prima. L'utente ha
+-- un indirizzo e la scheda no: e' il caso in cui l'adozione deve copiarlo
+-- subito, e non alla chiamata dopo.
+insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at, email,
   confirmation_token, recovery_token, email_change_token_new, email_change,
   created_at, updated_at)
 values
   ('00000000-0000-0000-0000-000000000000','e4000000-0000-0000-0000-0000000000cc',
-   'authenticated','authenticated','393331112233', now(), '','','','', now(), now());
+   'authenticated','authenticated','393331112233', now(), 'verdi@example.com',
+   '','','','', now(), now());
 insert into public.members (id, facility_id, name, phone) values
   ('e4000000-0000-0000-0000-0000000000c3','e4000000-0000-0000-0000-0000000000f1',
    'Verdi','3331112233');
@@ -61,6 +64,15 @@ select is(
   public.ensure_my_member('e4000000-0000-0000-0000-0000000000f1'),
   'e4000000-0000-0000-0000-0000000000c3'::uuid,
   'l''adozione per numero verificato continua a funzionare');
+
+-- Il ramo dell'adozione tornava la scheda senza copiarci l'indirizzo, e il
+-- valore arrivava una chiamata piu' tardi. In pratica `ClaimPhoneDialog`
+-- invalida ['my-member'] subito dopo, ma quella e' una coincidenza del client,
+-- non una proprieta' di questa funzione.
+select is(
+  (select email from public.members where id = 'e4000000-0000-0000-0000-0000000000c3'),
+  'verdi@example.com',
+  'la scheda adottata riceve l''indirizzo nella stessa chiamata');
 
 -- Il conteggio deve vedere tutte le schede della struttura, non solo la
 -- propria: senza tornare al ruolo di default, members_read_own la
