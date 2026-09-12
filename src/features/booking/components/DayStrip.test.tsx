@@ -18,8 +18,16 @@ function Harness({ initialDay, jumpTo }: { initialDay: Date; jumpTo: Date }) {
   )
 }
 
-const TODAY = new Date('2026-09-07T10:00:00+02:00')       // lunedì
-const FAR_DAY = new Date('2026-10-20T00:00:00+02:00')     // fuori dalla prima finestra
+// Entrambe le date sono fissate a **mezzogiorno**, non a mezzanotte, ed è la
+// stessa convenzione che `monthGrid` e `DateJump` seguono nel prodotto.
+// `DayStrip` disegna i giorni nel fuso del dispositivo (`startOfDay`,
+// `format`): un istante a mezzanotte di Roma è ancora il giorno prima in ogni
+// fuso a ovest, quindi `2026-10-20T00:00+02:00` si disegnava «19» su una
+// macchina in UTC — che è ciò che gira in CI. Mezzogiorno a Roma sono le 10:00
+// UTC, quindi nomina lo stesso giorno di calendario da UTC−9 fino a UTC+13:
+// la prova smette di dipendere da dove la si esegue.
+const TODAY = new Date('2026-09-07T12:00:00+02:00')       // lunedì
+const FAR_DAY = new Date('2026-10-20T12:00:00+02:00')     // fuori dalla prima finestra
 
 describe('DayStrip — la finestra segue day quando cade fuori dalla settimana', () => {
   beforeEach(() => vi.setSystemTime(TODAY))

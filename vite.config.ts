@@ -129,5 +129,27 @@ export default defineConfig({
     // Raising that timeout a second time would have bought a slower suite and
     // hidden the reason. Capping the pool is both faster and green.
     maxWorkers: 8,
+    coverage: {
+      provider: 'v8',
+      // `text-summary` so a local run says something useful in one screen;
+      // `lcov` because that is the only format SonarQube reads for
+      // JavaScript and TypeScript (`sonar.javascript.lcov.reportPaths`).
+      reporter: ['text-summary', 'lcov'],
+      reportsDirectory: './coverage',
+      // Without `include`, v8 reports only files a test happened to import,
+      // so a module nobody tests is absent rather than at 0% — and the
+      // headline number then flatters us by ignoring exactly the code that
+      // needs the attention.
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        // Generated from the database schema by `npm run types`; nothing to
+        // test and its size would dominate the ratio.
+        'src/shared/lib/database.types.ts',
+        // The bootstrap and the test environment's own scaffolding.
+        'src/main.tsx',
+        'src/test/**',
+        '**/*.d.ts',
+      ],
+    },
   },
 })
